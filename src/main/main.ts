@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, WebContents } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'path';
 import Database from 'better-sqlite3';
 
@@ -532,8 +532,11 @@ function completeTest() {
   testRunning = false;
   console.log(`Test completed. Total events: ${testEvents.length}`);
   
+  const endTimeNs = process.hrtime.bigint();
+  const elapsedTimeNs = endTimeNs - testStartTimeNs;
+  
   if (mainWindow) {
-    mainWindow.webContents.send('test-complete', testEvents);
+    mainWindow.webContents.send('test-complete', { events: testEvents, startTimeNs: testStartTimeNs.toString(), elapsedTimeNs: elapsedTimeNs.toString() });
   }
 }
 

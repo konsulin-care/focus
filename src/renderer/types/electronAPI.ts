@@ -18,6 +18,12 @@ export interface TestEvent {
   responseCorrect?: boolean;
 }
 
+export interface TestCompleteResult {
+  events: TestEvent[];
+  startTimeNs: string;
+  elapsedTimeNs: string;
+}
+
 export interface ElectronAPI {
   // Timing API
   getHighPrecisionTime: () => Promise<string>;
@@ -28,7 +34,7 @@ export interface ElectronAPI {
   stopTest: () => Promise<boolean>;
   recordResponse: (response: boolean) => Promise<void>;
   onStimulusChange: (callback: (event: TestEvent) => void) => () => void;
-  onTestComplete: (callback: (events: TestEvent[]) => void) => () => void;
+  onTestComplete: (callback: (result: TestCompleteResult) => void) => () => void;
   
   // Database API - safe query whitelist pattern
   queryDatabase: (command: string, params?: any[]) => Promise<any>;

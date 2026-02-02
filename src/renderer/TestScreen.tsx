@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from './store';
-import { TestEvent, StimulusType, TestConfig } from './types/electronAPI';
+import { TestEvent, StimulusType, TestConfig, TestCompleteResult } from './types/electronAPI';
 
 type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed';
 
@@ -19,6 +19,7 @@ function TestScreen() {
   const [lastEvent, setLastEvent] = useState<TestEvent | null>(null);
   const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
   const [testResponses, setTestResponses] = useState<TestEvent[]>([]);
+  const [elapsedTimeMs, setElapsedTimeMs] = useState<number>(0);
   const { endTest } = useNavigation();
 
   // Fetch test config on mount
@@ -75,10 +76,13 @@ function TestScreen() {
       }
     });
 
-    const unsubscribeComplete = window.electronAPI.onTestComplete((events) => {
-      console.log('Test complete, received', events.length, 'events');
-      setTestEvents(events);
-      setTestResponses(events.filter(e => e.eventType === 'response'));
+    const unsubscribeComplete = window.electronAPI.onTestComplete((data: TestCompleteResult) => {
+      console.log('Test complete, received', data.events.length, 'events');
+      
+      setTestEvents(data.events);
+      setTestResponses(data.events.filter(e => e.eventType === 'response'));
+      setElapsedTimeMs(Number(data.elapsedTimeNs) / 1_000_000);
+      
       setPhase('completed');
       setIsStimulusVisible(false);
       setCurrentStimulus(null);
@@ -228,6 +232,7 @@ function TestScreen() {
       {phase === 'completed' && (
         <div className="mt-6 text-center font-mono text-lg text-white">
           <div>Total responses recorded: {testResponses.length}</div>
+          <div className="mt-2">The test was completed in {Math.floor(elapsedTimeMs / 60000)}m {String(Math.floor((elapsedTimeMs % 60000) / 1000)).padStart(2, '0')}s</div>
           <div className="mt-4 text-white">
             {testResponses.length > 0 ? 'Data ready for submission' : 'No data recorded'}
           </div>
