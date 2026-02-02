@@ -2,11 +2,21 @@ import { app, BrowserWindow, ipcMain, Menu, WebContents } from 'electron';
 import * as path from 'path';
 import Database from 'better-sqlite3';
 
-// Test configuration constants
-const STIMULUS_DURATION_MS = 100; // 100ms per stimulus
-const ISI_MS = 2000; // 2000ms interstimulus interval
-const TOTAL_TRIALS = 648; // 648 trials; 21.6 minutes / 2s per trial (approximately)
-const BUFFER_MS = 500; // 500ms buffer period before first stimulus
+// Test configuration type
+interface TestConfig {
+  stimulusDurationMs: number;
+  interstimulusIntervalMs: number;
+  totalTrials: number;
+  bufferMs: number;
+}
+
+// Default test configuration
+const DEFAULT_TEST_CONFIG: TestConfig = {
+  stimulusDurationMs: 100,
+  interstimulusIntervalMs: 2000,
+  totalTrials: 648,
+  bufferMs: 500,
+};
 
 // Type definitions
 type StimulusType = 'target' | 'non-target';
@@ -152,10 +162,104 @@ let db: Database.Database | null = null;
 function initDatabase() {
   try {
     db = new Database(path.join(app.getPath('userData'), 'tova.db'));
+    
+    // Create test_results table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS test_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        test_data TEXT NOT NULL,
+        email TEXT NOT NULL,
+        upload_status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create test_config table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS test_config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+    
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
+}
+
+// Test configuration helper functions
+
+/**
+ * Get test configuration from database or defaults
+ */
+function getTestConfig(): TestConfig {
+  const config: TestConfig = { ...DEFAULT_TEST_CONFIG };
+  
+  if (!db) return config;
+  
+  try {
+    const stmt = db.prepare('SELECT key, value FROM test_config');
+    const rows = stmt.all() as { key: string; value: string }[];
+    
+    for (const row of rows) {
+      const numValue = parseInt(row.value, 10);
+      if (!isNaN(numValue)) {
+        switch (row.key) {
+          case 'stimulusDurationMs':
+            config.stimulusDurationMs = numValue;
+            break;
+          case 'interstimulusIntervalMs':
+            config.interstimulusIntervalMs = numValue;
+            break;
+          case 'totalTrials':
+            config.totalTrials = numValue;
+            break;
+          case 'bufferMs':
+            config.bufferMs = numValue;
+            break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load test config:', error);
+  }
+  
+  return config;
+}
+
+/**
+ * Save test configuration to database
+ */
+function saveTestConfig(newConfig: TestConfig): void {
+  if (!db) return;
+  
+  const upsertStmt = db.prepare(`
+    INSERT INTO test_config (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `);
+  
+  const transaction = db.transaction(() => {
+    upsertStmt.run('stimulusDurationMs', newConfig.stimulusDurationMs.toString());
+    upsertStmt.run('interstimulusIntervalMs', newConfig.interstimulusIntervalMs.toString());
+    upsertStmt.run('totalTrials', newConfig.totalTrials.toString());
+    upsertStmt.run('bufferMs', newConfig.bufferMs.toString());
+  });
+  
+  try {
+    transaction();
+    console.log('Test config saved successfully');
+  } catch (error) {
+    console.error('Failed to save test config:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reset test configuration to defaults
+ */
+function resetTestConfig(): void {
+  saveTestConfig(DEFAULT_TEST_CONFIG);
 }
 
 // Safe query whitelist - maps command identifiers to predefined SQL queries
@@ -287,6 +391,22 @@ ipcMain.handle('query-database', async (_event: any, command: DatabaseQueryComma
 });
 
 // ===========================================
+// Test Config IPC Handlers
+// ===========================================
+
+ipcMain.handle('get-test-config', async () => {
+  return getTestConfig();
+});
+
+ipcMain.handle('save-test-config', async (_event, config: TestConfig) => {
+  saveTestConfig(config);
+});
+
+ipcMain.handle('reset-test-config', async () => {
+  resetTestConfig();
+});
+
+// ===========================================
 // Test Control IPC Handlers (Main Process Timing)
 // ===========================================
 
@@ -338,7 +458,9 @@ ipcMain.handle('start-test', async () => {
  * Main stimulus sequence runner using precise timing
  */
 function runStimulusSequence() {
-  if (!testRunning || currentTrialIndex >= TOTAL_TRIALS) {
+  const config = getTestConfig();
+  
+  if (!testRunning || currentTrialIndex >= config.totalTrials) {
     completeTest();
     return;
   }
@@ -347,11 +469,11 @@ function runStimulusSequence() {
   if (currentTrialIndex === 0) {
     emitStimulusChange(-1, 'target', 'buffer-start');
     
-    // Schedule first stimulus after 500ms buffer
+    // Schedule first stimulus after buffer period
     setTimeout(() => {
       if (!testRunning) return;
       presentStimulus();
-    }, BUFFER_MS);
+    }, config.bufferMs);
     return;
   }
   
@@ -363,7 +485,9 @@ function runStimulusSequence() {
  * Present a single stimulus (called after buffer period or ISI)
  */
 function presentStimulus() {
-  if (!testRunning || currentTrialIndex >= TOTAL_TRIALS) {
+  const config = getTestConfig();
+  
+  if (!testRunning || currentTrialIndex >= config.totalTrials) {
     completeTest();
     return;
   }
@@ -385,20 +509,20 @@ function presentStimulus() {
     expectedResponse,
   });
   
-  // Schedule stimulus offset after 100ms
+  // Schedule stimulus offset after configured duration
   setTimeout(() => {
     if (!testRunning) return;
     
     emitStimulusChange(currentTrialIndex, currentStimulusType, 'stimulus-offset');
     
-    // Schedule next trial after 2000ms ISI
+    // Schedule next trial after ISI
     setTimeout(() => {
       if (!testRunning) return;
       
       currentTrialIndex++;
       runStimulusSequence();
-    }, ISI_MS);
-  }, STIMULUS_DURATION_MS);
+    }, config.interstimulusIntervalMs);
+  }, config.stimulusDurationMs);
 }
 
 /**
@@ -438,10 +562,13 @@ ipcMain.handle('record-response', async (_event, responded: boolean) => {
   // A response is valid if it's within the stimulus window or shortly after
   const validWindowMs = 500; // Allow responses up to 500ms after stimulus offset
   
+  // Get config for valid window calculation
+  const config = getTestConfig();
+  
   // Find pending response that hasn't been answered yet
   const pendingIndex = pendingResponses.findIndex(pr => {
     const elapsedMs = Number(responseTimestampNs - pr.onsetTimestampNs) / 1_000_000;
-    return elapsedMs < (STIMULUS_DURATION_MS + validWindowMs);
+    return elapsedMs < (config.stimulusDurationMs + validWindowMs);
   });
   
   if (pendingIndex === -1) {

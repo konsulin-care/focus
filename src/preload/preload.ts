@@ -13,6 +13,13 @@ type DatabaseQueryCommand =
 // Test control API
 type StimulusType = 'target' | 'non-target';
 
+interface TestConfig {
+  stimulusDurationMs: number;
+  interstimulusIntervalMs: number;
+  totalTrials: number;
+  bufferMs: number;
+}
+
 interface TestEvent {
   trialIndex: number;
   stimulusType: StimulusType;
@@ -46,4 +53,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('test-complete', listener);
     return () => { ipcRenderer.removeListener('test-complete', listener); };
   },
+  
+  // Test Config API
+  getTestConfig: () => ipcRenderer.invoke('get-test-config'),
+  saveTestConfig: (config: TestConfig) => ipcRenderer.invoke('save-test-config', config),
+  resetTestConfig: () => ipcRenderer.invoke('reset-test-config'),
 });

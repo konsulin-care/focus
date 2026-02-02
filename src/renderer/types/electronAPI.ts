@@ -3,6 +3,13 @@
 
 export type StimulusType = 'target' | 'non-target';
 
+export interface TestConfig {
+  stimulusDurationMs: number;
+  interstimulusIntervalMs: number;
+  totalTrials: number;
+  bufferMs: number;
+}
+
 export interface TestEvent {
   trialIndex: number;
   stimulusType: StimulusType;
@@ -25,6 +32,11 @@ export interface ElectronAPI {
   
   // Database API - safe query whitelist pattern
   queryDatabase: (command: string, params?: any[]) => Promise<any>;
+  
+  // Test Config API
+  getTestConfig: () => Promise<TestConfig>;
+  saveTestConfig: (config: TestConfig) => Promise<void>;
+  resetTestConfig: () => Promise<void>;
 }
 
 // Augment the Window interface to include electronAPI

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from './store';
-import { TestEvent, StimulusType } from './types/electronAPI';
+import { TestEvent, StimulusType, TestConfig } from './types/electronAPI';
 
 type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed';
 
@@ -10,10 +10,20 @@ function TestScreen() {
   const [currentStimulus, setCurrentStimulus] = useState<StimulusType | null>(null);
   const [isStimulusVisible, setIsStimulusVisible] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
-  const [totalTrials] = useState(648);
+  const [testConfig, setTestConfig] = useState<TestConfig>({
+    stimulusDurationMs: 100,
+    interstimulusIntervalMs: 2000,
+    totalTrials: 648,
+    bufferMs: 500,
+  });
   const [lastEvent, setLastEvent] = useState<TestEvent | null>(null);
   const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
   const { endTest } = useNavigation();
+
+  // Fetch test config on mount
+  useEffect(() => {
+    window.electronAPI.getTestConfig().then(setTestConfig);
+  }, []);
 
   // Countdown timer effect
   useEffect(() => {
@@ -162,7 +172,7 @@ function TestScreen() {
       {/* Trial progress */}
       {phase === 'running' && (
         <div className="text-gray-800 text-xl mb-4 font-mono">
-          Trial {trialCount} / {totalTrials}
+          Trial {trialCount} / {testConfig.totalTrials}
         </div>
       )}
 
