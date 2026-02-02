@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-function DebugScreen() {
+function TestScreen() {
   const [timing, setTiming] = useState<string>('No event detected');
   const [eventType, setEventType] = useState<string>('');
   const { endTest } = useNavigation();
@@ -83,4 +83,4 @@ function DebugScreen() {
   );
 }
 
-export default DebugScreen;
+export default TestScreen;

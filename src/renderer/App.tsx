@@ -4,10 +4,16 @@ import Home from './pages/Home';
 import Test from './pages/Test';
 import Settings from './pages/Settings';
 import About from './pages/About';
+import TestScreen from './TestScreen';
 import { useNavigation } from './store';
 
 function App() {
-  const { currentPage } = useNavigation();
+  const { currentPage, isTestActive } = useNavigation();
+
+  // When test is active, render only the test screen (full screen, no sidebar)
+  if (isTestActive) {
+    return <TestScreen />;
+  }
 
   const renderPage = () => {
     switch (currentPage) {
