@@ -25,6 +25,7 @@
     "eslint": "^9.39.2",
     "prettier": "^3.1.0",
     "tailwindcss": "^4.1.18",
+    "ts-node": "^10.9.2",
     "vite": "^5.4.21",
     "vitest": "^4.0.18"
   },
@@ -35,7 +36,7 @@
     "build:renderer": "vite build",
     "electron-rebuild": "electron-rebuild",
     "package": "npm run build && electron-builder",
-    "validate-timing": "npx ts-node src/validate-timing.ts"
+    "validate-timing": "ts-node src/validate-timing.ts"
   },
   "build": {
     "appId": "com.tova.clinical",
