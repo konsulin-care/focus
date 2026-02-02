@@ -1,6 +1,39 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, WebContents } from 'electron';
 import * as path from 'path';
 import Database from 'better-sqlite3';
+
+// Test configuration constants
+const STIMULUS_DURATION_MS = 100; // 100ms per stimulus
+const ISI_MS = 2000; // 2000ms interstimulus interval
+const TOTAL_TRIALS = 648; // 648 trials; 21.6 minutes / 2s per trial (approximately)
+const BUFFER_MS = 500; // 500ms buffer period before first stimulus
+
+// Type definitions
+type StimulusType = 'target' | 'non-target';
+
+interface TestEvent {
+  trialIndex: number;
+  stimulusType: StimulusType;
+  timestampNs: string;
+  eventType: 'stimulus-onset' | 'stimulus-offset' | 'response' | 'buffer-start';
+  responseCorrect?: boolean;
+}
+
+interface PendingResponse {
+  trialIndex: number;
+  stimulusType: StimulusType;
+  onsetTimestampNs: bigint;
+  expectedResponse: boolean; // true = target, false = non-target
+}
+
+// Test state
+let testRunning = false;
+let testEvents: TestEvent[] = [];
+let pendingResponses: PendingResponse[] = [];
+let testStartTimeNs: bigint = 0n;
+let currentTrialIndex = 0;
+let currentStimulusType: StimulusType = 'target';
+let mainWindow: BrowserWindow | null = null;
 
 /**
  * Computes the integer square root of a BigInt using binary search.
@@ -173,7 +206,7 @@ const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> = {
 
 // Create main window
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -250,5 +283,203 @@ ipcMain.handle('query-database', async (_event: any, command: DatabaseQueryComma
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
+  }
+});
+
+// ===========================================
+// Test Control IPC Handlers (Main Process Timing)
+// ===========================================
+
+/**
+ * Helper function to emit stimulus change to renderer
+ */
+function emitStimulusChange(trialIndex: number, stimulusType: StimulusType, eventType: 'stimulus-onset' | 'stimulus-offset' | 'response' | 'buffer-start') {
+  if (!mainWindow) return;
+  
+  const timestampNs = process.hrtime.bigint().toString();
+  
+  const event: TestEvent = {
+    trialIndex,
+    stimulusType,
+    timestampNs,
+    eventType,
+  };
+  
+  testEvents.push(event);
+  mainWindow.webContents.send('stimulus-change', event);
+}
+
+/**
+ * Start the test sequence with high-precision timing
+ */
+ipcMain.handle('start-test', async () => {
+  if (testRunning) {
+    console.warn('Test already running, ignoring start request');
+    return false;
+  }
+  
+  console.log('Starting TOVA test sequence...');
+  
+  // Reset test state
+  testRunning = true;
+  testEvents = [];
+  pendingResponses = [];
+  currentTrialIndex = 0;
+  currentStimulusType = 'target';
+  testStartTimeNs = process.hrtime.bigint();
+  
+  // Start the stimulus sequence
+  runStimulusSequence();
+  
+  return true;
+});
+
+/**
+ * Main stimulus sequence runner using precise timing
+ */
+function runStimulusSequence() {
+  if (!testRunning || currentTrialIndex >= TOTAL_TRIALS) {
+    completeTest();
+    return;
+  }
+  
+  // Check if this is the first trial - emit buffer-start event
+  if (currentTrialIndex === 0) {
+    emitStimulusChange(-1, 'target', 'buffer-start');
+    
+    // Schedule first stimulus after 500ms buffer
+    setTimeout(() => {
+      if (!testRunning) return;
+      presentStimulus();
+    }, BUFFER_MS);
+    return;
+  }
+  
+  // For subsequent trials, present stimulus immediately
+  presentStimulus();
+}
+
+/**
+ * Present a single stimulus (called after buffer period or ISI)
+ */
+function presentStimulus() {
+  if (!testRunning || currentTrialIndex >= TOTAL_TRIALS) {
+    completeTest();
+    return;
+  }
+  
+  // Determine stimulus type (alternate)
+  const isTarget = currentTrialIndex % 2 === 0;
+  currentStimulusType = isTarget ? 'target' : 'non-target';
+  const expectedResponse = isTarget; // Target requires response, non-target requires no response
+  
+  // Record stimulus onset
+  const onsetTimestampNs = process.hrtime.bigint();
+  emitStimulusChange(currentTrialIndex, currentStimulusType, 'stimulus-onset');
+  
+  // Store pending response for this trial
+  pendingResponses.push({
+    trialIndex: currentTrialIndex,
+    stimulusType: currentStimulusType,
+    onsetTimestampNs,
+    expectedResponse,
+  });
+  
+  // Schedule stimulus offset after 100ms
+  setTimeout(() => {
+    if (!testRunning) return;
+    
+    emitStimulusChange(currentTrialIndex, currentStimulusType, 'stimulus-offset');
+    
+    // Schedule next trial after 2000ms ISI
+    setTimeout(() => {
+      if (!testRunning) return;
+      
+      currentTrialIndex++;
+      runStimulusSequence();
+    }, ISI_MS);
+  }, STIMULUS_DURATION_MS);
+}
+
+/**
+ * Complete the test and send results to renderer
+ */
+function completeTest() {
+  testRunning = false;
+  console.log(`Test completed. Total events: ${testEvents.length}`);
+  
+  if (mainWindow) {
+    mainWindow.webContents.send('test-complete', testEvents);
+  }
+}
+
+/**
+ * Stop the test prematurely
+ */
+ipcMain.handle('stop-test', async () => {
+  if (!testRunning) {
+    return false;
+  }
+  
+  console.log('Stopping TOVA test sequence...');
+  testRunning = false;
+  completeTest();
+  
+  return true;
+});
+
+/**
+ * Record a user response during the test
+ */
+ipcMain.handle('record-response', async (_event, responded: boolean) => {
+  const responseTimestampNs = process.hrtime.bigint();
+  
+  // Find the most recent pending response (within valid window)
+  // A response is valid if it's within the stimulus window or shortly after
+  const validWindowMs = 500; // Allow responses up to 500ms after stimulus offset
+  
+  // Find pending response that hasn't been answered yet
+  const pendingIndex = pendingResponses.findIndex(pr => {
+    const elapsedMs = Number(responseTimestampNs - pr.onsetTimestampNs) / 1_000_000;
+    return elapsedMs < (STIMULUS_DURATION_MS + validWindowMs);
+  });
+  
+  if (pendingIndex === -1) {
+    // No valid pending response - this is a false positive (commission error)
+    const event: TestEvent = {
+      trialIndex: -1,
+      stimulusType: 'non-target',
+      timestampNs: responseTimestampNs.toString(),
+      eventType: 'response',
+      responseCorrect: false,
+    };
+    testEvents.push(event);
+    return;
+  }
+  
+  const pending = pendingResponses[pendingIndex];
+  
+  // Determine if response was correct
+  // For target: response should be true
+  // For non-target: response should be false (no response)
+  const isCorrect = pending.expectedResponse === responded;
+  
+  // Remove from pending responses
+  pendingResponses.splice(pendingIndex, 1);
+  
+  // Record the response event
+  const event: TestEvent = {
+    trialIndex: pending.trialIndex,
+    stimulusType: pending.stimulusType,
+    timestampNs: responseTimestampNs.toString(),
+    eventType: 'response',
+    responseCorrect: isCorrect,
+  };
+  
+  testEvents.push(event);
+  
+  // Send to renderer for UI feedback
+  if (mainWindow) {
+    mainWindow.webContents.send('stimulus-change', event);
   }
 });

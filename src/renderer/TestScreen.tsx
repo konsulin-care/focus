@@ -1,68 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from './store';
+import { TestEvent, StimulusType } from './types/electronAPI';
 
-// TypeScript interface for the electronAPI
-interface ElectronAPI {
-  getEventTimestamp: () => Promise<string>;
-}
-
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
-}
+type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed';
 
 function TestScreen() {
-  const [timing, setTiming] = useState<string>('No event detected');
-  const [eventType, setEventType] = useState<string>('');
+  const [phase, setPhase] = useState<TestPhase>('countdown');
+  const [countdown, setCountdown] = useState(3);
+  const [currentStimulus, setCurrentStimulus] = useState<StimulusType | null>(null);
+  const [isStimulusVisible, setIsStimulusVisible] = useState(false);
+  const [trialCount, setTrialCount] = useState(0);
+  const [totalTrials] = useState(648);
+  const [lastEvent, setLastEvent] = useState<TestEvent | null>(null);
+  const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
   const { endTest } = useNavigation();
 
+  // Countdown timer effect
   useEffect(() => {
-    // Handle mouse click events
+    if (phase !== 'countdown') return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Start the test when countdown reaches 0
+      startTestSequence();
+    }
+  }, [countdown, phase]);
+
+  // Start test sequence via main process
+  const startTestSequence = useCallback(async () => {
+    try {
+      const success = await window.electronAPI.startTest();
+      if (success) {
+        setPhase('running');
+      }
+    } catch (error) {
+      console.error('Failed to start test:', error);
+    }
+  }, []);
+
+  // Subscribe to stimulus changes from main process
+  useEffect(() => {
+    const unsubscribeStimulus = window.electronAPI.onStimulusChange((event) => {
+      setLastEvent(event);
+      
+      if (event.eventType === 'buffer-start') {
+        // Enter buffer period - blank screen, no stimuli
+        setPhase('buffer');
+        setIsStimulusVisible(false);
+        setCurrentStimulus(null);
+      } else if (event.eventType === 'stimulus-onset') {
+        setCurrentStimulus(event.stimulusType);
+        setIsStimulusVisible(true);
+        setTrialCount(event.trialIndex + 1);
+        setPhase('running');
+      } else if (event.eventType === 'stimulus-offset') {
+        setIsStimulusVisible(false);
+      } else if (event.eventType === 'response') {
+        // Response recorded - could show feedback here
+        setTestEvents(prev => [...prev, event]);
+      }
+    });
+
+    const unsubscribeComplete = window.electronAPI.onTestComplete((events) => {
+      console.log('Test complete, received', events.length, 'events');
+      setTestEvents(events);
+      setPhase('completed');
+      setIsStimulusVisible(false);
+      setCurrentStimulus(null);
+    });
+
+    return () => {
+      unsubscribeStimulus();
+      unsubscribeComplete();
+    };
+  }, []);
+
+  // Handle user input (keyboard and mouse)
+  useEffect(() => {
     const handleClick = async (event: MouseEvent) => {
+      if (phase !== 'running') return;
+      
+      // Left click is a response
       if (event.button === 0) {
-        // Left click
         try {
-          const timestampNs = await window.electronAPI.getEventTimestamp();
-          const timestampMs = Number(timestampNs) / 1_000_000;
-          setTiming(`${timestampMs.toFixed(3)}`);
-          setEventType('Left Click');
+          await window.electronAPI.recordResponse(true);
         } catch (error) {
-          setTiming('Error');
-          setEventType('Left Click');
+          console.error('Failed to record response:', error);
         }
       }
     };
 
-    // Handle keyboard events
     const handleKeyDown = async (event: KeyboardEvent) => {
+      if (phase !== 'running') return;
+      
+      // Spacebar is a response
       if (event.code === 'Space') {
-        event.preventDefault(); // Prevent scrolling
+        event.preventDefault();
         try {
-          const timestampNs = await window.electronAPI.getEventTimestamp();
-          const timestampMs = Number(timestampNs) / 1_000_000;
-          setTiming(`${timestampMs.toFixed(3)}`);
-          setEventType('Spacebar');
+          await window.electronAPI.recordResponse(true);
         } catch (error) {
-          setTiming('Error');
-          setEventType('Spacebar');
+          console.error('Failed to record response:', error);
         }
       }
     };
 
-    // Attach event listeners to window
     window.addEventListener('click', handleClick);
     window.addEventListener('keydown', handleKeyDown);
 
-    // Cleanup function to remove event listeners
     return () => {
       window.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
+  }, [phase]);
+
+  // Stop test handler
+  const handleStopTest = useCallback(async () => {
+    try {
+      await window.electronAPI.stopTest();
+      setPhase('completed');
+    } catch (error) {
+      console.error('Failed to stop test:', error);
+    }
   }, []);
 
   return (
-    <div className="bg-white h-screen flex flex-col justify-center items-center relative">
+    <div className="h-screen flex flex-col justify-center items-center bg-black">
       {/* Exit Test button */}
       <button
         onClick={endTest}
@@ -71,14 +135,91 @@ function TestScreen() {
         ← Exit Test
       </button>
 
-      {/* Test square */}
-      <div className="w-[300px] h-[300px] bg-black mb-6"></div>
+      {/* Stop Test button (when running) */}
+      {phase === 'running' && (
+        <button
+          onClick={handleStopTest}
+          className="absolute top-4 right-4 px-4 py-2 bg-red-200 hover:bg-red-300 text-red-800 rounded-lg font-medium transition-colors"
+        >
+          Stop Test
+        </button>
+      )}
 
-      {/* Debug text below the square */}
-      <div className="text-center font-mono text-lg text-gray-800">
-        {eventType && <div>Event Type: {eventType}</div>}
-        <div>Timing: {timing} ms</div>
+      {/* Countdown display */}
+      {phase === 'countdown' && (
+        <div className="text-white text-3xl mb-8 font-mono">
+          The test will automatically start in: {countdown}
+        </div>
+      )}
+
+      {/* Buffer period display */}
+      {phase === 'buffer' && (
+        <div className="text-gray-800 text-xl mb-4 font-mono">
+          Get ready...
+        </div>
+      )}
+
+      {/* Trial progress */}
+      {phase === 'running' && (
+        <div className="text-gray-800 text-xl mb-4 font-mono">
+          Trial {trialCount} / {totalTrials}
+        </div>
+      )}
+
+      {/* Test completed message */}
+      {phase === 'completed' && (
+        <div className="text-white text-2xl mb-8 font-mono">
+          Test Completed
+        </div>
+      )}
+
+      {/* White square container - 300x300px */}
+      <div className="w-[300px] h-[300px] bg-white relative border-2 border-gray-300 shadow-lg">
+        {/* Target stimulus - top half center (black square 20x20) */}
+        {isStimulusVisible && currentStimulus === 'target' && (
+          <div
+            className="absolute bg-black"
+            style={{
+              width: '20px',
+              height: '20px',
+              top: '65px',   // Top half: (150-20)/2 = 65px from top
+              left: '140px', // Center: (300-20)/2 = 140px from left
+            }}
+          />
+        )}
+
+        {/* Non-target stimulus - bottom half center (black square 20x20) */}
+        {isStimulusVisible && currentStimulus === 'non-target' && (
+          <div
+            className="absolute bg-black"
+            style={{
+              width: '20px',
+              height: '20px',
+              top: '215px',  // Bottom half: 150 + (150-20)/2 = 215px from top
+              left: '140px', // Center: (300-20)/2 = 140px from left
+            }}
+          />
+        )}
       </div>
+
+      {/* Debug info - shown during test */}
+      {phase === 'running' && lastEvent && (
+        <div className="mt-6 text-center font-mono text-sm text-gray-800">
+          <div>Last Event: {lastEvent.eventType}</div>
+          <div>Trial: {lastEvent.trialIndex}, Type: {lastEvent.stimulusType}</div>
+          <div>Timestamp: {Number(lastEvent.timestampNs) / 1_000_000}ms</div>
+        </div>
+      )}
+
+      {/* Test completed summary */}
+      {phase === 'completed' && (
+        <div className="mt-6 text-center font-mono text-lg text-white">
+          <div>Total events recorded: {testEvents.length}</div>
+          <div className="mt-4 text-white">
+            {testEvents.length > 0 ? 'Data ready for submission' : 'No data recorded'}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,17 @@ type DatabaseQueryCommand =
   | 'insert-test-result'
   | 'update-test-result';
 
+// Test control API
+type StimulusType = 'target' | 'non-target';
+
+interface TestEvent {
+  trialIndex: number;
+  stimulusType: StimulusType;
+  timestampNs: string;
+  eventType: 'stimulus-onset' | 'stimulus-offset' | 'response';
+  responseCorrect?: boolean;
+}
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -20,4 +31,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Safe Database API - uses whitelist of predefined queries
   queryDatabase: (command: DatabaseQueryCommand, params?: any[]) => 
     ipcRenderer.invoke('query-database', command, params),
+  
+  // Test Control API - timing in main process for clinical precision
+  startTest: () => ipcRenderer.invoke('start-test'),
+  stopTest: () => ipcRenderer.invoke('stop-test'),
+  recordResponse: (response: boolean) => ipcRenderer.invoke('record-response', response),
+  onStimulusChange: (callback: (event: TestEvent) => void) => {
+    const listener = (_event: any, data: TestEvent) => callback(data);
+    ipcRenderer.on('stimulus-change', listener);
+    return () => { ipcRenderer.removeListener('stimulus-change', listener); };
+  },
+  onTestComplete: (callback: (events: TestEvent[]) => void) => {
+    const listener = (_event: any, data: TestEvent[]) => callback(data);
+    ipcRenderer.on('test-complete', listener);
+    return () => { ipcRenderer.removeListener('test-complete', listener); };
+  },
 });
