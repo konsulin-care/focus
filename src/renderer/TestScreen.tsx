@@ -18,6 +18,7 @@ function TestScreen() {
   });
   const [lastEvent, setLastEvent] = useState<TestEvent | null>(null);
   const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
+  const [testResponses, setTestResponses] = useState<TestEvent[]>([]);
   const { endTest } = useNavigation();
 
   // Fetch test config on mount
@@ -70,12 +71,14 @@ function TestScreen() {
       } else if (event.eventType === 'response') {
         // Response recorded - could show feedback here
         setTestEvents(prev => [...prev, event]);
+        setTestResponses(prev => [...prev, event]);
       }
     });
 
     const unsubscribeComplete = window.electronAPI.onTestComplete((events) => {
       console.log('Test complete, received', events.length, 'events');
       setTestEvents(events);
+      setTestResponses(events.filter(e => e.eventType === 'response'));
       setPhase('completed');
       setIsStimulusVisible(false);
       setCurrentStimulus(null);
@@ -224,9 +227,9 @@ function TestScreen() {
       {/* Test completed summary */}
       {phase === 'completed' && (
         <div className="mt-6 text-center font-mono text-lg text-white">
-          <div>Total events recorded: {testEvents.length}</div>
+          <div>Total responses recorded: {testResponses.length}</div>
           <div className="mt-4 text-white">
-            {testEvents.length > 0 ? 'Data ready for submission' : 'No data recorded'}
+            {testResponses.length > 0 ? 'Data ready for submission' : 'No data recorded'}
           </div>
         </div>
       )}

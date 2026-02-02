@@ -1,4 +1,5 @@
 import { useNavigation } from '../store';
+import StimulusDemo from '../components/StimulusDemo';
 
 export default function Test() {
   const { startTest } = useNavigation();
@@ -16,10 +17,14 @@ export default function Test() {
         </p>
         <ul className="list-disc list-inside mt-4 text-yellow-800 space-y-2">
           <li>Duration: approximately 21.6 minutes</li>
-          <li>Press the button or key when the target stimulus appears</li>
+          <li>Left-click or press the spacebar when the target stimulus appears</li>
           <li>Do not respond to non-target stimuli</li>
           <li>High-precision timing captures your response accuracy</li>
         </ul>
+      </div>
+
+      <div className="mb-6">
+        <StimulusDemo />
       </div>
 
       <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-6">
