@@ -1,27 +1,28 @@
 # Technology Stack
 
 Desktop Application:
-- Electron 28+ (Chromium 120, Node.js 20)
+- Electron 40.1.0 (Chromium, Node.js 20)
 - React 18.2+
 - TypeScript 5.3+
 - Zustand 4.4+ (state management)
-- Tailwind CSS 3.4+
-- better-sqlite3 8.7+ (local database)
-- axios 1.6+ (HTTP client)
+- Tailwind CSS 4.1+ (via @tailwindcss/vite)
+- better-sqlite3 12.6.2 (local database)
+- axios 1.6+ (HTTP client - not yet installed)
 
 Build and Development Tools:
-- electron-builder 24+ (cross-platform packaging)
-- Vite 5+ (build tool, dev server)
-- Vitest 1+ (unit testing)
-- ESLint 8+ (linting)
+- electron-builder 26.7.0+ (cross-platform packaging)
+- Vite 5.4+ (build tool, dev server)
+- Vitest 4.0+ (unit testing)
+- ESLint 9+ (linting)
 - Prettier 3+ (code formatting)
+- @electron/rebuild 4+ (native module rebuilding)
 
 Backend Services:
-- N8N (workflow orchestration, self-hosted or cloud)
-- PostgreSQL 15+ (user and normative data storage)
-- HAPI FHIR Server 6+ (healthcare data repository)
-- SuperTokens (authentication, self-hosted or managed)
-- SendGrid or Mailgun (email delivery)
+- N8N (workflow orchestration - not yet implemented)
+- PostgreSQL 15+ (user and normative data storage - not yet implemented)
+- HAPI FHIR Server 6+ (healthcare data repository - not yet implemented)
+- SuperTokens (authentication - not yet implemented)
+- SendGrid or Mailgun (email delivery - not yet implemented)
 
 Development Setup Requirements
 
@@ -36,22 +37,24 @@ System Prerequisites:
 Installation Steps:
 1. Clone repository
 2. Run npm install to install dependencies
-3. Copy .env.example to .env and configure:
+3. Run npm run electron-rebuild to compile native modules
+4. Copy .env.example to .env and configure:
    - N8N_WEBHOOK_URL
    - SUPERTOKENS_API_URL
    - SUPERTOKENS_API_KEY
-4. Run npm run dev for development mode
-5. Run npm run build:platform for production builds
+5. Run npm run dev for development mode
+6. Run npm run build:platform for production builds
 
 Development Commands:
 - npm run dev: Start Electron in development mode with hot reload
-- npm run lint: Run ESLint checks
-- npm run format: Auto-format code with Prettier
-- npm run test: Run unit tests with Vitest
-- npm run build:win: Build Windows installer
-- npm run build:mac: Build macOS DMG and app bundle
-- npm run build:linux: Build Linux AppImage and deb
-- npm run build:all: Build for all platforms (requires appropriate OS)
+- npm run build: Build TypeScript and Vite for production
+- npm run build:main: Compile TypeScript for main process
+- npm run build:renderer: Build React UI for production
+- npm run electron-rebuild: Rebuild native modules for Electron
+- npm run lint: Run ESLint checks (not yet configured)
+- npm run format: Auto-format code with Prettier (not yet configured)
+- npm run test: Run unit tests with Vitest (not yet configured)
+- npm run package: Build and package for distribution
 
 Technical Constraints
 
@@ -60,6 +63,7 @@ Timing Precision Requirements:
 - Cannot rely on JavaScript Date.now() or performance.now() in renderer
 - Display refresh rate must be logged and included in metadata
 - Target precision: ±1ms standard deviation under normal conditions
+- Timing validation runs at startup to verify hardware capability
 
 Cross-Platform Limitations:
 - Separate binary builds required for each platform
@@ -76,7 +80,7 @@ Network and Connectivity:
 - Maximum payload size: 5MB per test result
 
 Security Constraints:
-- SQLite database must use sqlcipher for encryption
+- SQLite database must use sqlcipher for encryption (not yet implemented)
 - No credentials stored in application code
 - Environment variables for all API keys and endpoints
 - HTTPS-only communication with backend services
@@ -93,23 +97,30 @@ Performance Requirements:
 Dependencies Configuration
 
 Key Dependencies and Versions:
-- electron: ^28.0.0
+- electron: ^40.1.0
 - react: ^18.2.0
+- react-dom: ^18.2.0
 - typescript: ^5.3.0
 - zustand: ^4.4.0
-- tailwindcss: ^3.4.0
-- better-sqlite3: ^8.7.0
-- axios: ^1.6.0
-- @supertokens-web-js/session: ^0.5.0
+- tailwindcss: ^4.1.18
+- @tailwindcss/vite: ^4.1.18
+- better-sqlite3: ^12.6.2
+- axios: ^1.6.0 (not yet installed)
 
 Dev Dependencies:
-- electron-builder: ^24.9.0
-- vite: ^5.0.0
-- vitest: ^1.0.0
+- electron-builder: ^26.7.0
+- @electron/rebuild: ^4.0.3
+- vite: ^5.4.21
+- vitest: ^4.0.18
 - @vitejs/plugin-react: ^4.2.0
-- eslint: ^8.56.0
+- @types/node: ^20.0.0
+- @types/react: ^18.2.0
+- @types/react-dom: ^18.2.0
+- @types/better-sqlite3: ^7.6.13
+- eslint: ^9.39.2
 - prettier: ^3.1.0
-- typescript-eslint: ^6.15.0
+- typescript-eslint: ^8.54.0
+- tailwindcss: ^4.1.18
 
 Native Modules:
 - better-sqlite3: Requires node-gyp, platform-specific compilation
@@ -120,9 +131,10 @@ Tool Usage Patterns
 Electron IPC Pattern:
 - Main process exposes handlers via ipcMain.handle()
 - Preload script bridges to renderer via contextBridge
-- Renderer invokes via window.tovaAPI.methodName()
+- Renderer invokes via window.electronAPI.methodName()
 - All timing-critical operations in main process
 - All UI interactions in renderer process
+- IPC channels: 'get-high-precision-time', 'get-event-timestamp', 'query-database'
 
 State Management Pattern:
 - Zustand store for UI state only (loading, current screen, form values)
@@ -131,7 +143,7 @@ State Management Pattern:
 - Props drilling acceptable for small component tree
 
 Styling Pattern:
-- Tailwind utility classes for all styling
+- Tailwind utility classes for all styling via @tailwindcss/vite
 - No custom CSS files except global resets
 - Component-level class composition
 - No CSS modules or styled-components
@@ -144,9 +156,9 @@ Testing Pattern:
 
 Build Pattern:
 - Development: Vite dev server for renderer, Electron for main
-- Production: Vite builds renderer, electron-builder packages all
-- Code signing configured in electron-builder.json per platform
-- Auto-update configuration using electron-updater
+- Production: Vite builds renderer, TypeScript compiles main
+- Code signing configured in electron-builder per platform
+- Output directories: dist/renderer, dist/main
 
 Environment Configuration:
 - .env.local for local development (gitignored)
@@ -155,8 +167,13 @@ Environment Configuration:
 - No hardcoded URLs or credentials in source code
 
 Logging Pattern:
-- electron-log for both main and renderer processes
-- Logs written to platform-specific locations
-- Log rotation enabled (max 5MB per file)
-- Debug mode enables verbose timing logs
+- Console logging for main process
+- No structured logging library yet configured
+- Debug mode enables verbose timing logs (development mode)
 - Production mode logs errors and warnings only
+
+Database Pattern:
+- SQLite with better-sqlite3 for local persistence
+- Query whitelist pattern for security (no raw SQL from renderer)
+- Predefined commands: get-pending-uploads, get-test-result, delete-test-result, get-upload-count, get-all-test-results, insert-test-result, update-test-result
+- Database file stored in app.getPath('userData')
