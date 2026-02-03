@@ -15,8 +15,5 @@ export * from './trial-constants';
 // Trial processing utilities
 export * from './trial-processing';
 
-// Test metrics
-export * from './test-metrics';
-
 // Attention metrics (ACS scoring)
 export * from './attention-metrics';

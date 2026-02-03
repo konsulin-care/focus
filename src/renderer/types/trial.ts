@@ -41,48 +41,6 @@ export interface TrialResult {
 }
 
 /**
- * Comprehensive metrics for a completed test session.
- */
-export interface TestMetrics {
-  /** Array of individual trial results */
-  trials: TrialResult[];
-  
-  // Summary counts
-  /** Total number of trials */
-  totalTrials: number;
-  /** Number of correct target detections */
-  hits: number;
-  /** Number of missed target stimuli */
-  omissions: number;
-  /** Number of incorrect responses to non-targets */
-  commissions: number;
-  /** Number of correct non-responses to non-targets */
-  correctRejections: number;
-  
-  // Response time statistics (in milliseconds)
-  /** Mean response time across all valid responses */
-  meanResponseTimeMs: number;
-  /** Standard deviation of response times */
-  stdResponseTimeMs: number;
-  
-  // Validity indices
-  /** Number of anticipatory responses (<150ms) */
-  anticipatoryResponses: number;
-  /** Number of trials with multiple responses */
-  multipleResponses: number;
-  /** Number of trials following a commission error */
-  postCommissionTrials: number;
-  
-  // F.O.C.U.S. composite scores (0-100 scale)
-  /** Attention/consistency score based on response time variability */
-  attentionScore: number;
-  /** Impulse control score based on commission errors */
-  impulseControlScore: number;
-  /** Overall consistency score */
-  consistencyScore: number;
-}
-
-/**
  * Subject demographic information for ACS calculation.
  */
 export interface SubjectInfo {

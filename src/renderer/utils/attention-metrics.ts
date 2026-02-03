@@ -120,7 +120,8 @@ export function calculateAttentionMetrics(
   
   // Calculate ACS: scaled Z-scores + constant
   // The constant (1.80) is adjusted proportionally: 1.80 * scalingFactor
-  const acs = (rtZ + dPrimeZ + variabilityZ) * scalingFactor + (TRIAL_CONSTANTS.ACS_CONSTANT * scalingFactor);
+  // Note: Z-scores are already scaled individually (lines 112, 115, 118), so no additional scaling here
+  const acs = (rtZ + dPrimeZ + variabilityZ) + (TRIAL_CONSTANTS.ACS_CONSTANT * scalingFactor);
   
   // Interpret ACS
   let acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits';
