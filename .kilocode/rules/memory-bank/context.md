@@ -2,7 +2,7 @@
 
 ## Project Status: Early Development Phase
 
-The TOVA Clinical application is in the initial development stage with core infrastructure established.
+The F.O.C.U.S. Clinical application is in the initial development stage with core infrastructure established.
 
 ## Recent Changes
 

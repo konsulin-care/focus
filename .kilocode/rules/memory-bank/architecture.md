@@ -47,7 +47,7 @@ N8N Workflow Nodes:
 3. Conditional Branch: User exists vs new user path
 4. FHIR Patient Lookup: Query existing patient resource if user exists
 5. User Creation: SuperTokens account + FHIR patient resource if new
-6. Metric Calculation: JavaScript function node computes TOVA variables
+6. Metric Calculation: JavaScript function node computes F.O.C.U.S. variables
 7. Normative Data Fetch: PostgreSQL query filtered by age/gender
 8. Statistical Comparison: JavaScript function computes percentiles
 9. FHIR Write: Create DiagnosticReport resource with observations

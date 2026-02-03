@@ -1,10 +1,10 @@
 # Problem Statement
 
-Healthcare facilities need a reliable, cost-effective way to administer T.O.V.A. ADHD assessments without expensive proprietary hardware or complex IT infrastructure.
+Healthcare facilities need a reliable, cost-effective way to administer F.O.C.U.S. attention assessments without expensive proprietary hardware or complex IT infrastructure.
 
 Current challenges:
 
-- Clinical T.O.V.A. systems require specialized hardware and high licensing costs
+- Clinical attention tests require specialized hardware and high licensing costs
 - Web-based alternatives cannot achieve required timing precision due to browser limitations
 - Server-dependent systems introduce latency and reliability issues during testing
 - Healthcare facilities have limited IT resources for complex deployments
@@ -14,7 +14,7 @@ Current challenges:
 
 Patient Experience:
 
-- Patient sits at clinic workstation with installed TOVA application
+- Patient sits at clinic workstation with installed F.O.C.U.S. application
 - Healthcare staff launches application and instructs patient
 - Visual test runs for 21.6 minutes presenting two alternating square stimuli
 - Patient presses button/key when target stimulus appears

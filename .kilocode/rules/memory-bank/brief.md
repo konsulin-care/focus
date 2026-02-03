@@ -1,6 +1,6 @@
-# TOVA ADHD Test - Local Electron Application
+# F.O.C.U.S. Attention Test - Local Electron Application
 
-Building a desktop application that implements the T.O.V.A. (Test of Variables of Attention) visual assessment for ADHD evaluation in clinical settings.
+Building a desktop application that implements the F.O.C.U.S. (Following Ongoing Cues Under Structure) visual assessment for visual attention evaluation in clinical settings.
 
 Core requirements:
 
@@ -18,7 +18,7 @@ Core requirements:
 
 Critical success factors:
 
-- Timing precision must match or approach clinical-grade T.O.V.A. hardware (±1ms)
+- Timing precision must match or approach clinical-grade F.O.C.U.S. hardware (±1ms)
 - Zero network dependency during active testing to ensure reliability
 - Simple deployment process for non-technical healthcare staff
 - Data integrity and HIPAA compliance throughout the workflow
