@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TestConfig } from '../types/electronAPI';
 
-export type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture';
+export type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture' | 'error';
 
 interface UseTestPhaseReturn {
   phase: TestPhase;
@@ -23,7 +23,9 @@ export function useTestPhase(): UseTestPhaseReturn {
 
   // Fetch test config on mount
   useEffect(() => {
-    window.electronAPI.getTestConfig().then(setTestConfig);
+    window.electronAPI.getTestConfig()
+      .then(setTestConfig)
+      .catch((err) => console.error('[useTestPhase] Failed to fetch config:', err));
   }, []);
 
   // Start test sequence
@@ -46,7 +48,10 @@ export function useTestPhase(): UseTestPhaseReturn {
       const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      startTestSequence();
+      startTestSequence().catch((error) => {
+        console.error('[useTestPhase] Failed to start test sequence:', error);
+        setPhase('error');
+      });
     }
   }, [countdown, phase, startTestSequence]);
 
