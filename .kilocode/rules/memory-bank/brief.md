@@ -2,24 +2,34 @@
 
 Building a desktop application that implements the F.O.C.U.S. (Following Ongoing Cues Under Structure) visual assessment for visual attention evaluation in clinical settings.
 
-Core requirements:
+## Core Requirements
 
-- Achieve millisecond-precision timing (±1ms) for stimulus presentation and response capture
-- Run entirely client-side during test execution to minimize server dependency
-- Support visual test protocol: 21.6 minutes duration with two alternating stimuli
-- Measure four key attention variables: Response Time Variability, Response Time, Commission Errors, Omission Errors
-- Capture patient email after test completion for result delivery
-- Integrate with existing authentication system (SuperTokens) and FHIR healthcare data standards
-- Submit raw test data to serverless N8N workflow for processing against normative samples
-- Deploy as cross-platform desktop application (Windows, macOS, Linux, BSD-compatible)
-- Enable installation on multiple workstations within healthcare facilities
-- Store test data locally and securely until successful server transmission
-- Provide patients access to processed results via magic link email delivery
+### Implemented Features
+- Millisecond-precision timing (±1ms) using Node.js `process.hrtime.bigint()`
+- Client-side test execution with no network dependency during testing
+- 21.6-minute visual test protocol with 648 trials and two alternating stimuli
+- Four key attention variables measured: Response Time Variability, Response Time, Commission Errors, Omission Errors
+- Patient email capture after test completion
+- SQLCipher encrypted local SQLite database with GDPR-compliant 7-day retention
+- Cross-platform desktop application (Windows NSIS, macOS DMG, Linux AppImage)
+- Test data stored locally until server transmission
+- Attention Comparison Score (ACS) with normative data comparison
+- Signal detection metrics (D Prime, hit rate, false alarm rate)
+- Validity assessment with anticipatory response detection
 
-Critical success factors:
+### Partially Implemented
+- N8N webhook integration for result submission (structure exists, needs endpoint URL)
+- SuperTokens authentication integration (IPC handlers exist, needs API credentials)
+
+### Not Yet Implemented
+- FHIR healthcare data integration
+- Magic link email delivery
+
+## Critical Success Factors
 
 - Timing precision must match or approach clinical-grade F.O.C.U.S. hardware (±1ms)
 - Zero network dependency during active testing to ensure reliability
 - Simple deployment process for non-technical healthcare staff
-- Data integrity and HIPAA compliance throughout the workflow
+- Data integrity and HIPAA/GDPR compliance throughout the workflow
 - Minimal ongoing infrastructure costs through serverless architecture
+- Support for abbreviated tests (proportional scaling for shorter tests)
