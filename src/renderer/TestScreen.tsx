@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from './store';
 import { TestEvent, StimulusType, TestConfig, TestCompleteResult } from './types/electronAPI';
+import { EmailCaptureForm } from './components/EmailCaptureForm';
 
-type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed';
+type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture';
 
 function TestScreen() {
   const [phase, setPhase] = useState<TestPhase>('countdown');
@@ -20,6 +21,8 @@ function TestScreen() {
   const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
   const [testResponses, setTestResponses] = useState<TestEvent[]>([]);
   const [elapsedTimeMs, setElapsedTimeMs] = useState<number>(0);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [testDataJson, setTestDataJson] = useState<string>('');
   const { endTest } = useNavigation();
 
   // Fetch test config on mount
@@ -83,7 +86,12 @@ function TestScreen() {
       setTestResponses(data.events.filter(e => e.eventType === 'response'));
       setElapsedTimeMs(Number(data.elapsedTimeNs) / 1_000_000);
       
-      setPhase('completed');
+      // Store test data as JSON for email capture
+      setTestDataJson(JSON.stringify(data));
+      
+      // Show email capture form
+      setShowEmailCapture(true);
+      setPhase('email-capture');
       setIsStimulusVisible(false);
       setCurrentStimulus(null);
     });
@@ -136,10 +144,23 @@ function TestScreen() {
   const handleStopTest = useCallback(async () => {
     try {
       await window.electronAPI.stopTest();
-      setPhase('completed');
+      setPhase('email-capture');
+      setShowEmailCapture(true);
+      setTestDataJson(JSON.stringify({ events: testEvents, elapsedTimeNs: String(elapsedTimeMs * 1_000_000) }));
     } catch (error) {
       console.error('Failed to stop test:', error);
     }
+  }, [testEvents, elapsedTimeMs]);
+
+  // Email capture handlers
+  const handleEmailCaptureSuccess = useCallback(() => {
+    setShowEmailCapture(false);
+    setPhase('completed');
+  }, []);
+
+  const handleEmailCaptureCancel = useCallback(() => {
+    setShowEmailCapture(false);
+    setPhase('completed');
   }, []);
 
   return (
@@ -229,13 +250,24 @@ function TestScreen() {
       )}
 
       {/* Test completed summary */}
-      {phase === 'completed' && (
+      {phase === 'completed' && !showEmailCapture && (
         <div className="mt-6 text-center font-mono text-lg text-white">
           <div>Total responses recorded: {testResponses.length}</div>
           <div className="mt-2">The test was completed in {Math.floor(elapsedTimeMs / 60000)}m {String(Math.floor((elapsedTimeMs % 60000) / 1000)).padStart(2, '0')}s</div>
           <div className="mt-4 text-white">
             {testResponses.length > 0 ? 'Data ready for submission' : 'No data recorded'}
           </div>
+        </div>
+      )}
+
+      {/* Email capture form overlay */}
+      {showEmailCapture && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-50">
+          <EmailCaptureForm
+            testData={testDataJson}
+            onSuccess={handleEmailCaptureSuccess}
+            onCancel={handleEmailCaptureCancel}
+          />
         </div>
       )}
     </div>

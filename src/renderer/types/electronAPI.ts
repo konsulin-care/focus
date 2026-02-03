@@ -39,6 +39,14 @@ export interface ElectronAPI {
   // Database API - safe query whitelist pattern
   queryDatabase: (command: string, params?: any[]) => Promise<any>;
   
+  // Test Result API - GDPR compliant email capture
+  saveTestResultWithConsent: (
+    testData: string,
+    email: string,
+    consentGiven: boolean,
+    consentTimestamp: string
+  ) => Promise<void>;
+  
   // Test Config API
   getTestConfig: () => Promise<TestConfig>;
   saveTestConfig: (config: TestConfig) => Promise<void>;

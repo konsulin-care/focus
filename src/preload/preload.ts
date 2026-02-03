@@ -8,7 +8,10 @@ type DatabaseQueryCommand =
   | 'get-upload-count'
   | 'get-all-test-results'
   | 'insert-test-result'
-  | 'update-test-result';
+  | 'insert-test-result-with-consent'
+  | 'update-test-result'
+  | 'cleanup-expired-records'
+  | 'get-expired-count';
 
 // Test control API
 type StimulusType = 'target' | 'non-target';
@@ -58,4 +61,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTestConfig: () => ipcRenderer.invoke('get-test-config'),
   saveTestConfig: (config: TestConfig) => ipcRenderer.invoke('save-test-config', config),
   resetTestConfig: () => ipcRenderer.invoke('reset-test-config'),
+  
+  // GDPR Compliant Test Result API
+  saveTestResultWithConsent: (
+    testData: string,
+    email: string,
+    consentGiven: boolean,
+    consentTimestamp: string
+  ) => ipcRenderer.invoke('save-test-result-with-consent', testData, email, consentGiven, consentTimestamp),
 });

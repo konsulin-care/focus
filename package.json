@@ -1,10 +1,11 @@
 {
-  "name": "tova",
+  "name": "focus",
   "version": "1.0.0",
   "main": "dist/main/main.js",
   "dependencies": {
     "axios": "^1.6.0",
     "better-sqlite3": "^12.6.2",
+    "keytar": "^7.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.0",
@@ -36,7 +37,10 @@
     "build:renderer": "vite build",
     "electron-rebuild": "electron-rebuild",
     "package": "npm run build && electron-builder",
-    "validate-timing": "ts-node src/validate-timing.ts"
+    "validate-timing": "ts-node src/validate-timing.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "build": {
     "appId": "com.konsulin.focus",
@@ -66,14 +70,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/konsulin-care/tova.git"
+    "url": "git+https://github.com/konsulin-care/focus.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/konsulin-care/tova/issues"
+    "url": "https://github.com/konsulin-care/focus/issues"
   },
-  "homepage": "https://github.com/konsulin-care/tova#readme",
+  "homepage": "https://github.com/konsulin-care/focus#readme",
   "description": ""
 }

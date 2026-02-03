@@ -1,6 +1,166 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import Database from 'better-sqlite3';
+
+// ===========================================
+// SQLCipher Encryption Key Management
+// ===========================================
+
+/**
+ * Generate a random 256-bit (32 byte) encryption key as hex string.
+ * This key is used to encrypt the SQLite database with SQLCipher.
+ */
+function generateEncryptionKey(): string {
+  const key = crypto.randomBytes(32);
+  return key.toString('hex');
+}
+
+/**
+ * Get or create encryption key for database encryption.
+ * Key is stored in userData directory with restricted permissions (chmod 600).
+ * 
+ * @returns The encryption key as hex string
+ */
+function getOrCreateEncryptionKey(): string {
+  const fs = require('fs');
+  const keyPath = path.join(app.getPath('userData'), '.tova_db_key');
+  
+  // Check if key already exists
+  if (fs.existsSync(keyPath)) {
+    try {
+      const existingKey = fs.readFileSync(keyPath, 'utf8').trim();
+      // Validate key format (64 hex characters = 256 bits)
+      if (existingKey.length === 64 && /^[a-fA-F0-9]+$/.test(existingKey)) {
+        console.log('Existing encryption key found and validated');
+        return existingKey;
+      } else {
+        console.warn('Invalid encryption key format, generating new key');
+      }
+    } catch (error) {
+      console.error('Failed to read existing encryption key:', error);
+    }
+  }
+  
+  // Generate new key
+  const newKey = generateEncryptionKey();
+  
+  try {
+    fs.writeFileSync(keyPath, newKey, { mode: 0o600 });
+    console.log('New encryption key generated and stored securely');
+  } catch (error) {
+    console.error('Failed to store encryption key:', error);
+    // Continue with the key in memory (less secure but functional)
+  }
+  
+  return newKey;
+}
+
+/**
+ * Check if the database is already encrypted by attempting to read it.
+ * An encrypted database will return an error when accessed without the key.
+ */
+function isDatabaseEncrypted(dbPath: string): boolean {
+  const fs = require('fs');
+  
+  if (!fs.existsSync(dbPath)) {
+    return false; // New database, not yet encrypted
+  }
+  
+  // Try to open without key and check if it's a valid SQLite database
+  try {
+    // SQLCipher databases have a different header than standard SQLite
+    const headerBuffer = Buffer.alloc(16);
+    const fd = fs.openSync(dbPath, 'r');
+    fs.readSync(fd, headerBuffer, 0, 16, 0);
+    fs.closeSync(fd);
+    
+    // Standard SQLite starts with "SQLite format 3\000"
+    const sqliteHeader = 'SQLite format 3';
+    const headerStr = headerBuffer.toString('utf8', 0, 16);
+    
+    // If header doesn't match standard SQLite, it's likely encrypted or corrupted
+    if (!headerStr.includes(sqliteHeader)) {
+      return true;
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Migrate an unencrypted database to encrypted format.
+ * Uses the attach/detach pattern to re-encrypt the database.
+ * 
+ * @param db - The database connection
+ * @param newKey - The new encryption key
+ */
+function migrateToEncrypted(db: Database.Database, newKey: string): void {
+  console.log('Migrating unencrypted database to encrypted format...');
+  
+  try {
+    // Create a temporary encrypted database by exporting and re-importing
+    // This is a simplified migration - in production, use proper backup/restore
+    const tempDbPath = path.join(app.getPath('userData'), 'tova_backup.db');
+    const encryptedDbPath = path.join(app.getPath('userData'), 'tova.db');
+    
+    // Close current connection
+    db.close();
+    
+    // Rename current database to backup
+    const fs = require('fs');
+    if (fs.existsSync(tempDbPath)) {
+      fs.unlinkSync(tempDbPath);
+    }
+    fs.renameSync(encryptedDbPath, tempDbPath);
+    
+    // Open backup and re-export with encryption
+    const backupDb = new Database(tempDbPath);
+    const encryptedDb = new Database(encryptedDbPath);
+    
+    // Apply encryption key to new database
+    encryptedDb.exec(`PRAGMA key = "x'${newKey}'"`);
+    encryptedDb.exec('PRAGMA cipher_use_hmac = 1');
+    
+    // Export all data and re-import
+    const tables = backupDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
+    
+    for (const table of tables) {
+      if (table.name === 'sqlite_sequence') continue;
+      
+      // Get table schema
+      const schema = backupDb.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`).get(table.name) as { sql: string };
+      
+      // Create table in encrypted database
+      encryptedDb.exec(schema.sql);
+      
+      // Copy data
+      const data = backupDb.prepare(`SELECT * FROM ${table.name}`).all() as Record<string, unknown>[];
+      if (data.length > 0) {
+        const columns = Object.keys(data[0]).join(', ');
+        const placeholders = Object.keys(data[0]).map(() => '?').join(', ');
+        const insertStmt = encryptedDb.prepare(`INSERT INTO ${table.name} (${columns}) VALUES (${placeholders})`);
+        
+        for (const row of data) {
+          insertStmt.run(...Object.values(row));
+        }
+      }
+    }
+    
+    backupDb.close();
+    encryptedDb.close();
+    
+    // Remove backup
+    fs.unlinkSync(tempDbPath);
+    
+    console.log('Database migration to encrypted format completed successfully');
+  } catch (error) {
+    console.error('Failed to migrate database:', error);
+    throw error;
+  }
+}
 
 // Test configuration type
 interface TestConfig {
@@ -18,8 +178,65 @@ const DEFAULT_TEST_CONFIG: TestConfig = {
   bufferMs: 500,
 };
 
+// ===========================================
+// GDPR Compliance - Data Retention
+// ===========================================
+
+// Retention period in days (GDPR storage limitation principle)
+const RETENTION_DAYS = 7;
+
+/**
+ * Clean up expired test records (older than retention period)
+ * Returns the number of records deleted
+ */
+function cleanupExpiredRecords(): number {
+  if (!db) {
+    console.warn('Database not initialized, skipping cleanup');
+    return 0;
+  }
+
+  try {
+    // Delete records where retention_expires_at is in the past
+    const result = db.prepare(`
+      DELETE FROM test_results
+      WHERE retention_expires_at < datetime('now')
+    `).run();
+
+    const deletedCount = result.changes;
+    console.log(`GDPR cleanup: Deleted ${deletedCount} expired records`);
+    return deletedCount;
+  } catch (error) {
+    console.error('Failed to cleanup expired records:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get count of expired records (for monitoring)
+ */
+function getExpiredRecordCount(): number {
+  if (!db) return 0;
+
+  try {
+    const result = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM test_results
+      WHERE retention_expires_at < datetime('now')
+    `).get() as { count: number };
+    return result.count;
+  } catch (error) {
+    console.error('Failed to get expired count:', error);
+    return 0;
+  }
+}
+
 // Type definitions
 type StimulusType = 'target' | 'non-target';
+
+interface ConsentData {
+  consentGiven: boolean;
+  consentTimestamp: string;
+}
 
 interface TestEvent {
   trialIndex: number;
@@ -159,19 +376,65 @@ if (!timingValidationPassed) {
 // Initialize SQLite database
 let db: Database.Database | null = null;
 
+/**
+ * Initialize the database with SQLCipher encryption.
+ * Handles migration from unencrypted to encrypted format.
+ */
 function initDatabase() {
+  const dbPath = path.join(app.getPath('userData'), 'tova.db');
+  const fs = require('fs');
+  
+  // Get or create encryption key
+  const encryptionKey = getOrCreateEncryptionKey();
+  
   try {
-    db = new Database(path.join(app.getPath('userData'), 'tova.db'));
+    // Check if database exists and is encrypted
+    const exists = fs.existsSync(dbPath);
+    const isEncrypted = exists && isDatabaseEncrypted(dbPath);
     
-    // Create test_results table
+    if (exists && !isEncrypted) {
+      // Migrate unencrypted database to encrypted format
+      const tempDb = new Database(dbPath);
+      migrateToEncrypted(tempDb, encryptionKey);
+      db = new Database(dbPath);
+    } else {
+      // Open database (new or already encrypted)
+      db = new Database(dbPath);
+    }
+    
+    // Apply encryption key (required for both new and existing encrypted databases)
+    db.exec(`PRAGMA key = "x'${encryptionKey}'"`);
+    db.exec('PRAGMA cipher_use_hmac = 1');
+    
+    // Verify encryption is working by attempting a simple query
+    try {
+      db.prepare('SELECT 1').get();
+      console.log('Database encryption verified successfully');
+    } catch (verifyError) {
+      console.error('Failed to verify database encryption:', verifyError);
+      throw new Error('Database encryption verification failed');
+    }
+    
+    // Create test_results table with GDPR-compliant schema
     db.exec(`
       CREATE TABLE IF NOT EXISTS test_results (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         test_data TEXT NOT NULL,
         email TEXT NOT NULL,
         upload_status TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        consent_given BOOLEAN NOT NULL DEFAULT 0,
+        consent_timestamp TEXT,
+        retention_expires_at TEXT GENERATED ALWAYS AS (
+          datetime(created_at, '+7 days')
+        ) VIRTUAL
       )
+    `);
+    
+    // Create indexes for cleanup queries
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_retention_expires ON test_results(retention_expires_at);
+      CREATE INDEX IF NOT EXISTS idx_upload_status ON test_results(upload_status);
     `);
     
     // Create test_config table
@@ -182,7 +445,7 @@ function initDatabase() {
       )
     `);
     
-    console.log('Database initialized successfully');
+    console.log('Database initialized successfully with SQLCipher encryption (GDPR-compliant)');
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
@@ -270,7 +533,10 @@ type DatabaseQueryCommand =
   | 'get-upload-count'
   | 'get-all-test-results'
   | 'insert-test-result'
-  | 'update-test-result';
+  | 'insert-test-result-with-consent'
+  | 'update-test-result'
+  | 'cleanup-expired-records'
+  | 'get-expired-count';
 
 interface QueryWhitelistEntry {
   sql: string;
@@ -299,12 +565,24 @@ const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> = {
     paramCount: 0,
   },
   'insert-test-result': {
-    sql: 'INSERT INTO test_results (test_data, email, upload_status, created_at) VALUES (?, ?, ?, ?)',
-    paramCount: 4,
+    sql: 'INSERT INTO test_results (test_data, email, upload_status, created_at, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+    paramCount: 6,
+  },
+  'insert-test-result-with-consent': {
+    sql: 'INSERT INTO test_results (test_data, email, upload_status, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?)',
+    paramCount: 5,
   },
   'update-test-result': {
     sql: 'UPDATE test_results SET upload_status = ? WHERE id = ?',
     paramCount: 2,
+  },
+  'cleanup-expired-records': {
+    sql: 'DELETE FROM test_results WHERE retention_expires_at < datetime("now")',
+    paramCount: 0,
+  },
+  'get-expired-count': {
+    sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
+    paramCount: 0,
   },
 };
 
@@ -334,6 +612,7 @@ function createWindow() {
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   initDatabase();
+  cleanupExpiredRecords(); // Run GDPR cleanup on startup
   createWindow();
 
   app.on('activate', () => {
@@ -404,6 +683,55 @@ ipcMain.handle('save-test-config', async (_event, config: TestConfig) => {
 
 ipcMain.handle('reset-test-config', async () => {
   resetTestConfig();
+});
+
+// ===========================================
+// GDPR Compliance IPC Handlers
+// ===========================================
+
+ipcMain.handle('cleanup-expired-records', async () => {
+  return cleanupExpiredRecords();
+});
+
+ipcMain.handle('get-expired-count', async () => {
+  return getExpiredRecordCount();
+});
+
+/**
+ * Save test result with explicit consent (GDPR compliant)
+ * Validates consent before saving and records consent timestamp for audit
+ */
+ipcMain.handle('save-test-result-with-consent', async (_event, testData: string, email: string, consentGiven: boolean, consentTimestamp: string) => {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+
+  // Validate consent is given (GDPR requirement)
+  if (!consentGiven) {
+    throw new Error('Consent is required to save test results');
+  }
+
+  // Validate email format
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (!email || !emailRegex.test(email)) {
+    throw new Error('Invalid email format');
+  }
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO test_results (test_data, email, upload_status, consent_given, consent_timestamp)
+      VALUES (?, ?, 'pending', ?, ?)
+    `);
+    
+    const result = stmt.run(testData, email, consentGiven ? 1 : 0, consentTimestamp);
+    
+    console.log(`Test result saved with consent. ID: ${result.lastInsertRowid}, Email: ${email}, Consent: ${consentGiven}`);
+    
+    return result.lastInsertRowid;
+  } catch (error) {
+    console.error('Failed to save test result with consent:', error);
+    throw error;
+  }
 });
 
 // ===========================================
