@@ -115,11 +115,9 @@ export function initDatabase(): void {
       const result = testDb.prepare('SELECT name FROM sqlite_master WHERE type="table" AND name="test_config"').get();
       testDb.close();
       
-      if (result) {
-        // We could read from it without a key - it's unencrypted
-        needsMigration = true;
-        console.log('[DB] Migrating unencrypted database to encrypted format');
-      }
+      // Successful open/read means DB is unencrypted - trigger migration
+      needsMigration = true;
+      console.log('[DB] Migrating unencrypted database to encrypted format');
     } catch {
       // Could not read without key - it's already encrypted
     }
