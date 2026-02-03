@@ -5,7 +5,7 @@
  */
 
 import { ipcMain } from 'electron';
-import { DatabaseQueryCommand } from './types';
+import { DatabaseQueryCommand, TestConfig } from './types';
 import { queryWhitelist, db, insertTestResultWithConsent } from './database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from './test-config';
 import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from './gdpr';
@@ -95,12 +95,22 @@ ipcMain.handle('get-test-config', async () => {
   return getTestConfig();
 });
 
-ipcMain.handle('save-test-config', async (_event: Electron.IpcMainInvokeEvent, config: Parameters<typeof saveTestConfig>[0]) => {
-  saveTestConfig(config);
+ipcMain.handle('save-test-config', async (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
+  try {
+    saveTestConfig(config);
+  } catch (error) {
+    console.error('Failed to save test config:', error);
+    throw error;
+  }
 });
 
 ipcMain.handle('reset-test-config', async () => {
-  resetTestConfig();
+  try {
+    resetTestConfig();
+  } catch (error) {
+    console.error('Failed to reset test config:', error);
+    throw error;
+  }
 });
 
 // ===========================================

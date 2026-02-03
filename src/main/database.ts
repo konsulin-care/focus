@@ -162,6 +162,15 @@ export function initDatabase(): void {
       )
     `);
     
+    // Seed default configuration (only if not already seeded)
+    db.exec(`
+      INSERT OR IGNORE INTO test_config (key, value) VALUES
+        ('stimulusDurationMs', '100'),
+        ('interstimulusIntervalMs', '2000'),
+        ('totalTrials', '648'),
+        ('bufferMs', '500')
+    `);
+    
     console.log('Database initialized successfully with SQLCipher encryption (GDPR-compliant)');
   } catch (error) {
     console.error('Failed to initialize database:', error);

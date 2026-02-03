@@ -1,20 +1,35 @@
 import { useState, FormEvent } from 'react';
+import { SubjectInfo } from '../types/trial';
 
 export interface EmailCaptureFormProps {
   testData: string;  // JSON string of test events
-  onSuccess: () => void;
+  onSuccess: (subjectInfo: SubjectInfo) => void;
   onCancel: () => void;
 }
 
 export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCaptureFormProps) {
+  const [age, setAge] = useState<number>(0);
+  const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const subjectInfo: SubjectInfo = { age, gender: gender as 'Male' | 'Female' };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const newErrors: string[] = [];
+    
+    // Age validation
+    if (age < 0 || age > 120 || !Number.isInteger(age)) {
+      newErrors.push('Please enter a valid age between 0 and 120');
+    }
+    
+    // Gender validation
+    if (gender !== 'Male' && gender !== 'Female') {
+      newErrors.push('Please select a gender');
+    }
     
     // Email validation - RFC 5322 compliant regex
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
@@ -43,7 +58,7 @@ export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCapture
         consent,
         consentTimestamp
       );
-      onSuccess();
+      onSuccess(subjectInfo);
     } catch (error) {
       console.error('Failed to save test result:', error);
       setErrors(['Failed to save. Please try again.']);
@@ -57,8 +72,47 @@ export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCapture
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Receive Your Results</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Enter your email to receive a secure link to your test results
+          Enter your information to receive a secure link to your test results
         </p>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+              Age (years)
+            </label>
+            <input
+              id="age"
+              type="number"
+              min="0"
+              max="120"
+              value={age || ''}
+              onChange={(e) => setAge(parseInt(e.target.value, 10) || 0)}
+              className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
+              placeholder="25"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+              Gender
+            </label>
+            <select
+              id="gender"
+              value={gender}
+              onChange={(e) => setGender(e.target.value as 'Male' | 'Female')}
+              className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
+              disabled={isSubmitting}
+              required
+            >
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+        </div>
+        
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           Email Address
         </label>
@@ -102,7 +156,7 @@ export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCapture
       <div className="flex gap-4">
         <button
           type="submit"
-          disabled={!consent || !email || isSubmitting}
+          disabled={!consent || !email || !gender || age < 0 || age > 120 || isSubmitting}
           className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
         >
           {isSubmitting ? 'Saving...' : 'Send My Results'}

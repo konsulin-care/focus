@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from './store';
 import { TestEvent, StimulusType, TestConfig, TestCompleteResult } from './types/electronAPI';
-import { TrialResult, TestMetrics } from './types/trial';
-import { processTestEvents, calculateTestMetrics } from './utils/trial-metrics';
+import { SubjectInfo, AttentionMetrics } from './types/trial';
+import { calculateAttentionMetrics } from './utils/trial-metrics';
+import { normalCDF } from './utils/statistics';
 import { EmailCaptureForm } from './components/EmailCaptureForm';
 
 type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture';
@@ -21,13 +22,11 @@ function TestScreen() {
   });
   const [lastEvent, setLastEvent] = useState<TestEvent | null>(null);
   const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
-  const [testResponses, setTestResponses] = useState<TestEvent[]>([]);
   const [elapsedTimeMs, setElapsedTimeMs] = useState<number>(0);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [testDataJson, setTestDataJson] = useState<string>('');
   const [hasRespondedToCurrentTrial, setHasRespondedToCurrentTrial] = useState(false);
-  const [trialResults, setTrialResults] = useState<TrialResult[]>([]);
-  const [testMetrics, setTestMetrics] = useState<TestMetrics | null>(null);
+  const [attentionMetrics, setAttentionMetrics] = useState<AttentionMetrics | null>(null);
   const { endTest } = useNavigation();
 
   // Fetch test config on mount
@@ -82,7 +81,6 @@ function TestScreen() {
       } else if (event.eventType === 'response') {
         // Response recorded - could show feedback here
         setTestEvents(prev => [...prev, event]);
-        setTestResponses(prev => [...prev, event]);
       }
     });
 
@@ -90,16 +88,7 @@ function TestScreen() {
       console.log('Test complete, received', data.events.length, 'events');
       
       setTestEvents(data.events);
-      setTestResponses(data.events.filter(e => e.eventType === 'response'));
       setElapsedTimeMs(Number(data.elapsedTimeNs) / 1_000_000);
-      
-      // Process test events into trial results
-      const results = processTestEvents(data.events, testConfig);
-      setTrialResults(results);
-      
-      // Calculate comprehensive test metrics
-      const metrics = calculateTestMetrics(results);
-      setTestMetrics(metrics);
       
       // Store test data as JSON for email capture
       setTestDataJson(JSON.stringify(data));
@@ -171,11 +160,16 @@ function TestScreen() {
     }
   }, [testEvents, elapsedTimeMs]);
 
-  // Email capture handlers
-  const handleEmailCaptureSuccess = useCallback(() => {
+  // Email capture handlers with metrics calculation
+  const handleEmailCaptureSuccess = useCallback((subjectInfo: SubjectInfo) => {
+    // Calculate ACS metrics with subject demographics
+    if (testEvents.length > 0) {
+      const metrics = calculateAttentionMetrics(testEvents, subjectInfo);
+      setAttentionMetrics(metrics);
+    }
     setShowEmailCapture(false);
     setPhase('completed');
-  }, []);
+  }, [testEvents]);
 
   const handleEmailCaptureCancel = useCallback(() => {
     setShowEmailCapture(false);
@@ -230,34 +224,36 @@ function TestScreen() {
         </div>
       )}
 
-      {/* White square container - 300x300px */}
-      <div className="w-[300px] h-[300px] bg-white relative border-2 border-gray-300 shadow-lg">
-        {/* Target stimulus - top half center (black square 20x20) */}
-        {isStimulusVisible && currentStimulus === 'target' && (
-          <div
-            className="absolute bg-black"
-            style={{
-              width: '20px',
-              height: '20px',
-              top: '65px',   // Top half: (150-20)/2 = 65px from top
-              left: '140px', // Center: (300-20)/2 = 140px from left
-            }}
-          />
-        )}
+      {/* White square container - 300x300px - hidden when completed */}
+      {phase !== 'completed' && (
+        <div className="w-[300px] h-[300px] bg-white relative border-2 border-gray-300 shadow-lg">
+          {/* Target stimulus - top half center (black square 20x20) */}
+          {isStimulusVisible && currentStimulus === 'target' && (
+            <div
+              className="absolute bg-black"
+              style={{
+                width: '20px',
+                height: '20px',
+                top: '65px',   // Top half: (150-20)/2 = 65px from top
+                left: '140px', // Center: (300-20)/2 = 140px from left
+              }}
+            />
+          )}
 
-        {/* Non-target stimulus - bottom half center (black square 20x20) */}
-        {isStimulusVisible && currentStimulus === 'non-target' && (
-          <div
-            className="absolute bg-black"
-            style={{
-              width: '20px',
-              height: '20px',
-              top: '215px',  // Bottom half: 150 + (150-20)/2 = 215px from top
-              left: '140px', // Center: (300-20)/2 = 140px from left
-            }}
-          />
-        )}
-      </div>
+          {/* Non-target stimulus - bottom half center (black square 20x20) */}
+          {isStimulusVisible && currentStimulus === 'non-target' && (
+            <div
+              className="absolute bg-black"
+              style={{
+                width: '20px',
+                height: '20px',
+                top: '215px',  // Bottom half: 150 + (150-20)/2 = 215px from top
+                left: '140px', // Center: (300-20)/2 = 140px from left
+              }}
+            />
+          )}
+        </div>
+      )}
 
       {/* Debug info - shown during test */}
       {phase === 'running' && lastEvent && (
@@ -268,66 +264,107 @@ function TestScreen() {
         </div>
       )}
 
-      {/* Test completed summary with metrics */}
-      {phase === 'completed' && !showEmailCapture && testMetrics && (
+      {/* Test completed summary with ACS metrics */}
+      {phase === 'completed' && !showEmailCapture && attentionMetrics && (
         <div className="mt-6 text-center font-mono text-lg text-white max-w-2xl">
           <div className="text-2xl mb-4">Test Completed</div>
+          
+          {/* ACS Score Display */}
+          {attentionMetrics ? (
+            <div className="mb-6 bg-blue-900/50 p-6 rounded-lg border border-blue-700">
+              <div className="text-blue-300 text-sm mb-1">Attention Comparison Score (ACS)</div>
+              <div className="text-5xl font-bold text-white">{attentionMetrics.acs.toFixed(2)}</div>
+              <div className={`mt-2 text-lg font-medium ${
+                attentionMetrics.acsInterpretation === 'normal' ? 'text-green-400' :
+                attentionMetrics.acsInterpretation === 'borderline' ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {attentionMetrics.acsInterpretation === 'normal' ? '✓ Within Normal Limits' :
+                 attentionMetrics.acsInterpretation === 'borderline' ? '~ Borderline' :
+                 '✗ Not Within Normal Limits'}
+              </div>
+              <div className="text-blue-300 text-sm mt-2">
+                Attention Percentile: {normalCDF(attentionMetrics.acs - 1.80).toFixed(1)}%
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 bg-gray-800 p-4 rounded-lg">
+              <div className="text-gray-400 text-sm">ACS Score</div>
+              <div className="text-xl text-gray-500">Enter age/gender for scoring</div>
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4 text-left bg-gray-800 p-4 rounded-lg">
             <div>
               <div className="text-gray-400 text-sm">Hits</div>
-              <div className="text-xl">{testMetrics.hits}</div>
+              <div className="text-xl">{attentionMetrics.trialCount * (1 - attentionMetrics.omissionPercent / 100) * 0.5}</div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Omissions</div>
-              <div className="text-xl">{testMetrics.omissions}</div>
+              <div className="text-gray-400 text-sm">Omissions ({attentionMetrics.omissionPercent.toFixed(1)}%)</div>
+              <div className="text-xl">{Math.round(attentionMetrics.trialCount * attentionMetrics.omissionPercent / 100 * 0.5)}</div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Commissions</div>
-              <div className="text-xl">{testMetrics.commissions}</div>
+              <div className="text-gray-400 text-sm">Commissions ({attentionMetrics.commissionPercent.toFixed(1)}%)</div>
+              <div className="text-xl">{Math.round(attentionMetrics.trialCount * attentionMetrics.commissionPercent / 100 * 0.5)}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Correct Rejections</div>
-              <div className="text-xl">{testMetrics.correctRejections}</div>
+              <div className="text-xl">{Math.round(attentionMetrics.trialCount * (1 - attentionMetrics.commissionPercent / 100) * 0.5)}</div>
             </div>
           </div>
           
           <div className="mt-4 grid grid-cols-2 gap-4 text-left bg-gray-800 p-4 rounded-lg">
             <div>
               <div className="text-gray-400 text-sm">Mean Response Time</div>
-              <div className="text-xl">{testMetrics.meanResponseTimeMs.toFixed(1)}ms</div>
+              <div className="text-xl">{attentionMetrics.meanResponseTimeMs.toFixed(1)}ms</div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Response Time SD</div>
-              <div className="text-xl">{testMetrics.stdResponseTimeMs.toFixed(1)}ms</div>
+              <div className="text-gray-400 text-sm">Response Variability</div>
+              <div className="text-xl">{attentionMetrics.variability.toFixed(1)}</div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">D Prime</div>
+              <div className="text-xl">{attentionMetrics.dPrime.toFixed(2)}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Anticipatory Responses</div>
-              <div className="text-xl">{testMetrics.anticipatoryResponses}</div>
-            </div>
-            <div>
-              <div className="text-gray-400 text-sm">Multiple Responses</div>
-              <div className="text-xl">{testMetrics.multipleResponses}</div>
+              <div className="text-xl">{attentionMetrics.validity.anticipatoryResponses}</div>
             </div>
           </div>
           
           <div className="mt-4 grid grid-cols-3 gap-4 text-left bg-gray-800 p-4 rounded-lg">
             <div>
-              <div className="text-gray-400 text-sm">Attention Score</div>
-              <div className="text-xl">{testMetrics.attentionScore.toFixed(1)}</div>
+              <div className="text-gray-400 text-sm">RT Z-Score</div>
+              <div className="text-xl">{attentionMetrics?.zScores.responseTime.toFixed(2) || '—'}</div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Impulse Control</div>
-              <div className="text-xl">{testMetrics.impulseControlScore.toFixed(1)}</div>
+              <div className="text-gray-400 text-sm">D' Z-Score</div>
+              <div className="text-xl">{attentionMetrics?.zScores.dPrime.toFixed(2) || '—'}</div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm">Consistency</div>
-              <div className="text-xl">{testMetrics.consistencyScore.toFixed(1)}</div>
+              <div className="text-gray-400 text-sm">Variability Z</div>
+              <div className="text-xl">{attentionMetrics?.zScores.variability.toFixed(2) || '—'}</div>
             </div>
           </div>
           
+          {/* Validity indicator */}
+          {attentionMetrics && !attentionMetrics.validity.valid && (
+            <div className="mt-4 bg-yellow-900/50 p-3 rounded-lg border border-yellow-700">
+              <div className="text-yellow-400 text-sm font-medium">Validity Concern</div>
+              <div className="text-yellow-300 text-xs">{attentionMetrics.validity.exclusionReason}</div>
+            </div>
+          )}
+          
+          {/* Trial count and scaling info */}
+          {attentionMetrics && attentionMetrics.trialCount < 648 && (
+            <div className="mt-4 bg-gray-800 p-3 rounded-lg border border-gray-700">
+              <div className="text-gray-400 text-xs">Partial Test ({attentionMetrics.trialCount} trials)</div>
+              <div className="text-gray-300 text-xs">Scaling: {(attentionMetrics.scalingFactor * 100).toFixed(1)}% of full test</div>
+            </div>
+          )}
+          
           <div className="mt-4 text-gray-400">
-            Total responses: {testMetrics.hits + testMetrics.commissions} / {testMetrics.totalTrials} trials
+            Total responses: {attentionMetrics.trialCount * (1 - attentionMetrics.omissionPercent / 100) * 0.5 + attentionMetrics.trialCount * attentionMetrics.commissionPercent / 100 * 0.5} / {attentionMetrics.trialCount} trials
           </div>
           <div className="text-gray-400">
             Duration: {Math.floor(elapsedTimeMs / 60000)}m {String(Math.floor((elapsedTimeMs % 60000) / 1000)).padStart(2, '0')}s
