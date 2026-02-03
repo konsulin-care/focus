@@ -5,7 +5,6 @@
  * For individual modules, import directly from:
  * - trial-constants.ts
  * - trial-processing.ts
- * - test-metrics.ts
  * - attention-metrics.ts
  */
 
