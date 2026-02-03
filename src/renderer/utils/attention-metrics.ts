@@ -7,7 +7,8 @@
 import { TestEvent, TestConfig } from '../types/electronAPI';
 import { SubjectInfo, AttentionMetrics } from '../types/trial';
 import { getNormativeStats } from './normative-data';
-import { zScore, calculateStdDev, calculateMean, calculateVariability, calculateDPrime } from './statistics';
+import { zScore, calculateStdDev, calculateMean, calculateVariability } from './basic-stats';
+import { calculateDPrime } from './clinical-metrics';
 import { processTestEvents } from './trial-processing';
 import { TRIAL_CONSTANTS } from './trial-constants';
 

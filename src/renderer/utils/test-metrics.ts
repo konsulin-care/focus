@@ -5,21 +5,7 @@
  */
 
 import { TrialResult, TestMetrics } from '../types/trial';
-import { calculateStdDev } from './statistics';
-
-/**
- * Calculate standard deviation of an array of numbers with pre-computed mean.
- * 
- * @param values - Array of numbers
- * @param mean - Mean value
- * @returns Standard deviation
- */
-function calculateStdDevWithMean(values: number[], mean: number): number {
-  if (values.length === 0) return 0;
-  const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
-  const avgSquaredDiff = squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
-  return Math.sqrt(avgSquaredDiff);
-}
+import { calculateStdDevWithMean } from './basic-stats';
 
 /**
  * Calculate comprehensive test metrics from trial results.
