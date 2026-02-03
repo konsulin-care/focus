@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Encryption Key Management
+ * F.O.C.U.S. Assessment - Encryption Key Management
  * 
  * Database encryption using SQLCipher with secure key management.
  * Keys are stored in userData directory with restricted permissions.

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Main Entry Point
+ * F.O.C.U.S. Assessment - Main Entry Point
  * 
  * Composition root for the Electron application.
  * Orchestrates initialization of all modules.

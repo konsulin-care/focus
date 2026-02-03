@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Trial Processing Utilities
+ * F.O.C.U.S. Assessment - Trial Processing Utilities
  * 
  * Utility functions for processing raw test events into trial results
  * and determining trial outcomes.

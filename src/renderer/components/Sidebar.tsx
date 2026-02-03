@@ -78,7 +78,7 @@ export default function Sidebar() {
         {isSidebarCollapsed ? (
           <span className="text-2xl font-bold text-blue-400">F</span>
         ) : (
-          <span className="text-xl font-bold">F.O.C.U.S. Clinical</span>
+          <span className="text-xl font-bold">F.O.C.U.S. Assessment</span>
         )}
       </div>
 

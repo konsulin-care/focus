@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Test Engine
+ * F.O.C.U.S. Assessment - Test Engine
  * 
  * Test state machine with high-precision timing for stimulus presentation
  * and response capture.
@@ -244,7 +244,7 @@ export function startTest(): boolean {
     return false;
   }
   
-  console.log('Starting F.O.C.U.S. test sequence...');
+  console.log('Starting F.O.C.U.S. Assessment test sequence...');
   
   // Reset test state
   testRunning = true;
@@ -271,7 +271,7 @@ export function stopTest(): boolean {
     return false;
   }
   
-  console.log('Stopping F.O.C.U.S. test sequence...');
+  console.log('Stopping F.O.C.U.S. Assessment test sequence...');
   testRunning = false;
   completeTest();
   

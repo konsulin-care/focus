@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Trial Metrics
+ * F.O.C.U.S. Assessment - Trial Metrics
  * 
  * This module re-exports all trial-related utilities for convenience.
  * For individual modules, import directly from:

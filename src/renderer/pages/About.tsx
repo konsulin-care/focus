@@ -6,7 +6,7 @@ export default function About() {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">
-        About F.O.C.U.S. Attention
+        About F.O.C.U.S. Assessment
       </h1>
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
@@ -22,13 +22,15 @@ export default function About() {
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold mb-3 text-gray-800">
-          About the F.O.C.U.S. Test
+          About the F.O.C.U.S. Assessment
         </h2>
         <p className="text-gray-600 mb-4">
-          The Following Ongoing Cues Under Structure (F.O.C.U.S.) is a computerized visual
-          continuous performance test used to assess attention and inhibitory control.
-          It is widely used in the diagnosis and monitoring of attention disorders
-          such as ADHD.
+          The Following Ongoing Cues Under Structure (F.O.C.U.S.) is a
+          computerized visual continuous performance test used to assess
+          attention and inhibitory control. It is adapted from T.O.V.A. manual,
+          which is widely used in the diagnosis and monitoring of attention
+          disorders such as ADHD. F.O.C.U.S. is intended as a research tool to
+          standardize the assessment of attention using an open-source platform.
         </p>
         <p className="text-gray-600">
           The test measures four key variables: Response Time, Response Time
@@ -55,8 +57,7 @@ export default function About() {
           Support & Contact
         </h2>
         <p className="text-gray-600 mb-2">
-          For technical support or questions about the F.O.C.U.S. Attention assessment,
-          please contact your healthcare provider or system administrator.
+          For technical support or questions about the F.O.C.U.S. Assessment, please contact your healthcare provider or system administrator.
         </p>
         <p className="text-gray-600">
           <strong>Email:</strong> hello@konsulin.care

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Basic Statistics
+ * F.O.C.U.S. Assessment - Basic Statistics
  * 
  * Fundamental statistical functions for calculating mean, standard deviation,
  * z-scores, and response time variability.

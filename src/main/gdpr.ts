@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - GDPR Compliance Module
+ * F.O.C.U.S. Assessment - GDPR Compliance Module
  * 
  * Data retention and cleanup functions for GDPR compliance.
  * Implements the storage limitation principle by automatically

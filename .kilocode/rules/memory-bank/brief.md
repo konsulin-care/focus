@@ -1,4 +1,4 @@
-# F.O.C.U.S. Attention Test - Local Electron Application
+# F.O.C.U.S. Assessment - Local Electron Application
 
 Building a desktop application that implements the F.O.C.U.S. (Following Ongoing Cues Under Structure) visual assessment for visual attention evaluation in clinical settings.
 

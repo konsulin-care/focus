@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Trial Constants
+ * F.O.C.U.S. Assessment - Trial Constants
  * 
  * Consolidated constants for trial processing and metrics calculation.
  */

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Clinical Metrics
+ * F.O.C.U.S. Assessment - Clinical Metrics
  * 
  * Clinical-specific metric functions including D Prime signal detection
  * and other attention assessment measures.

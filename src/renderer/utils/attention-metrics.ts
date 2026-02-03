@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Attention Metrics
+ * F.O.C.U.S. Assessment - Attention Metrics
  * 
  * Utility functions for calculating comprehensive attention metrics with ACS scoring.
  */

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Trial Result Types
+ * F.O.C.U.S. Assessment - Trial Result Types
  * 
  * Types for post-processed trial data and computed metrics.
  */

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - IPC Handlers
+ * F.O.C.U.S. Assessment - IPC Handlers
  * 
  * All IPC handler registrations for main-renderer communication.
  */

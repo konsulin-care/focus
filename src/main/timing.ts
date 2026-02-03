@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Timing Utilities
+ * F.O.C.U.S. Assessment - Timing Utilities
  * 
  * High-precision timing functions for clinical-grade measurement.
  * Uses Node.js process.hrtime.bigint() for nanosecond resolution.

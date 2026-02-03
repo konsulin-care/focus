@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Configuration Module
+ * F.O.C.U.S. Assessment - Configuration Module
  * 
  * Test configuration management with database persistence.
  */

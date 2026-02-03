@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Window Management
+ * F.O.C.U.S. Assessment - Window Management
  * 
  * Browser window creation and management.
  */

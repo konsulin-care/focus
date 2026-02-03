@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Database Module
+ * F.O.C.U.S. Assessment - Database Module
  * 
  * Database initialization with SQLCipher encryption and query whitelist.
  * Uses better-sqlite3 for local data persistence.

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Probability Distributions
+ * F.O.C.U.S. Assessment - Probability Distributions
  * 
  * Functions for normal distribution calculations including inverse CDF
  * and cumulative distribution functions for clinical metrics.

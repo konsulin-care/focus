@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Test Metrics
+ * F.O.C.U.S. Assessment - Test Metrics
  * 
  * Utility functions for calculating comprehensive test metrics from trial results.
  */

@@ -1,5 +1,5 @@
 /**
- * F.O.C.U.S. Clinical Attention Test - Normative Reference Data
+ * F.O.C.U.S. Assessment - Normative Reference Data
  * 
  * Utility for loading and looking up normative reference data.
  */
