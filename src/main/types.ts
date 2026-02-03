@@ -116,6 +116,11 @@ export type DatabaseQueryCommand =
   | 'get-expired-count';
 
 /**
+ * Type of query for determining the appropriate execution method.
+ */
+export type QueryType = 'select-one' | 'select-many' | 'write';
+
+/**
  * Entry in the database query whitelist.
  */
 export interface QueryWhitelistEntry {
@@ -123,6 +128,8 @@ export interface QueryWhitelistEntry {
   sql: string;
   /** Expected number of parameters */
   paramCount: number;
+  /** Type of query for execution */
+  type: QueryType;
 }
 
 // ===========================================

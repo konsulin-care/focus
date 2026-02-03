@@ -31,7 +31,7 @@
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "dev": "vite & sleep 3 && electron .",
+    "dev": "electron .",
     "build": "tsc && vite build",
     "build:main": "tsc",
     "build:renderer": "vite build",

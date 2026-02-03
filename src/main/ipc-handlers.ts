@@ -69,8 +69,18 @@ ipcMain.handle('query-database', async (
 
   try {
     const stmt = db.prepare(queryEntry.sql);
-    const result = stmt.all(...(params || []));
-    return result;
+    
+    // Use appropriate execution method based on query type
+    switch (queryEntry.type) {
+      case 'select-one':
+        return stmt.get(...(params || []));
+      case 'select-many':
+        return stmt.all(...(params || []));
+      case 'write':
+        return stmt.run(...(params || []));
+      default:
+        throw new Error(`Unknown query type: ${queryEntry.type}`);
+    }
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
@@ -130,7 +140,7 @@ ipcMain.handle('save-test-result-with-consent', async (
   }
 
   try {
-    const result = insertTestResultWithConsent(testData, email, consentGiven, consentTimestamp);
+    const result = insertTestResultWithConsent(testData, email, consentGiven, consentTimestamp, 'pending');
     console.log(`Test result saved with consent. ID: ${result}, Email: ${email}, Consent: ${consentGiven}`);
     return result;
   } catch (error) {

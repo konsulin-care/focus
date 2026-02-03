@@ -145,6 +145,7 @@ function runStimulusSequence(): void {
   
   // For subsequent trials, use drift-corrected scheduling with absolute timestamps
   const trialStartTime = testStartTimeNs + 
+    BigInt(config.bufferMs) * 1_000_000n +
     BigInt(currentTrialIndex * (config.stimulusDurationMs + config.interstimulusIntervalMs)) * 1_000_000n;
   const now = getHighPrecisionTime();
   const delayMs = Math.max(0, Number(trialStartTime - now) / 1_000_000);
@@ -184,7 +185,7 @@ function presentStimulus(): void {
   
   // Calculate absolute timing targets using drift-corrected scheduling
   const now = Number(getHighPrecisionTime() - testStartTimeNs) / 1_000_000;
-  const trialStartTime = currentTrialIndex * (config.stimulusDurationMs + config.interstimulusIntervalMs);
+  const trialStartTime = config.bufferMs + currentTrialIndex * (config.stimulusDurationMs + config.interstimulusIntervalMs);
   const stimulusEndTime = trialStartTime + config.stimulusDurationMs;
   const nextTrialStartTime = stimulusEndTime + config.interstimulusIntervalMs;
   

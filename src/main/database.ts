@@ -40,42 +40,52 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
   'get-pending-uploads': {
     sql: 'SELECT * FROM test_results WHERE upload_status = ?',
     paramCount: 1,
+    type: 'select-many',
   },
   'get-test-result': {
     sql: 'SELECT * FROM test_results WHERE id = ?',
     paramCount: 1,
+    type: 'select-one',
   },
   'delete-test-result': {
     sql: 'DELETE FROM test_results WHERE id = ?',
     paramCount: 1,
+    type: 'write',
   },
   'get-upload-count': {
     sql: 'SELECT COUNT(*) as count FROM test_results WHERE upload_status = ?',
     paramCount: 1,
+    type: 'select-one',
   },
   'get-all-test-results': {
     sql: 'SELECT * FROM test_results',
     paramCount: 0,
+    type: 'select-many',
   },
   'insert-test-result': {
     sql: 'INSERT INTO test_results (test_data, email, upload_status, created_at, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?, ?)',
     paramCount: 6,
+    type: 'write',
   },
   'insert-test-result-with-consent': {
     sql: 'INSERT INTO test_results (test_data, email, upload_status, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?)',
     paramCount: 5,
+    type: 'write',
   },
   'update-test-result': {
     sql: 'UPDATE test_results SET upload_status = ? WHERE id = ?',
     paramCount: 2,
+    type: 'write',
   },
   'cleanup-expired-records': {
     sql: 'DELETE FROM test_results WHERE retention_expires_at < datetime("now")',
     paramCount: 0,
+    type: 'write',
   },
   'get-expired-count': {
     sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
     paramCount: 0,
+    type: 'select-one',
   },
 };
 
@@ -163,17 +173,25 @@ export function initDatabase(): void {
 // ===========================================
 
 /**
+ * Result of a write query (INSERT/UPDATE/DELETE).
+ */
+interface WriteResult {
+  changes: number;
+  lastInsertRowid: number;
+}
+
+/**
  * Execute a whitelisted database query.
  * 
  * @param command - The query command from the whitelist
  * @param params - Optional parameters for the query
- * @returns Query result
+ * @returns Query result based on query type
  * @throws Error if command is invalid or parameters don't match
  */
-export function executeWhitelistedQuery<T>(
+export function executeWhitelistedQuery(
   command: DatabaseQueryCommand, 
   params?: unknown[]
-): T {
+): unknown {
   if (!db) {
     throw new Error('Database not initialized');
   }
@@ -193,8 +211,17 @@ export function executeWhitelistedQuery<T>(
 
   try {
     const stmt = db.prepare(queryEntry.sql);
-    const result = stmt.all(...(params || []));
-    return result as T;
+    
+    switch (queryEntry.type) {
+      case 'select-one':
+        return stmt.get(...(params || []));
+      case 'select-many':
+        return stmt.all(...(params || []));
+      case 'write':
+        return stmt.run(...(params || [])) as WriteResult;
+      default:
+        throw new Error(`Unknown query type: ${queryEntry.type}`);
+    }
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
@@ -208,10 +235,10 @@ export function executeWhitelistedQuery<T>(
  * @returns Number of matching records
  */
 export function getUploadCount(status: string): number {
-  const result = executeWhitelistedQuery<{ count: number }>(
+  const result = executeWhitelistedQuery(
     'get-upload-count',
     [status]
-  );
+  ) as { count: number };
   return result.count;
 }
 
@@ -221,7 +248,7 @@ export function getUploadCount(status: string): number {
  * @returns Array of pending test results
  */
 export function getPendingUploads(): unknown[] {
-  return executeWhitelistedQuery('get-pending-uploads', ['pending']);
+  return executeWhitelistedQuery('get-pending-uploads', ['pending']) as unknown[];
 }
 
 /**
@@ -241,10 +268,10 @@ export function getTestResult(id: number): unknown {
  * @returns true if deleted, false if not found
  */
 export function deleteTestResult(id: number): boolean {
-  const result = executeWhitelistedQuery<{ changes: number }>(
+  const result = executeWhitelistedQuery(
     'delete-test-result',
     [id]
-  );
+  ) as { changes: number };
   return result.changes > 0;
 }
 
@@ -254,7 +281,7 @@ export function deleteTestResult(id: number): boolean {
  * @returns Array of all test results
  */
 export function getAllTestResults(): unknown[] {
-  return executeWhitelistedQuery('get-all-test-results');
+  return executeWhitelistedQuery('get-all-test-results') as unknown[];
 }
 
 /**
@@ -270,12 +297,13 @@ export function insertTestResultWithConsent(
   testData: string,
   email: string,
   consentGiven: boolean,
-  consentTimestamp: string
+  consentTimestamp: string,
+  uploadStatus: string = 'pending'
 ): number {
-  const result = executeWhitelistedQuery<{ lastInsertRowid: number }>(
+  const result = executeWhitelistedQuery(
     'insert-test-result-with-consent',
-    [testData, email, consentGiven ? 1 : 0, consentTimestamp]
-  );
+    [testData, email, uploadStatus, consentGiven ? 1 : 0, consentTimestamp]
+  ) as { lastInsertRowid: number };
   return result.lastInsertRowid;
 }
 
@@ -287,9 +315,9 @@ export function insertTestResultWithConsent(
  * @returns true if updated, false if not found
  */
 export function updateTestResultStatus(id: number, status: string): boolean {
-  const result = executeWhitelistedQuery<{ changes: number }>(
+  const result = executeWhitelistedQuery(
     'update-test-result',
     [status, id]
-  );
+  ) as { changes: number };
   return result.changes > 0;
 }
