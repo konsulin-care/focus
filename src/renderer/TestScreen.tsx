@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { StimulusType } from './types/electronAPI';
-import { SubjectInfo, AttentionMetrics } from './types/trial';
-import { useTestPhase, type TestPhase } from './hooks/useTestPhase';
+import { SubjectInfo } from './types/trial';
+import { useTestPhase } from './hooks/useTestPhase';
 import { useTestEvents } from './hooks/useTestEvents';
 import { useTestInput } from './hooks/useTestInput';
 import { useAttentionMetrics } from './hooks/useAttentionMetrics';
@@ -74,10 +74,11 @@ function TestScreen() {
     setPhase('completed');
   }, [calculateMetrics, setPhase]);
 
-  const handleEmailCaptureCancel = useCallback(() => {
+  const handleEmailCaptureSkip = useCallback((subjectInfo: SubjectInfo) => {
+    calculateMetrics(subjectInfo);
     setShowEmailCapture(false);
     setPhase('completed');
-  }, [setPhase]);
+  }, [calculateMetrics, setPhase]);
 
   return (
     <div className="h-screen flex flex-col justify-center items-center bg-black">
@@ -110,7 +111,10 @@ function TestScreen() {
 
       {/* Results summary */}
       {phase === 'completed' && !showEmailCapture && metrics && (
-        <ResultsSummary metrics={metrics} elapsedTimeMs={elapsedTimeMs} />
+        <ResultsSummary 
+          metrics={metrics} 
+          elapsedTimeMs={elapsedTimeMs}
+        />
       )}
 
       {/* Email capture form overlay */}
@@ -119,7 +123,7 @@ function TestScreen() {
           <EmailCaptureForm
             testData={testDataJson}
             onSuccess={handleEmailCaptureSuccess}
-            onCancel={handleEmailCaptureCancel}
+            onSkip={handleEmailCaptureSkip}
           />
         </div>
       )}

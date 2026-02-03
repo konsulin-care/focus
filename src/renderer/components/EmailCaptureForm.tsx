@@ -4,10 +4,10 @@ import { SubjectInfo } from '../types/trial';
 export interface EmailCaptureFormProps {
   testData: string;  // JSON string of test events
   onSuccess: (subjectInfo: SubjectInfo) => void;
-  onCancel: () => void;
+  onSkip?: (subjectInfo: SubjectInfo) => void;  // Called when user clicks Preview
 }
 
-export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCaptureFormProps) {
+export function EmailCaptureForm({ testData, onSuccess, onSkip }: EmailCaptureFormProps) {
   const [age, setAge] = useState<number>(0);
   const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
   const [email, setEmail] = useState('');
@@ -72,7 +72,7 @@ export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCapture
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Receive Your Results</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Enter your information to receive a secure link to your test results
+          Konsulin will provide a secure access to your results through email
         </p>
         
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -159,15 +159,15 @@ export function EmailCaptureForm({ testData, onSuccess, onCancel }: EmailCapture
           disabled={!consent || !email || !gender || age < 0 || age > 120 || isSubmitting}
           className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
         >
-          {isSubmitting ? 'Saving...' : 'Send My Results'}
+          {isSubmitting ? 'Saving...' : 'Save and Preview'}
         </button>
         <button
           type="button"
-          onClick={onCancel}
-          disabled={isSubmitting}
+          onClick={() => onSkip?.(subjectInfo)}
+          disabled={!gender || age < 0 || age > 120 || isSubmitting}
           className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
         >
-          Skip
+          Preview
         </button>
       </div>
       
