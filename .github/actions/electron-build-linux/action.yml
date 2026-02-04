@@ -21,7 +21,7 @@ runs:
           libdrm2 \
           libgtk-3-0 \
           libgbm1 \
-          libasound2 \
+          libasound2t64 \
           libxshmfence1 \
           wget \
           ca-certificates \
@@ -34,7 +34,7 @@ runs:
       run: |
         npx electron-builder --linux AppImage \
           --config.from=package.json \
-          --config.version=${{ inputs.version }} \
+          --build-version=${{ inputs.version }} \
           --config.publish=null
       env:
         DEBUG: electron-builder

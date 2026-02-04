@@ -14,7 +14,7 @@ runs:
       run: |
         npx electron-builder --win portable \
           --config.from=package.json \
-          --config.version=${{ inputs.version }} \
+          --build-version=${{ inputs.version }} \
           --config.publish=null
       env:
         DEBUG: electron-builder
