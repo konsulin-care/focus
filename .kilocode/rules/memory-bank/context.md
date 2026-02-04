@@ -1,10 +1,60 @@
 # Current Work Focus
 
-## Project Status: Feature Complete Core Application
+## Project Status: Feature Complete Core Application with Modular Architecture
 
-The F.O.C.U.S. Assessment application has reached feature completion for the core client application. All test execution, timing precision, metrics calculation, and results display are implemented.
+The F.O.C.U.S. Assessment application has reached feature completion for the core client application with a fully modularized test engine. All test execution, timing precision, metrics calculation, and results display are implemented using a clean separation of concerns.
 
 ## Recent Changes
+
+### Test Engine Modular Refactoring (Completed)
+
+The test-engine.ts file has been completely refactored from a 431-line monolithic file into 4 modular components with clear responsibilities:
+
+**Before (Monolithic Architecture):**
+- Single file `src/main/test-engine.ts` (431 lines)
+- Mixed responsibilities: state, timing, sequence generation, response tracking, event emission
+- Module-level mutable state scattered throughout
+
+**After (Modular Architecture):**
+
+1. **TrialScheduler Class** (`src/main/trial-scheduler.ts`):
+   - Encapsulates all timing state
+   - Implements drift-corrected scheduling algorithm
+   - Manages trial state transitions
+   - Emits stimulus-change events via callback
+
+2. **TrialSequenceGenerator Module** (`src/main/trial-sequence.ts`):
+   - Pure functions for sequence generation
+   - `shuffleArray<T>()` - Fisher-Yates shuffle
+   - `generateTrialSequence()` - Two-half ratio generation
+   - Interface for dependency injection
+
+3. **ResponseTracker Class** (`src/main/response-tracker.ts`):
+   - Manages pending response windows
+   - Validates responses against stimulus onset
+   - Detects anticipatory responses (configurable threshold)
+   - Tracks commission/omission errors
+   - Handles multiple responses per trial
+
+4. **TestEngine** (`src/main/test-engine.ts`):
+   - Reduced to orchestrator role only
+   - Creates and coordinates TrialScheduler and ResponseTracker
+   - Maintains public API (`startTest`, `stopTest`, `recordResponse`, etc.)
+   - Owns window reference for event emission
+
+### Bug Fix: Response Tracking (Completed)
+
+During the refactoring, a critical bug was discovered and fixed:
+
+**Issue:** Clicks on target stimuli were not being recorded as hits. Instead, responses were incorrectly matched to previous non-target trials.
+
+**Root Cause:** In `test-engine.ts`, the code used `pendingResponses[0]` (oldest pending trial) instead of the correct trial matching the current stimulus.
+
+**Fix Applied:** Changed to `pendingResponses[pendingResponses.length - 1]` to correctly match responses to the most recent pending stimulus.
+
+**Result:**
+- Before fix: 3 targets → 1 hit, 2 omissions (incorrect)
+- After fix: 3 targets → 3 hits, 0 omissions (correct)
 
 ### Test Engine & Timing (Completed)
 - High-precision test engine with `process.hrtime.bigint()` nanosecond timestamps
@@ -73,10 +123,29 @@ The F.O.C.U.S. Assessment application has reached feature completion for the cor
 
 ## Source Code Paths
 
-- Main process: `src/main/main.ts`, `src/main/test-engine.ts`, `src/main/timing.ts`
+### Main Process (Test Engine)
+- Test engine orchestrator: `src/main/test-engine.ts`
+- Trial timing: `src/main/trial-scheduler.ts`
+- Sequence generation: `src/main/trial-sequence.ts`
+- Response validation: `src/main/response-tracker.ts`
+- High-precision timing: `src/main/timing.ts`
+- IPC handlers: `src/main/ipc-handlers.ts`
+- Database: `src/main/database.ts`
+- Types: `src/main/types.ts`
+
+### Preload & Window
 - Preload script: `src/preload/preload.ts`
-- React UI: `src/renderer/App.tsx`, `src/renderer/TestScreen.tsx`
+- Window management: `src/main/window.ts`
+
+### React UI
+- Main app: `src/renderer/App.tsx`
+- Test screen: `src/renderer/TestScreen.tsx`
 - Test hooks: `src/renderer/hooks/useTestEvents.ts`, `src/renderer/hooks/useTestPhase.ts`, `src/renderer/hooks/useTestInput.ts`, `src/renderer/hooks/useAttentionMetrics.ts`
 - Results components: `src/renderer/components/Results/`
 - Stimulus components: `src/renderer/components/Stimulus/`
-- Configuration: `vite.config.mjs`, `package.json`
+- Test components: `src/renderer/components/Test/`
+
+### Configuration & Build
+- Vite config: `vite.config.mjs`
+- Package: `package.json`
+- Plans: `plans/test-engine-refactoring-plan.md`

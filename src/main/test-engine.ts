@@ -3,128 +3,28 @@
  * 
  * Test state machine with high-precision timing for stimulus presentation
  * and response capture.
+ * 
+ * Phase 3: Delegates response validation to ResponseTracker class.
  */
 
 import { BrowserWindow } from 'electron';
 import { 
   TestEvent, 
-  StimulusType, 
-  TestEventType 
 } from './types';
 import { getTestConfig } from './test-config';
 import { getHighPrecisionTime } from './timing';
+import { TrialScheduler } from './trial-scheduler';
+import { generateTrialSequence } from './trial-sequence';
+import { ResponseTracker } from './response-tracker';
 
 // ===========================================
-// Test State
+// Window Reference
 // ===========================================
-
-/**
- * Whether a test is currently running.
- */
-export let testRunning = false;
-
-/**
- * Array of recorded test events.
- */
-export let testEvents: TestEvent[] = [];
-
-/**
- * Pending responses for the current stimulus window.
- */
-const pendingResponses: Array<{
-  trialIndex: number;
-  stimulusType: StimulusType;
-  onsetTimestampNs: bigint;
-  expectedResponse: boolean;
-}> = [];
-
-/**
- * Test start timestamp in nanoseconds.
- */
-let testStartTimeNs: bigint = 0n;
-
-/**
- * Current trial index (0-based).
- */
-let currentTrialIndex = 0;
-
-/**
- * Current stimulus type.
- */
-let currentStimulusType: StimulusType = 'target';
 
 /**
  * Reference to the main window for sending events.
  */
 let mainWindow: BrowserWindow | null = null;
-
-/**
- * Response count per trial (for detecting multiple responses).
- */
-const responseCountPerTrial: Map<number, number> = new Map();
-
-// ===========================================
-// Trial Sequence Generation
-// ===========================================
-
-/**
- * Fisher-Yates shuffle algorithm for randomizing arrays in-place.
- * 
- * @param array - Array to shuffle
- */
-function shuffleArray<T>(array: T[]): void {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-/**
- * Generate randomized trial sequence with two-half ratio system.
- * First half: 22.5% targets, 77.5% non-targets
- * Second half: 77.5% targets, 22.5% non-targets
- * 
- * @param totalTrials - Total number of trials
- * @returns Array of stimulus types for the full sequence
- */
-export function generateTrialSequence(totalTrials: number): StimulusType[] {
-  const halfTrials = totalTrials / 2;
-  
-  // First half: 22.5% targets
-  const firstHalfTargets = Math.round(halfTrials * 0.225);
-  const firstHalfNonTargets = halfTrials - firstHalfTargets;
-  
-  // Second half: 77.5% targets
-  const secondHalfTargets = Math.round(halfTrials * 0.775);
-  const secondHalfNonTargets = halfTrials - secondHalfTargets;
-  
-  // Build arrays
-  const firstHalf: StimulusType[] = [
-    ...Array(firstHalfTargets).fill('target'),
-    ...Array(firstHalfNonTargets).fill('non-target'),
-  ];
-  
-  const secondHalf: StimulusType[] = [
-    ...Array(secondHalfTargets).fill('target'),
-    ...Array(secondHalfNonTargets).fill('non-target'),
-  ];
-  
-  // Shuffle each half independently to preserve ratio within each half
-  shuffleArray(firstHalf);
-  shuffleArray(secondHalf);
-  
-  // Combine: first half + second half
-  return [...firstHalf, ...secondHalf];
-}
-
-/**
- * Current trial sequence (generated at test start).
- */
-let trialSequence: StimulusType[] = [];
-
-// ===========================================
-// Window Reference
-// ===========================================
 
 /**
  * Set the main window reference for sending events to renderer.
@@ -145,146 +45,41 @@ export function getMainWindow(): BrowserWindow | null {
 }
 
 // ===========================================
-// Event Emission
+// Test Orchestrator
 // ===========================================
 
 /**
- * Helper function to emit stimulus change to renderer.
+ * ResponseTracker instance for managing response validation.
+ */
+let responseTracker: ResponseTracker | null = null;
+
+/**
+ * TrialScheduler instance for managing test timing.
+ */
+let scheduler: TrialScheduler | null = null;
+
+/**
+ * Create a new TrialScheduler instance with configured callbacks.
  * 
- * @param trialIndex - Trial index
- * @param stimulusType - Type of stimulus
- * @param eventType - Type of event
+ * @returns TrialScheduler instance
  */
-function emitStimulusChange(
-  trialIndex: number, 
-  stimulusType: StimulusType, 
-  eventType: TestEventType
-): void {
-  if (!mainWindow) return;
-  
-  const timestampNs = getHighPrecisionTime().toString();
-  
-  const event: TestEvent = {
-    trialIndex,
-    stimulusType,
-    timestampNs,
-    eventType,
-  };
-  
-  testEvents.push(event);
-  mainWindow.webContents.send('stimulus-change', event);
-}
-
-// ===========================================
-// Test Sequence
-// ===========================================
-
-/**
- * Main stimulus sequence runner using precise timing with drift correction.
- */
-function runStimulusSequence(): void {
+function createScheduler(): TrialScheduler {
   const config = getTestConfig();
   
-  if (!testRunning || currentTrialIndex >= config.totalTrials) {
-    completeTest();
-    return;
-  }
+  // Create ResponseTracker for this test session
+  responseTracker = new ResponseTracker(config);
   
-  // Check if this is the first trial - emit buffer-start event
-  if (currentTrialIndex === 0) {
-    emitStimulusChange(-1, 'target', 'buffer-start');
-    
-    // Schedule first stimulus after buffer period with drift correction
-    const bufferEndTime = testStartTimeNs + BigInt(config.bufferMs) * 1_000_000n;
-    const now = getHighPrecisionTime();
-    const delayMs = Math.max(0, Number(bufferEndTime - now) / 1_000_000);
-    
-    setTimeout(() => {
-      if (!testRunning) return;
-      presentStimulus();
-    }, delayMs);
-    return;
-  }
-  
-  // For subsequent trials, use drift-corrected scheduling with absolute timestamps
-  const trialStartTime = testStartTimeNs + 
-    BigInt(config.bufferMs) * 1_000_000n +
-    BigInt(currentTrialIndex * (config.stimulusDurationMs + config.interstimulusIntervalMs)) * 1_000_000n;
-  const now = getHighPrecisionTime();
-  const delayMs = Math.max(0, Number(trialStartTime - now) / 1_000_000);
-  
-  setTimeout(() => {
-    if (!testRunning) return;
-    presentStimulus();
-  }, delayMs);
-}
-
-/**
- * Present a single stimulus with drift-corrected timing.
- */
-function presentStimulus(): void {
-  const config = getTestConfig();
-  
-  if (!testRunning || currentTrialIndex >= config.totalTrials) {
-    completeTest();
-    return;
-  }
-  
-  // Determine stimulus type from pre-generated sequence
-  const isTarget = trialSequence[currentTrialIndex] === 'target';
-  currentStimulusType = isTarget ? 'target' : 'non-target';
-  const expectedResponse = isTarget;
-  
-  // Record stimulus onset
-  emitStimulusChange(currentTrialIndex, currentStimulusType, 'stimulus-onset');
-  
-  // Store pending response for this trial
-  pendingResponses.push({
-    trialIndex: currentTrialIndex,
-    stimulusType: currentStimulusType,
-    onsetTimestampNs: getHighPrecisionTime(),
-    expectedResponse,
+  return new TrialScheduler(config, responseTracker, (event) => {
+    // Emit stimulus change to renderer
+    if (mainWindow) {
+      mainWindow.webContents.send('stimulus-change', event);
+    }
+  }, (data) => {
+    // Handle test completion
+    if (mainWindow) {
+      mainWindow.webContents.send('test-complete', data);
+    }
   });
-  
-  // Calculate absolute timing targets using drift-corrected scheduling
-  const now = Number(getHighPrecisionTime() - testStartTimeNs) / 1_000_000;
-  const trialStartTime = config.bufferMs + currentTrialIndex * (config.stimulusDurationMs + config.interstimulusIntervalMs);
-  const stimulusEndTime = trialStartTime + config.stimulusDurationMs;
-  const nextTrialStartTime = stimulusEndTime + config.interstimulusIntervalMs;
-  
-  const offsetDelay = Math.max(0, stimulusEndTime - now);
-  setTimeout(() => {
-    if (!testRunning) return;
-    
-    const currentNow = Number(getHighPrecisionTime() - testStartTimeNs) / 1_000_000;
-    emitStimulusChange(currentTrialIndex, currentStimulusType, 'stimulus-offset');
-    
-    const remainingDelay = Math.max(0, nextTrialStartTime - currentNow);
-    setTimeout(() => {
-      if (!testRunning) return;
-      currentTrialIndex++;
-      runStimulusSequence();
-    }, remainingDelay);
-  }, offsetDelay);
-}
-
-/**
- * Complete the test and send results to renderer.
- */
-function completeTest(): void {
-  testRunning = false;
-  console.log(`Test completed. Total events: ${testEvents.length}`);
-  
-  const endTimeNs = getHighPrecisionTime();
-  const elapsedTimeNs = endTimeNs - testStartTimeNs;
-  
-  if (mainWindow) {
-    mainWindow.webContents.send('test-complete', { 
-      events: testEvents, 
-      startTimeNs: testStartTimeNs.toString(), 
-      elapsedTimeNs: elapsedTimeNs.toString() 
-    });
-  }
 }
 
 // ===========================================
@@ -297,28 +92,25 @@ function completeTest(): void {
  * @returns true if test started successfully
  */
 export function startTest(): boolean {
-  if (testRunning) {
+  if (scheduler?.isRunning()) {
     console.warn('Test already running, ignoring start request');
     return false;
   }
   
   console.log('Starting F.O.C.U.S. Assessment test sequence...');
   
-  // Reset test state
-  testRunning = true;
-  testEvents = [];
-  pendingResponses.length = 0;
-  currentTrialIndex = 0;
-  currentStimulusType = 'target';
-  testStartTimeNs = getHighPrecisionTime();
-  responseCountPerTrial.clear();
+  // Reset response tracker
+  if (responseTracker) {
+    responseTracker.clear();
+  }
   
   // Generate randomized trial sequence with two-half ratio
   const config = getTestConfig();
-  trialSequence = generateTrialSequence(config.totalTrials);
+  const sequence = generateTrialSequence(config.totalTrials);
   
-  // Start the stimulus sequence
-  runStimulusSequence();
+  // Create and start scheduler
+  scheduler = createScheduler();
+  scheduler.start(sequence, getHighPrecisionTime());
   
   return true;
 }
@@ -329,13 +121,14 @@ export function startTest(): boolean {
  * @returns true if test was stopped
  */
 export function stopTest(): boolean {
-  if (!testRunning) {
+  if (!scheduler?.isRunning()) {
     return false;
   }
   
   console.log('Stopping F.O.C.U.S. Assessment test sequence...');
-  testRunning = false;
-  completeTest();
+  scheduler.stop();
+  scheduler = null;
+  responseTracker = null;
   
   return true;
 }
@@ -346,20 +139,16 @@ export function stopTest(): boolean {
  * @param responded - Whether the user responded
  */
 export function recordResponse(responded: boolean): void {
+  if (!scheduler || !responseTracker) {
+    return;
+  }
+  
   const responseTimestampNs = getHighPrecisionTime();
+  const pendingResponses = responseTracker.getPendingResponses();
   
-  // Use ISI as the valid response window (allows responses up to next stimulus)
-  const config = getTestConfig();
-  
-  // Find pending response that hasn't been answered yet
-  // Valid if response is within the interstimulus interval from onset
-  const pendingIndex = pendingResponses.findIndex(pr => {
-    const elapsedMs = Number(responseTimestampNs - pr.onsetTimestampNs) / 1_000_000;
-    return elapsedMs < config.interstimulusIntervalMs;
-  });
-  
-  if (pendingIndex === -1) {
-    // No valid pending response - this is a false positive (commission error)
+  if (pendingResponses.length === 0) {
+    // No pending responses - this shouldn't happen normally
+    // Check if this is a commission error (response outside any valid window)
     const event: TestEvent = {
       trialIndex: -1,
       stimulusType: 'non-target',
@@ -370,45 +159,56 @@ export function recordResponse(responded: boolean): void {
       responseCount: 1,
       isAnticipatory: false,
     };
-    testEvents.push(event);
+    scheduler.addEvent(event);
     return;
   }
   
-  const pending = pendingResponses[pendingIndex];
+  // Use the most recent pending response (for the current trial)
+  const pending = pendingResponses[pendingResponses.length - 1];
   
-  // Calculate response time from stimulus onset
-  const responseTimeMs = Number(responseTimestampNs - pending.onsetTimestampNs) / 1_000_000;
+  const result = responseTracker.processResponse(
+    responseTimestampNs,
+    responded,
+    pending.stimulusType,
+    pending.trialIndex
+  );
   
-  // Determine if response is anticipatory (<150ms from onset)
-  const isAnticipatory = responseTimeMs < 150;
+  if (!result) {
+    // Duplicate response, already counted
+    return;
+  }
   
-  // Increment response count for this trial
-  const currentCount = responseCountPerTrial.get(pending.trialIndex) || 0;
-  responseCountPerTrial.set(pending.trialIndex, currentCount + 1);
-  
-  // Determine if response was correct
-  const isCorrect = pending.expectedResponse === responded;
-  
-  // Remove from pending responses
-  pendingResponses.splice(pendingIndex, 1);
-  
-  // Record the response event with timing data
-  const event: TestEvent = {
-    trialIndex: pending.trialIndex,
-    stimulusType: pending.stimulusType,
-    timestampNs: responseTimestampNs.toString(),
-    eventType: 'response',
-    responseCorrect: isCorrect,
-    responseTimeMs,
-    responseCount: currentCount + 1,
-    isAnticipatory,
-  };
-  
-  testEvents.push(event);
-  
-  // Send to renderer for UI feedback
-  if (mainWindow) {
-    mainWindow.webContents.send('stimulus-change', event);
+  if (result.isCommissionError) {
+    // Commission error - response outside valid window
+    const event: TestEvent = {
+      trialIndex: -1,
+      stimulusType: 'non-target',
+      timestampNs: responseTimestampNs.toString(),
+      eventType: 'response',
+      responseCorrect: false,
+      responseTimeMs: 0,
+      responseCount: result.responseCount,
+      isAnticipatory: false,
+    };
+    scheduler.addEvent(event);
+  } else {
+    // Valid response
+    const event: TestEvent = {
+      trialIndex: result.trialIndex,
+      stimulusType: result.stimulusType,
+      timestampNs: responseTimestampNs.toString(),
+      eventType: 'response',
+      responseCorrect: result.responseCorrect,
+      responseTimeMs: result.responseTimeMs,
+      responseCount: result.responseCount,
+      isAnticipatory: result.isAnticipatory,
+    };
+    scheduler.addEvent(event);
+    
+    // Send to renderer for UI feedback
+    if (mainWindow) {
+      mainWindow.webContents.send('stimulus-change', event);
+    }
   }
 }
 
@@ -418,7 +218,7 @@ export function recordResponse(responded: boolean): void {
  * @returns Array of test events
  */
 export function getTestEvents(): TestEvent[] {
-  return testEvents;
+  return scheduler?.getEvents() || [];
 }
 
 /**
@@ -427,5 +227,5 @@ export function getTestEvents(): TestEvent[] {
  * @returns Number of events
  */
 export function getEventCount(): number {
-  return testEvents.length;
+  return scheduler?.getEvents().length || 0;
 }
