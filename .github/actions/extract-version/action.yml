@@ -1,5 +1,5 @@
 name: 'Extract Version'
-description: 'Extract version from PR commits and verify on merge commit'
+description: 'Extract version from PR commits and auto-tag merge commit'
 
 inputs:
   base_sha:
@@ -22,56 +22,89 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Extract version from PR commits and verify on merge commit
+    - name: Extract version from PR commits and auto-tag merge commit
       id: version
       shell: bash
       run: |
+        # Enable error handling - exit on error, undefined variable, and pipe failure
+        set -euo pipefail
+
         # Get the merge commit SHA
-        MERGE_SHA=$(git rev-parse HEAD)
-        echo "Merge commit SHA: $MERGE_SHA"
+        readonly MERGE_SHA="$(git rev-parse HEAD)"
+        echo "Merge commit SHA: ${MERGE_SHA}"
 
         # Get PR commit range
-        BASE_SHA="${{ inputs.base_sha }}"
-        HEAD_SHA="${{ inputs.head_sha }}"
-        echo "PR range: $BASE_SHA..$HEAD_SHA"
+        readonly BASE_SHA="${{ inputs.base_sha }}"
+        readonly HEAD_SHA="${{ inputs.head_sha }}"
+        echo "PR range: ${BASE_SHA}..${HEAD_SHA}"
+
+        # Check if merge commit has a version tag; prioritizes vX.Y.Z over vX.Y.Z-release
+        check_merge_commit_tag() {
+          local tags
+          tags="$(git tag --points-at "${MERGE_SHA}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v '\-release$' | head -1 || true)"
+          echo "${tags}"
+        }
+
+        # Function to find version tag in PR commits
+        find_version_in_pr() {
+          local pr_commits version
+          pr_commits="$(git log --format="%H" "${BASE_SHA}..${HEAD_SHA}")"
+          version=""
+          for commit in ${pr_commits}; do
+            local tags
+            tags="$(git tag --points-at "${commit}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
+            if [[ -n "${tags}" ]]; then
+              version="${tags#v}"
+              echo "Found version tag v${version} on commit ${commit}" >&2
+              break
+            fi
+          done
+          echo "${version}"
+        }
+
+        # Function to auto-tag merge commit
+        auto_tag_merge_commit() {
+          local version="$1"
+          echo "Tagging merge commit ${MERGE_SHA} with v${version}..."
+
+          # Configure git user for tag (required by GitHub Actions)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create and push tag to merge commit
+          git tag -a "v${version}-release" -m "Release v${version}" "${MERGE_SHA}"
+          git push origin "v${version}-release"
+
+          echo "Successfully tagged merge commit with v${version}"
+        }
 
         # Check if merge commit already has a version tag
-        MERGE_TAGS=$(git tag --points-at "$MERGE_SHA" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || echo "")
-        if [ -n "$MERGE_TAGS" ]; then
-          VERSION=${MERGE_TAGS#v}
-          echo "Found version tag on merge commit: v$VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "is_release=true" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+        merge_tags="$(check_merge_commit_tag)"
+        if [[ -n "${merge_tags}" ]]; then
+          readonly VERSION="${merge_tags#v}"
+          echo "Found version tag on merge commit: v${VERSION}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "is_release=true" >> "${GITHUB_OUTPUT}"
+          echo "Version: ${VERSION}"
           echo "Is Release: true"
           exit 0
         fi
 
-        # Search for version tag in PR commits (in reverse order - newest first)
+        # Search for version tag in PR commits
         echo "Searching for version tag in PR commits..."
-        PR_COMMITS=$(git log --format="%H" "$BASE_SHA..$HEAD_SHA")
+        readonly VERSION="$(find_version_in_pr)"
 
-        VERSION=""
-        for commit in $PR_COMMITS; do
-          # Get tags pointing to this commit
-          TAGS=$(git tag --points-at "$commit" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || echo "")
-          if [ -n "$TAGS" ]; then
-            VERSION=${TAGS#v}
-            echo "Found version tag v$VERSION on commit $commit"
-            break
-          fi
-        done
-
-        if [ -n "$VERSION" ]; then
-          echo "Error: Version tag v$VERSION exists in PR commits but NOT on merge commit"
-          echo "Please tag the merge commit before merging:"
-          echo "  git tag -a v$VERSION -m \"Release v$VERSION\" $MERGE_SHA"
-          echo "  git push origin v$VERSION"
-          exit 1
+        if [[ -n "${VERSION}" ]]; then
+          # Auto-tag the merge commit
+          auto_tag_merge_commit "${VERSION}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "is_release=true" >> "${GITHUB_OUTPUT}"
+          echo "Version: ${VERSION}"
+          echo "Is Release: true"
         else
           echo "No version tag found in PR commits"
-          echo "version=" >> $GITHUB_OUTPUT
-          echo "is_release=false" >> $GITHUB_OUTPUT
+          echo "version=" >> "${GITHUB_OUTPUT}"
+          echo "is_release=false" >> "${GITHUB_OUTPUT}"
           echo "Version: (none)"
           echo "Is Release: false"
         fi
