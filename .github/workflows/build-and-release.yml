@@ -60,7 +60,7 @@ jobs:
       - name: Display build information
         run: |
           echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Is Release: ${{ steps.version.outputs.is_release }}"
+          echo "Is Release: ${{ needs.prepare.outputs.is_release }}"
           echo "GitHub Ref: ${{ github.ref }}"
           echo "Event: ${{ github.event_name }}"
 
@@ -70,221 +70,48 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     container: ubuntu:latest
-    outputs:
-      artifact_name: ${{ steps.naming.outputs.artifact_name }}
-    
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout and setup
+        uses: ./.github/actions/electron-build-common
+      
+      - name: Build Linux artifact
+        uses: ./.github/actions/electron-build-linux
         with:
-          persist-credentials: false
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install system dependencies
-        run: |
-          apt-get update
-          apt-get install -y \
-            libnss3 \
-            libatk1.0-0 \
-            libatk-bridge2.0-0 \
-            libcups2 \
-            libdrm2 \
-            libgtk-3-0 \
-            libgbm1 \
-            libasound2 \
-            libxshmfence1 \
-            wget \
-            ca-certificates \
-            fonts-liberation \
-            libappindicator3-1 \
-            xdg-utils
-      
-      - name: Install npm dependencies
-        run: npm ci
-      
-      - name: Rebuild native modules for Electron
-        run: npm run electron-rebuild
-      
-      - name: Build TypeScript
-        run: npm run build:main
-      
-      - name: Build Renderer
-        run: npm run build:renderer
-      
-      - name: Set artifact name
-        id: naming
-        run: |
-          ARTIFACT_NAME="focus-v${{ needs.prepare.outputs.version }}-linux"
-          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-      
-      - name: Build AppImage
-        run: |
-          npx electron-builder --linux AppImage \
-            --config.from=package.json \
-            --config.version=${{ needs.prepare.outputs.version }} \
-            --config.publish=null
-        env:
-          DEBUG: electron-builder
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-      
-      - name: Generate SHA256 checksum
-        run: |
-          cd release
-          sha256sum focus-v${{ needs.prepare.outputs.version }}-linux.AppImage > focus-v${{ needs.prepare.outputs.version }}-linux.AppImage.sha256sum
-          cat focus-v${{ needs.prepare.outputs.version }}-linux.AppImage.sha256sum
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: focus-linux-appimage
-          path: release/
-          retention-days: 7
-          compression-level: 9
+          version: ${{ env.VERSION }}
 
   # Build for macOS (DMG)
   build-macos:
     name: Build macOS (DMG)
     needs: prepare
     runs-on: macos-latest
-    outputs:
-      artifact_name: ${{ steps.naming.outputs.artifact_name }}
-    
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout and setup
+        uses: ./.github/actions/electron-build-common
+      
+      - name: Build macOS artifact
+        uses: ./.github/actions/electron-build-macos
         with:
-          persist-credentials: false
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install npm dependencies
-        run: npm ci
-      
-      - name: Rebuild native modules for Electron
-        run: npm run electron-rebuild
-      
-      - name: Build TypeScript
-        run: npm run build:main
-      
-      - name: Build Renderer
-        run: npm run build:renderer
-      
-      - name: Set artifact name
-        id: naming
-        run: |
-          ARTIFACT_NAME="focus-v${{ needs.prepare.outputs.version }}-macOS"
-          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-      
-      - name: Build DMG
-        run: |
-          npx electron-builder --mac dmg \
-            --config.from=package.json \
-            --config.version=${{ needs.prepare.outputs.version }} \
-            --config.publish=null
-        env:
-          DEBUG: electron-builder
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          # Code signing configuration (for production, set these secrets)
-          # CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
-          # CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-      
-      - name: Generate SHA256 checksum
-        run: |
-          cd release
-          sha256sum focus-v${{ needs.prepare.outputs.version }}-macOS.dmg > focus-v${{ needs.prepare.outputs.version }}-macOS.dmg.sha256sum
-          cat focus-v${{ needs.prepare.outputs.version }}-macOS.dmg.sha256sum
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: focus-macos-dmg
-          path: release/
-          retention-days: 7
-          compression-level: 9
+          version: ${{ env.VERSION }}
 
   # Build for Windows (EXE portable)
   build-windows:
     name: Build Windows (EXE)
     needs: prepare
     runs-on: windows-latest
-    outputs:
-      artifact_name: ${{ steps.naming.outputs.artifact_name }}
-    
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout and setup
+        uses: ./.github/actions/electron-build-common
+      
+      - name: Build Windows artifact
+        uses: ./.github/actions/electron-build-windows
         with:
-          persist-credentials: false
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install Wine for Windows builds
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: |
-            # Install Wine dependencies
-            apt-get update
-            apt-get install -y wine64 wine32 winbind cabextract wget
-            # Enable 32-bit support
-            dpkg --add-architecture i386
-      
-      - name: Install npm dependencies
-        run: npm ci
-      
-      - name: Rebuild native modules for Electron
-        run: npm run electron-rebuild
-      
-      - name: Build TypeScript
-        run: npm run build:main
-      
-      - name: Build Renderer
-        run: npm run build:renderer
-      
-      - name: Set artifact name
-        id: naming
-        run: |
-          $ARTIFACT_NAME = "focus-v${{ needs.prepare.outputs.version }}-windows.exe"
-          echo "artifact_name=$ARTIFACT_NAME" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-      
-      - name: Build Windows EXE
-        run: |
-          npx electron-builder --win portable \
-            --config.from=package.json \
-            --config.version=${{ needs.prepare.outputs.version }} \
-            --config.publish=null
-        env:
-          DEBUG: electron-builder
-          # Code signing configuration (for production, set these secrets)
-          # CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
-          # CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # CSC_FILES_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
-      
-      - name: Generate SHA256 checksum
-        run: |
-          cd release
-          CertUtil -hashfile focus-v${{ needs.prepare.outputs.version }}-windows.exe SHA256 | Select-Object -Skip 1 > focus-v${{ needs.prepare.outputs.version }}-windows.exe.sha256sum
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: focus-windows-exe
-          path: release/
-          retention-days: 7
+          version: ${{ env.VERSION }}
 
   # Combine and create GitHub release
   create-release:

@@ -1,0 +1,49 @@
+name: 'Electron Build Windows'
+description: 'Build Electron app for Windows (EXE portable)'
+
+inputs:
+  version:
+    description: 'Version string for artifact naming'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Wine for Windows builds
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        command: |
+          # Install Wine dependencies
+          apt-get update
+          apt-get install -y wine64 wine32 winbind cabextract wget
+          # Enable 32-bit support
+          dpkg --add-architecture i386
+    
+    - name: Build Windows EXE
+      shell: bash
+      run: |
+        npx electron-builder --win portable \
+          --config.from=package.json \
+          --config.version=${{ inputs.version }} \
+          --config.publish=null
+      env:
+        DEBUG: electron-builder
+        # Code signing configuration (for production, set these secrets)
+        # CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
+        # CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        # CSC_FILES_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
+    
+    - name: Generate SHA256 checksum
+      shell: bash
+      run: |
+        cd release
+        CertUtil -hashfile focus-v${{ inputs.version }}-windows.exe SHA256 | Select-Object -Skip 1 > focus-v${{ inputs.version }}-windows.exe.sha256sum
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: focus-windows-exe
+        path: release/
+        retention-days: 7

@@ -1,0 +1,56 @@
+name: 'Electron Build Linux'
+description: 'Build Electron app for Linux (AppImage)'
+
+inputs:
+  version:
+    description: 'Version string for artifact naming'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        apt-get update
+        apt-get install -y \
+          libnss3 \
+          libatk1.0-0 \
+          libatk-bridge2.0-0 \
+          libcups2 \
+          libdrm2 \
+          libgtk-3-0 \
+          libgbm1 \
+          libasound2 \
+          libxshmfence1 \
+          wget \
+          ca-certificates \
+          fonts-liberation \
+          libappindicator3-1 \
+          xdg-utils
+    
+    - name: Build AppImage
+      shell: bash
+      run: |
+        npx electron-builder --linux AppImage \
+          --config.from=package.json \
+          --config.version=${{ inputs.version }} \
+          --config.publish=null
+      env:
+        DEBUG: electron-builder
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+    
+    - name: Generate SHA256 checksum
+      shell: bash
+      run: |
+        cd release
+        sha256sum focus-v${{ inputs.version }}-linux.AppImage > focus-v${{ inputs.version }}-linux.AppImage.sha256sum
+        cat focus-v${{ inputs.version }}-linux.AppImage.sha256sum
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: focus-linux-appimage
+        path: release/
+        retention-days: 7
+        compression-level: 9

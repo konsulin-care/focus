@@ -1,0 +1,39 @@
+name: 'Electron Build macOS'
+description: 'Build Electron app for macOS (DMG)'
+
+inputs:
+  version:
+    description: 'Version string for artifact naming'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build DMG
+      shell: bash
+      run: |
+        npx electron-builder --mac dmg \
+          --config.from=package.json \
+          --config.version=${{ inputs.version }} \
+          --config.publish=null
+      env:
+        DEBUG: electron-builder
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+        # Code signing configuration (for production, set these secrets)
+        # CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
+        # CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+    
+    - name: Generate SHA256 checksum
+      shell: bash
+      run: |
+        cd release
+        sha256sum focus-v${{ inputs.version }}-macOS.dmg > focus-v${{ inputs.version }}-macOS.dmg.sha256sum
+        cat focus-v${{ inputs.version }}-macOS.dmg.sha256sum
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: focus-macos-dmg
+        path: release/
+        retention-days: 7
+        compression-level: 9

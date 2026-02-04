@@ -1,0 +1,38 @@
+name: 'Electron Build Common'
+description: 'Common build steps for Electron app on any platform'
+
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+    
+    - name: Install npm dependencies
+      shell: bash
+      run: npm ci
+    
+    - name: Rebuild native modules for Electron
+      shell: bash
+      run: npm run electron-rebuild
+    
+    - name: Build TypeScript
+      shell: bash
+      run: npm run build:main
+    
+    - name: Build Renderer
+      shell: bash
+      run: npm run build:renderer
