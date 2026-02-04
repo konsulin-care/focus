@@ -42,14 +42,19 @@ jobs:
           # Only set version for tag refs, empty for branch pushes
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "is_release=true" >> $GITHUB_OUTPUT
+            IS_RELEASE=true
           else
-            echo "version=" >> $GITHUB_OUTPUT
-            echo "is_release=false" >> $GITHUB_OUTPUT
+            VERSION=""
+            IS_RELEASE=false
           fi
-          echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Is Release: ${{ steps.version.outputs.is_release }}"
+          
+          # Write to GITHUB_OUTPUT for downstream steps
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
+          
+          # Echo for logging
+          echo "Version: $VERSION"
+          echo "Is Release: $IS_RELEASE"
       
       - name: Verify version format
         if: steps.version.outputs.is_release == 'true'
@@ -76,9 +81,14 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Checkout and setup
         uses: ./.github/actions/electron-build-common
-      
+
       - name: Build Linux artifact
         uses: ./.github/actions/electron-build-linux
         with:
@@ -92,9 +102,14 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Checkout and setup
         uses: ./.github/actions/electron-build-common
-      
+
       - name: Build macOS artifact
         uses: ./.github/actions/electron-build-macos
         with:
@@ -108,9 +123,14 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Checkout and setup
         uses: ./.github/actions/electron-build-common
-      
+
       - name: Build Windows artifact
         uses: ./.github/actions/electron-build-windows
         with:
