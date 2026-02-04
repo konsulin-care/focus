@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '../store';
 import type { TestConfig } from '../types/electronAPI';
 
@@ -11,6 +11,17 @@ export default function Settings() {
     bufferMs: 500,
   });
   const [status, setStatus] = useState('');
+
+  // Normalize totalTrials to ensure it's always even
+  const normalizedTotalTrials = useMemo(() => {
+    const value = config.totalTrials;
+    if (!Number.isInteger(value) || value < 2) return 2;
+    return value % 2 === 0 ? value : value + 1;
+  }, [config.totalTrials]);
+
+  // Show warning when normalization occurs (odd number was entered)
+  const showNormalizationWarning = config.totalTrials !== normalizedTotalTrials && 
+                                   config.totalTrials >= 2;
 
   useEffect(() => {
     window.electronAPI.getTestConfig()
@@ -46,7 +57,12 @@ export default function Settings() {
   };
 
   const handleChange = (field: keyof TestConfig, value: number) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
+    if (field === 'totalTrials') {
+      // Ensure positive integer, normalization to even happens via useMemo
+      setConfig(prev => ({ ...prev, [field]: Math.max(1, parseInt(String(value)) || 1) }));
+    } else {
+      setConfig(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   return (
@@ -100,12 +116,23 @@ export default function Settings() {
               </label>
               <input
                 type="number"
-                value={config.totalTrials}
+                value={normalizedTotalTrials}
                 onChange={(e) => handleChange('totalTrials', parseInt(e.target.value) || 0)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="1"
-                max="2000"
+                min="2"
+                step="2"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Must be an even number for balanced two-half test design
+              </p>
+              {showNormalizationWarning && (
+                <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Odd values are automatically rounded up to {normalizedTotalTrials}
+                </p>
+              )}
             </div>
             
             <div>

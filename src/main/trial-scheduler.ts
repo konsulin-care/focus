@@ -55,6 +55,14 @@ export class TrialScheduler {
   start(sequence: StimulusType[], startTimeNs: bigint): void {
     if (this.testRunning) return;
     
+    // Guard: Validate sequence length matches config.totalTrials
+    if (sequence.length !== this.config.totalTrials) {
+      throw new Error(
+        `Sequence length (${sequence.length}) does not match config.totalTrials (${this.config.totalTrials}). ` +
+        'Clamping or silently adding trials would skew attention metrics.'
+      );
+    }
+    
     this.testRunning = true;
     this.testEvents = [];
     this.currentTrialIndex = 0;
