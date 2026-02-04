@@ -1,16 +1,17 @@
 name: Build and Release Electron App
 
-# Workflow triggers on merged versioned pull requests to master
+# Workflow triggers on merged pull requests to master
+# Requires version tag to exist in PR and be on the merge commit
 on:
-  push:
+  pull_request:
     branches:
       - master
-    tags:
-      - 'v*.*.*'
+    types:
+      - closed
 
 # Concurrency settings to prevent concurrent builds
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 # Permissions for the workflow
@@ -19,91 +20,59 @@ permissions:
   attestations: write
   id-token: write
 
-# Job definitions using matrix strategy for parallel builds
 jobs:
   # Validate build environment and extract version
   prepare:
     name: Prepare Build
     runs-on: ubuntu-latest
+    # Only run if PR was merged
+    if: github.event.pull_request.merged == true
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      is_release: ${{ steps.version.outputs.is_release }}
+      version: ${{ steps.extract-version.outputs.version }}
+      is_release: ${{ steps.extract-version.outputs.is_release }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
-      
-      - name: Extract version from tag
-        id: version
-        run: |
-          # Extract version from git tag (remove 'v' prefix if present)
-          # Only set version for tag refs, empty for branch pushes
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-            IS_RELEASE=true
-          else
-            VERSION=""
-            IS_RELEASE=false
-          fi
-          
-          # Write to GITHUB_OUTPUT for downstream steps
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
-          
-          # Echo for logging
-          echo "Version: $VERSION"
-          echo "Is Release: $IS_RELEASE"
-      
-      - name: Verify version format
-        if: steps.version.outputs.is_release == 'true'
-        run: |
-          if ! [[ ${{ steps.version.outputs.version }} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: Version must be in format X.Y.Z (semantic versioning)"
-            exit 1
-          fi
-          echo "Build version: ${{ steps.version.outputs.version }}"
-      
+          fetch-tags: true
+
+      - name: Extract version from PR commits and verify on merge commit
+        id: extract-version
+        uses: ./.github/actions/extract-version
+        with:
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          head_sha: ${{ github.event.pull_request.head.sha }}
+
       - name: Display build information
         run: |
-          echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Is Release: ${{ steps.version.outputs.is_release }}"
-          echo "GitHub Ref: ${{ github.ref }}"
+          echo "Version: ${{ needs.prepare.outputs.version }}"
+          echo "Is Release: ${{ needs.prepare.outputs.is_release }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
           echo "Event: ${{ github.event_name }}"
 
-  # Build for Linux (AppImage)
-  build-linux:
-    name: Build Linux (AppImage)
+  # Build for all platforms using matrix strategy
+  build:
+    name: Build ${{ matrix.platform }}
     needs: prepare
-    runs-on: ubuntu-latest
-    container: ubuntu:latest
-    env:
-      VERSION: ${{ needs.prepare.outputs.version }}
-    steps:
-      - name: Install git (container)
-        run: |
-          apt-get update
-          apt-get install -y git
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Checkout and setup
-        uses: ./.github/actions/electron-build-common
-
-      - name: Build Linux artifact
-        uses: ./.github/actions/electron-build-linux
-        with:
-          version: ${{ env.VERSION }}
-
-  # Build for macOS (DMG)
-  build-macos:
-    name: Build macOS (DMG)
-    needs: prepare
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux (AppImage)
+            runs-on: ubuntu-latest
+            artifact-name: focus-linux-appimage
+            action-ref: ./.github/actions/electron-build-linux
+          - platform: macOS (DMG)
+            runs-on: macos-latest
+            artifact-name: focus-macos-dmg
+            action-ref: ./.github/actions/electron-build-macos
+          - platform: Windows (EXE)
+            runs-on: windows-latest
+            artifact-name: focus-windows-exe
+            action-ref: ./.github/actions/electron-build-windows
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
@@ -115,112 +84,34 @@ jobs:
       - name: Checkout and setup
         uses: ./.github/actions/electron-build-common
 
-      - name: Build macOS artifact
-        uses: ./.github/actions/electron-build-macos
+      - name: Build ${{ matrix.platform }} artifact
+        uses: ${{ matrix.action-ref }}
         with:
           version: ${{ env.VERSION }}
 
-  # Build for Windows (EXE portable)
-  build-windows:
-    name: Build Windows (EXE)
-    needs: prepare
-    runs-on: windows-latest
-    env:
-      VERSION: ${{ needs.prepare.outputs.version }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Checkout and setup
-        uses: ./.github/actions/electron-build-common
-
-      - name: Build Windows artifact
-        uses: ./.github/actions/electron-build-windows
-        with:
-          version: ${{ env.VERSION }}
-
-  # Combine and create GitHub release
+  # Create GitHub release
   create-release:
     name: Create GitHub Release
-    needs: [prepare, build-linux, build-macos, build-windows]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     if: needs.prepare.outputs.is_release == 'true'
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v7
+
+      - name: Prepare release and create GitHub release
+        uses: ./.github/actions/prepare-release
         with:
-          path: release
-      
-      - name: Prepare release assets
-        run: |
-          cd release
-          # Flatten artifacts from subdirectories
-          for dir in focus-*-*; do
-            if [ -d "$dir" ]; then
-              mv "$dir"/* .
-              rmdir "$dir"
-            fi
-          done
-          ls -la
-      
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: F.O.C.U.S. Attention v${{ needs.prepare.outputs.version }}
-          tag_name: v${{ needs.prepare.outputs.version }}
-          draft: false
-          prerelease: false
-          files: release/*
-          body: |
-            ## Release Notes
-            
-            ### Version ${{ needs.prepare.outputs.version }}
-            
-            This release includes pre-built binaries for:
-            - Linux (AppImage)
-            - macOS (DMG)
-            - Windows (Portable EXE)
-            
-            ### Checksums
-            
-            Verify download integrity using SHA256 checksums:
-            ```text
-            $(cat release/*.sha256sum 2>/dev/null || echo "Checksums available in individual artifact downloads")
-            ```
-            
-            ### Installation Instructions
-            
-            **Linux:** Download the AppImage, make it executable, and run.
-            ```bash
-            chmod +x focus-v${{ needs.prepare.outputs.version }}-linux.AppImage
-            ./focus-v${{ needs.prepare.outputs.version }}-linux.AppImage
-            ```
-            
-            **macOS:** Open the DMG file and drag the application to your Applications folder.
-            
-            **Windows:** Run the portable EXE file directly or move to your preferred location.
-            
-            ### Security Note
-            
-            These builds are not code-signed. On Windows and macOS, you may see security warnings. For production use, configure code signing certificates.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ needs.prepare.outputs.version }}
 
   # Summary job (always runs)
   summary:
     name: Build Summary
-    needs: [prepare, build-linux, build-macos, build-windows]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     if: always()
-    
     steps:
       - name: Build Summary
         run: |
@@ -232,11 +123,11 @@ jobs:
           echo "### Build Status" >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux (AppImage) | ${{ needs.build-linux.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS (DMG) | ${{ needs.build-macos.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows (EXE) | ${{ needs.build-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux (AppImage) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| Linux (AppImage) | success |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS (DMG) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| macOS (DMG) | success |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows (EXE) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| Windows (EXE) | success |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-v${{ needs.prepare.outputs.version }}-linux.AppImage" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-v${{ needs.prepare.outputs.version }}-macOS.dmg" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-v${{ needs.prepare.outputs.version }}-windows.exe" >> $GITHUB_STEP_SUMMARY
+          echo "- focus-${{ needs.prepare.outputs.version }}.AppImage" >> $GITHUB_STEP_SUMMARY
+          echo "- focus-${{ needs.prepare.outputs.version }}.dmg" >> $GITHUB_STEP_SUMMARY
+          echo "- focus-${{ needs.prepare.outputs.version }}.exe" >> $GITHUB_STEP_SUMMARY

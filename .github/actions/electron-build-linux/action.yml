@@ -9,11 +9,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Cache Electron Builder
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/electron
+          ~/.cache/electron-builder
+        key: ${{ runner.os }}-electron-builder-${{ hashFiles('package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-electron-builder-
+
     - name: Install system dependencies
       shell: bash
       run: |
-        apt-get update
-        apt-get install -y \
+        sudo apt-get update
+        sudo apt-get install -y \
           libnss3 \
           libatk1.0-0 \
           libatk-bridge2.0-0 \
@@ -28,25 +38,29 @@ runs:
           fonts-liberation \
           libappindicator3-1 \
           xdg-utils
-    
+
     - name: Build AppImage
       shell: bash
       run: |
-        npx electron-builder --linux AppImage \
-          --config.from=package.json \
-          --build-version=${{ inputs.version }} \
-          --config.publish=null
+        if [ -n "${{ inputs.version }}" ]; then
+          npm version ${{ inputs.version }} --no-git-tag-version
+        fi
+        npx electron-builder --linux AppImage
       env:
         DEBUG: electron-builder
         CSC_IDENTITY_AUTO_DISCOVERY: false
-    
+
     - name: Generate SHA256 checksum
       shell: bash
       run: |
         cd release
-        sha256sum focus-v${{ inputs.version }}-linux.AppImage > focus-v${{ inputs.version }}-linux.AppImage.sha256sum
-        cat focus-v${{ inputs.version }}-linux.AppImage.sha256sum
-    
+        VERSION="${{ inputs.version }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="$(node -p "require('../package.json').version")"
+        fi
+        sha256sum focus-${VERSION}.AppImage > focus-${VERSION}.AppImage.sha256sum
+        cat focus-${VERSION}.AppImage.sha256sum
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:

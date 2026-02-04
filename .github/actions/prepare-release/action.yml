@@ -1,0 +1,89 @@
+name: 'Prepare Release'
+description: 'Prepare release assets and create GitHub release'
+
+inputs:
+  version:
+    description: 'Version string'
+    required: true
+
+outputs:
+  release_notes:
+    description: 'Formatted release notes'
+    value: ${{ steps.release_notes.outputs.content }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: release
+
+    - name: Prepare release assets
+      shell: bash
+      run: |
+        cd release
+        # Flatten artifacts from subdirectories
+        for dir in focus-*-*; do
+          if [ -d "$dir" ]; then
+            mv "$dir"/* .
+            rmdir "$dir"
+          fi
+        done
+        ls -la
+
+    - name: Generate release notes
+      id: release_notes
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        CHECKSUMS=$(cat release/*.sha256sum 2>/dev/null || echo "Checksums available in individual artifact downloads")
+
+        # Read template and substitute placeholders
+        CONTENT=$(cat <<EOF
+## Release Notes
+
+### Version $VERSION
+
+This release includes pre-built binaries for:
+- Linux (AppImage)
+- macOS (DMG)
+- Windows (Portable EXE)
+
+### Checksums
+
+Verify download integrity using SHA256 checksums:
+\`\`\`text
+$CHECKSUMS
+\`\`\`
+
+### Installation Instructions
+
+**Linux:** Download the AppImage, make it executable, and run.
+\`\`\`bash
+chmod +x focus-$VERSION.AppImage
+./focus-$VERSION.AppImage
+\`\`\`
+
+**macOS:** Open the DMG file and drag the application to your Applications folder.
+
+**Windows:** Run the portable EXE file directly or move to your preferred location.
+
+### Security Note
+
+These builds are not code-signed. On Windows and macOS, you may see security warnings. For production use, configure code signing certificates.
+EOF
+)
+        echo "content=$CONTENT" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: F.O.C.U.S. Attention v${{ inputs.version }}
+        tag_name: v${{ inputs.version }}
+        draft: false
+        prerelease: false
+        files: release/*
+        body: ${{ steps.release_notes.outputs.content }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

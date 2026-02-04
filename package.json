@@ -1,6 +1,6 @@
 {
   "name": "focus",
-  "version": "1.0.0",
+  "version": "0.0.0-dev",
   "main": "dist/main/main.js",
   "dependencies": {
     "axios": "^1.6.0",
@@ -44,7 +44,7 @@
   },
   "build": {
     "appId": "com.konsulin.focus",
-    "productName": "F.O.C.U.S. Attention",
+    "productName": "F.O.C.U.S. Assessment",
     "directories": {
       "output": "release"
     },
@@ -55,18 +55,21 @@
     "win": {
       "target": [
         "portable"
-      ]
+      ],
+      "artifactName": "focus-${version}.exe"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "category": "public.app-category.medical"
+      "category": "public.app-category.medical",
+      "artifactName": "focus-${version}.dmg"
     },
     "linux": {
       "target": [
         "AppImage"
-      ]
+      ],
+      "artifactName": "focus-${version}.AppImage"
     }
   },
   "repository": {

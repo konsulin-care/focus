@@ -96,6 +96,12 @@ During the refactoring, a critical bug was discovered and fixed:
 - Validity assessment with anticipatory response detection
 - Normative reference data for ages 4-80+ by gender
 
+### Build Optimization (Completed)
+- Removed container from Linux build job (git pre-installed on ubuntu-latest)
+- Added Electron Builder cache to `electron-build-linux/action.yml`
+- Added native module build cache to `electron-build-common/action.yml`
+- Expected build time reduction: ~1-2 minutes on cache hits
+
 ### IPC Communication (Completed)
 - Test control IPC handlers (start-test, stop-test, record-response)
 - Event emission for stimulus changes and test completion
