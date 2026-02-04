@@ -38,10 +38,10 @@ runs:
         readonly HEAD_SHA="${{ inputs.head_sha }}"
         echo "PR range: ${BASE_SHA}..${HEAD_SHA}"
 
-        # Function to check if merge commit has a version tag
+        # Check if merge commit has a version tag; prioritizes vX.Y.Z over vX.Y.Z-release
         check_merge_commit_tag() {
           local tags
-          tags="$(git tag --points-at "${MERGE_SHA}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
+          tags="$(git tag --points-at "${MERGE_SHA}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v '\-release$' | head -1 || true)"
           echo "${tags}"
         }
 
