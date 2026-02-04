@@ -26,18 +26,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history for git diff
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'  # Built-in npm caching
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
@@ -45,7 +45,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Cache electron-gyp
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.electron-gyp
           key: ${{ runner.os }}-electron-gyp-${{ hashFiles('package-lock.json') }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-output
           path: dist/
