@@ -72,8 +72,8 @@ runs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create and push tag to merge commit
-          git tag -a "v${version}" -m "Release v${version}" "${MERGE_SHA}"
-          git push origin "v${version}"
+          git tag -a "v${version}-release" -m "Release v${version}" "${MERGE_SHA}"
+          git push origin "v${version}-release"
 
           echo "Successfully tagged merge commit with v${version}"
         }
