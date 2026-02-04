@@ -128,6 +128,11 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
     const tempDbPath = path.join(app.getPath('userData'), 'focus_backup.db');
     const encryptedDbPath = path.join(app.getPath('userData'), 'focus.db');
     
+    // Helper function to safely quote SQL identifiers (prevents SQL injection)
+    function quoteIdentifier(identifier: string): string {
+      return `"${identifier.replace(/"/g, '""')}"`;
+    }
+    
     // Close current connection
     db.close();
     
@@ -171,11 +176,14 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
       }
       
       // Copy data using only writable columns
-      const data = backupDb.prepare(`SELECT ${writableColumns.join(', ')} FROM ${table.name}`).all() as Record<string, unknown>[];
+      const quotedTableName = quoteIdentifier(table.name);
+      const quotedColumns = writableColumns.map(quoteIdentifier);
+      
+      const data = backupDb.prepare(`SELECT ${quotedColumns.join(', ')} FROM ${quotedTableName}`).all() as Record<string, unknown>[];
       if (data.length > 0) {
-        const columns = writableColumns.join(', ');
+        const columns = quotedColumns.join(', ');
         const placeholders = writableColumns.map(() => '?').join(', ');
-        const insertStmt = encryptedDb.prepare(`INSERT INTO ${table.name} (${columns}) VALUES (${placeholders})`);
+        const insertStmt = encryptedDb.prepare(`INSERT INTO ${quotedTableName} (${columns}) VALUES (${placeholders})`);
         
         for (const row of data) {
           const values = writableColumns.map(col => row[col]);

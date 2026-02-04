@@ -120,7 +120,7 @@ export class ResponseTracker {
       // Commission error - response outside valid window or no pending trial
       this.responseCountPerTrial.set(trialIndex, existingCount + 1);
       return {
-        trialIndex: -1,
+        trialIndex,
         stimulusType: 'non-target',
         responseCorrect: false,
         responseTimeMs: 0,
