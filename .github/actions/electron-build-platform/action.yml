@@ -70,34 +70,38 @@ runs:
         DEBUG: electron-builder
         CSC_IDENTITY_AUTO_DISCOVERY: false
 
-    # Generate SHA256 checksum (Linux/macOS)
-    - name: Generate SHA256 checksum
+    # Generate SHA256 checksum (platform-specific)
+    - name: Generate SHA256 checksum (Linux)
+      if: inputs.platform == 'linux'
       shell: bash
       run: |
         set -e
         cd release
-        VERSION="${{ inputs.version }}"
-        if [ -z "$VERSION" ]; then
-          VERSION="$(node -p "require('../package.json').version")"
+        sha256sum "focus-${VERSION}.AppImage" > "focus-${VERSION}.AppImage.sha256sum"
+        cat "focus-${VERSION}.AppImage.sha256sum"
+
+    - name: Generate SHA256 checksum (macOS)
+      if: inputs.platform == 'macos'
+      shell: bash
+      run: |
+        set -e
+        cd release
+        if command -v sha256sum &> /dev/null; then
+          sha256sum "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
+        else
+          shasum -a 256 "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
         fi
-        case "${{ inputs.platform }}" in
-          linux)
-            sha256sum focus-${VERSION}.AppImage > focus-${VERSION}.AppImage.sha256sum
-            ;;
-          macos)
-            if command -v sha256sum &> /dev/null; then
-              sha256sum focus-${VERSION}.dmg > focus-${VERSION}.dmg.sha256sum
-            else
-              shasum -a 256 focus-${VERSION}.dmg > focus-${VERSION}.dmg.sha256sum
-            fi
-            ;;
-          windows)
-            # Use PowerShell on Windows - assemble filename in bash and pass to PowerShell
-            FILENAME="focus-${VERSION}.exe"
-            powershell -Command "& { Get-FileHash -Algorithm SHA256 '${FILENAME}' | ForEach-Object { \$_.Hash } > '${FILENAME}.sha256sum' }"
-            ;;
-        esac
-        cat focus-${VERSION}.*.sha256sum
+        cat "focus-${VERSION}.dmg.sha256sum"
+
+    - name: Generate SHA256 checksum (Windows)
+      if: inputs.platform == 'windows'
+      shell: pwsh
+      run: |
+        set -e
+        cd release
+        $version = "${{ inputs.version }}"
+        $filename = "focus-${version}.exe"
+        Get-FileHash -Algorithm SHA256 $filename | ForEach-Object { $_.Hash } | Out-File -FilePath "${filename}.sha256sum"
 
     # Upload artifact
     - name: Upload artifact

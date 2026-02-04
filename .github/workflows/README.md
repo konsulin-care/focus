@@ -11,54 +11,47 @@ The pipeline automatically builds and packages the Electron application for thre
 
 ## Trigger Conditions
 
-The workflow triggers on:
+The workflow triggers on **merged pull requests to master** that include a version tag.
 
-1. **Push to master branch** - After a PR is merged
-2. **Version tag push** - When a tag matching `v*.*.*` is pushed (e.g., `v1.0.0`, `v2.3.4`)
+**Requirements**:
+1. PR must be merged to master branch
+2. Version tag (`v*.*.*`) must exist in PR and be present on merge commit
+3. Pull request must have `closed` type with `merged: true`
 
 ```yaml
 on:
-  push:
+  pull_request:
     branches:
       - master
-    tags:
-      - 'v*.*.*'
+    types:
+      - closed
 ```
 
 ## Workflow Structure
 
+The workflow uses a matrix strategy to build all platforms from a single `build` job. Platform-specific logic is handled by the `electron-build-platform` composite action.
+
 ```mermaid
 flowchart TD
-    A[prepare Job] -->|version, is_release| B[build-linux]
-    A -->|version, is_release| C[build-macos]
-    A -->|version, is_release| D[build-windows]
+    A[prepare Job<br/>Extract version] -->|version, is_release| B[build Job<br/>Matrix: linux, macos, windows]
     
-    B --> E[create-release Job<br/>tagged releases only]
-    C --> E
-    D --> E
+    B -->|artifact| C[create-release Job<br/>tagged releases only]
+    B -->|artifact| D[summary Job<br/>always runs]
+    C --> D
     
-    B --> F[summary Job<br/>always runs]
-    C --> F
-    D --> F
-    E --> F
-    
-    subgraph Build Platform
+    subgraph Build Matrix
     B
+    end
+    
+    subgraph Final Jobs
     C
     D
     end
     
-    subgraph Final Jobs
-    E
-    F
-    end
-    
     style A fill:#e1f5fe
     style B fill:#f3e5f5
-    style C fill:#f3e5f5
-    style D fill:#f3e5f5
-    style E fill:#e8f5e9
-    style F fill:#fff3e0
+    style C fill:#e8f5e9
+    style D fill:#fff3e0
 ```
 
 ## Jobs
@@ -77,51 +70,22 @@ flowchart TD
 3. Validate version format (X.Y.Z)
 4. Display build information
 
-### 2. build-linux
+### 2. build (Matrix Job)
 
-**Purpose**: Build Linux AppImage package.
+**Purpose**: Build Electron app for all platforms using a matrix strategy.
 
-**Runner**: Ubuntu container
-
-**Steps**:
-1. Install system dependencies (libnss3, libgtk-3-0, etc.)
-2. Install npm dependencies
-3. Rebuild native modules for Electron
-4. Build TypeScript and Renderer
-5. Build AppImage with electron-builder
-6. Generate SHA256 checksum
-7. Upload artifact (7-day retention)
-
-### 3. build-macos
-
-**Purpose**: Build macOS DMG package.
-
-**Runner**: macOS-latest
+**Runner**: Varies by platform (ubuntu-latest, macos-latest, windows-latest)
 
 **Steps**:
-1. Install npm dependencies
-2. Rebuild native modules for Electron
-3. Build TypeScript and Renderer
-4. Build DMG with electron-builder
-5. Generate SHA256 checksum
-6. Upload artifact (7-day retention)
+1. Checkout repository
+2. Run `electron-build-common` action (npm install, native module rebuild)
+3. Run `electron-build-platform` action with platform parameter:
+   - Linux: Install system deps, build AppImage, generate SHA256, upload
+   - macOS: Build DMG, generate SHA256, upload
+   - Windows: Build portable EXE, generate SHA256, upload
+4. Upload artifact (7-day retention)
 
-### 4. build-windows
-
-**Purpose**: Build Windows portable EXE.
-
-**Runner**: Windows-latest with Wine
-
-**Steps**:
-1. Install Wine (for building Windows on Linux/macOS)
-2. Install npm dependencies
-3. Rebuild native modules for Electron
-4. Build TypeScript and Renderer
-5. Build portable EXE with electron-builder
-6. Generate SHA256 checksum
-7. Upload artifact (7-day retention)
-
-### 5. create-release (Tagged Releases Only)
+### 3. create-release (Tagged Releases Only)
 
 **Purpose**: Create GitHub release with all artifacts.
 
@@ -134,7 +98,7 @@ flowchart TD
 4. Attach all build artifacts
 5. Include installation instructions
 
-### 6. summary
+### 4. summary
 
 **Purpose**: Display build summary in GitHub Actions UI.
 
@@ -147,13 +111,13 @@ flowchart TD
 
 ## Artifact Naming
 
-All artifacts follow the naming convention: `focus-v{version}-{platform}.{ext}`
+All artifacts follow the naming convention: `focus-{version}.{ext}`
 
 | Platform | Extension | Example |
 |----------|-----------|---------|
-| Linux | .AppImage | focus-v1.0.0-linux.AppImage |
-| macOS | .dmg | focus-v1.0.0-macOS.dmg |
-| Windows | .exe | focus-v1.0.0-windows.exe |
+| Linux | .AppImage | focusv1.0.0.AppImage |
+| macOS | .dmg | focus-1.0.0.dmg |
+| Windows | .exe | focus-1.0.0.exe |
 
 Each artifact also includes a SHA256 checksum file: `{artifact}.sha256sum`
 
@@ -183,11 +147,11 @@ CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
 
 ```yaml
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 ```
 
-This prevents multiple builds for the same ref and cancels in-progress builds when a new commit is pushed.
+This prevents concurrent builds for the same PR and cancels in-progress builds when a new commit is pushed to the PR.
 
 ## Caching
 
@@ -261,10 +225,10 @@ Ensure tags follow semantic versioning:
 
 | File | Purpose |
 |------|---------|
-| `.github/actions/electron-build-common/action.yml` | Shared build steps |
-| `.github/actions/electron-build-linux/action.yml` | Linux-specific steps |
-| `.github/actions/electron-build-macos/action.yml` | macOS-specific steps |
-| `.github/actions/electron-build-windows/action.yml` | Windows-specific steps |
+| `.github/actions/extract-version/action.yml` | Extract version from git commits |
+| `.github/actions/electron-build-common/action.yml` | Shared build setup (npm, cache, native modules) |
+| `.github/actions/electron-build-platform/action.yml` | Platform-specific build (linux/macos/windows) |
+| `.github/actions/prepare-release/action.yml` | Create GitHub release with artifacts |
 
 ### Application Build Config
 
