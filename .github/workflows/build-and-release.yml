@@ -81,6 +81,11 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
+      - name: Install git (container)
+        run: |
+          apt-get update
+          apt-get install -y git
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
