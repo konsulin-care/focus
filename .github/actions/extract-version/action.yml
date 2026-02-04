@@ -55,7 +55,7 @@ runs:
             tags="$(git tag --points-at "${commit}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
             if [[ -n "${tags}" ]]; then
               version="${tags#v}"
-              echo "Found version tag v${version} on commit ${commit}"
+              echo "Found version tag v${version} on commit ${commit}" >&2
               break
             fi
           done
@@ -79,7 +79,6 @@ runs:
         }
 
         # Check if merge commit already has a version tag
-        local merge_tags
         merge_tags="$(check_merge_commit_tag)"
         if [[ -n "${merge_tags}" ]]; then
           readonly VERSION="${merge_tags#v}"
