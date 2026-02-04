@@ -12,7 +12,9 @@ runs:
     - name: Build DMG
       shell: bash
       run: |
-        npm version ${{ inputs.version }} --no-git-tag-version
+        if [ -n "${{ inputs.version }}" ]; then
+          npm version ${{ inputs.version }} --no-git-tag-version
+        fi
         npx electron-builder --mac dmg --config.publish=null
       env:
         DEBUG: electron-builder
@@ -26,11 +28,11 @@ runs:
       run: |
         cd release
         if command -v sha256sum &> /dev/null; then
-          sha256sum focus-v${{ inputs.version }}-macOS.dmg > focus-v${{ inputs.version }}-macOS.dmg.sha256sum
+          sha256sum focus-${{ inputs.version }}.dmg > focus-${{ inputs.version }}.dmg.sha256sum
         else
-          shasum -a 256 focus-v${{ inputs.version }}-macOS.dmg > focus-v${{ inputs.version }}-macOS.dmg.sha256sum
+          shasum -a 256 focus-${{ inputs.version }}.dmg > focus-${{ inputs.version }}.dmg.sha256sum
         fi
-        cat focus-v${{ inputs.version }}-macOS.dmg.sha256sum
+        cat focus-${{ inputs.version }}.dmg.sha256sum
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4

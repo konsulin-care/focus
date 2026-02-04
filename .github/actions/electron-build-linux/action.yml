@@ -42,7 +42,9 @@ runs:
     - name: Build AppImage
       shell: bash
       run: |
-        npm version ${{ inputs.version }} --no-git-tag-version
+        if [ -n "${{ inputs.version }}" ]; then
+          npm version ${{ inputs.version }} --no-git-tag-version
+        fi
         npx electron-builder --linux AppImage --config.publish=null
       env:
         DEBUG: electron-builder
@@ -52,8 +54,8 @@ runs:
       shell: bash
       run: |
         cd release
-        sha256sum focus-v${{ inputs.version }}-linux.AppImage > focus-v${{ inputs.version }}-linux.AppImage.sha256sum
-        cat focus-v${{ inputs.version }}-linux.AppImage.sha256sum
+        sha256sum focus-${{ inputs.version }}.AppImage > focus-${{ inputs.version }}.AppImage.sha256sum
+        cat focus-${{ inputs.version }}.AppImage.sha256sum
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
