@@ -57,22 +57,22 @@ jobs:
     name: Build ${{ matrix.platform }}
     needs: prepare
     runs-on: ${{ matrix.runs-on }}
+    outputs:
+      platform: ${{ matrix.platform }}
+      platform_name: ${{ matrix.platform-name }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: Linux (AppImage)
             runs-on: ubuntu-latest
-            artifact-name: focus-linux-appimage
-            action-ref: ./.github/actions/electron-build-linux
+            platform-name: linux
           - platform: macOS (DMG)
             runs-on: macos-latest
-            artifact-name: focus-macos-dmg
-            action-ref: ./.github/actions/electron-build-macos
+            platform-name: macos
           - platform: Windows (EXE)
             runs-on: windows-latest
-            artifact-name: focus-windows-exe
-            action-ref: ./.github/actions/electron-build-windows
+            platform-name: windows
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
@@ -85,8 +85,10 @@ jobs:
         uses: ./.github/actions/electron-build-common
 
       - name: Build ${{ matrix.platform }} artifact
-        uses: ${{ matrix.action-ref }}
+        id: build
+        uses: ./.github/actions/electron-build-platform
         with:
+          platform: ${{ matrix.platform-name }}
           version: ${{ env.VERSION }}
 
   # Create GitHub release
@@ -94,7 +96,9 @@ jobs:
     name: Create GitHub Release
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    if: needs.prepare.outputs.is_release == 'true'
+    if: |
+      needs.prepare.outputs.is_release == 'true' &&
+      needs.build.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -111,23 +115,43 @@ jobs:
     name: Build Summary
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !cancelled() && (needs.prepare.result == 'success' || needs.build.result == 'success') }}
     steps:
-      - name: Build Summary
+      - name: Generate Build Summary
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          PREPARE_RESULT: ${{ needs.prepare.result }}
         run: |
+          # Determine status emoji based on job results
+          if [ "$BUILD_RESULT" = "success" ]; then
+            BUILD_STATUS="✅ Success"
+          elif [ "$BUILD_RESULT" = "failure" ]; then
+            BUILD_STATUS="❌ Failure"
+          elif [ "$BUILD_RESULT" = "cancelled" ]; then
+            BUILD_STATUS="⚠️ Cancelled"
+          elif [ "$BUILD_RESULT" = "skipped" ]; then
+            BUILD_STATUS="⏭️ Skipped"
+          else
+            BUILD_STATUS="❓ Unknown"
+          fi
+
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Version: ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "Release: ${{ needs.prepare.outputs.is_release }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.prepare.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** \`${{ needs.prepare.outputs.is_release }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Build Status" >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux (AppImage) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| Linux (AppImage) | success |" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS (DMG) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| macOS (DMG) | success |" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows (EXE) | ${{ needs.build.outputs.* }}" >> $GITHUB_STEP_SUMMARY || echo "| Windows (EXE) | success |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🐧 Linux (AppImage) | $BUILD_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🍎 macOS (DMG) | $BUILD_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🪟 Windows (EXE) | $BUILD_STATUS |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-${{ needs.prepare.outputs.version }}.AppImage" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-${{ needs.prepare.outputs.version }}.dmg" >> $GITHUB_STEP_SUMMARY
-          echo "- focus-${{ needs.prepare.outputs.version }}.exe" >> $GITHUB_STEP_SUMMARY
+          if [ "$BUILD_RESULT" = "success" ]; then
+            echo "- focus-\`${{ needs.prepare.outputs.version }}\`.AppImage" >> $GITHUB_STEP_SUMMARY
+            echo "- focus-\`${{ needs.prepare.outputs.version }}\`.dmg" >> $GITHUB_STEP_SUMMARY
+            echo "- focus-\`${{ needs.prepare.outputs.version }}\`.exe" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "_No artifacts available due to build ${BUILD_RESULT}_" >> $GITHUB_STEP_SUMMARY
+          fi
