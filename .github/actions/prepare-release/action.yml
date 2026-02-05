@@ -49,7 +49,7 @@ runs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: F.O.C.U.S. Attention v${{ inputs.version }}
+        name: F.O.C.U.S. Assessment v${{ inputs.version }}
         tag_name: v${{ inputs.version }}
         draft: false
         prerelease: false
