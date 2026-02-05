@@ -108,10 +108,29 @@ runs:
         Get-FileHash -Algorithm SHA256 $filename | ForEach-Object { $_.Hash } | Out-File -FilePath "${filename}.sha256sum"
 
     # Upload artifact
-    - name: Upload artifact
+    - name: Upload artifact (Linux)
+      if: inputs.platform == 'linux'
       uses: actions/upload-artifact@v4
       with:
         name: focus-${{ inputs.platform }}-${{ inputs.version }}
-        path: release/
+        path: release/focus-${{ inputs.version }}.AppImage
         retention-days: 7
-        compression-level: 9
+        compression-level: 0
+
+    - name: Upload artifact (macOS)
+      if: inputs.platform == 'macos'
+      uses: actions/upload-artifact@v4
+      with:
+        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        path: release/focus-${{ inputs.version }}.dmg
+        retention-days: 7
+        compression-level: 0
+
+    - name: Upload artifact (Windows)
+      if: inputs.platform == 'windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        path: release/focus-${{ inputs.version }}.exe
+        retention-days: 7
+        compression-level: 0
