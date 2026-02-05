@@ -7,8 +7,7 @@ This release includes pre-built binaries for:
 - macOS (DMG)
 - Windows (Portable EXE)
 
-<detail>
-
+<details>
 <summary>📝 Release Notes</summary>
 
 ### Checksums
@@ -34,4 +33,4 @@ chmod +x focus-{{VERSION}}.AppImage
 
 These builds are not code-signed. On Windows and macOS, you may see security warnings. For production use, configure code signing certificates.
 
-</detail>
+</details>

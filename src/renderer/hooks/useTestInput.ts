@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TestPhase } from './useTestPhase';
+
+const CLICK_COOLDOWN_MS = 100;
 
 interface UseTestInputReturn {
   hasResponded: boolean;
@@ -9,6 +11,7 @@ interface UseTestInputReturn {
 
 export function useTestInput(phase: TestPhase): UseTestInputReturn {
   const [hasResponded, setHasResponded] = useState(false);
+  const lastClickTime = useRef<number>(0);
 
   const recordResponse = useCallback(async (response: boolean) => {
     try {
@@ -33,9 +36,15 @@ export function useTestInput(phase: TestPhase): UseTestInputReturn {
     const handleClick = (event: MouseEvent) => {
       if (phase !== 'running') return;
       if (hasResponded) return;
-      if (event.button === 0) {
-        recordResponse(true);
+      if (event.button !== 0) return;
+      
+      const now = Date.now();
+      if (now - lastClickTime.current < CLICK_COOLDOWN_MS) {
+        return;
       }
+      lastClickTime.current = now;
+      
+      recordResponse(true);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -47,11 +56,11 @@ export function useTestInput(phase: TestPhase): UseTestInputReturn {
       }
     };
 
-    window.addEventListener('click', handleClick);
+    document.addEventListener('click', handleClick, { capture: true });
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick, { capture: true });
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [phase, hasResponded, recordResponse]);
