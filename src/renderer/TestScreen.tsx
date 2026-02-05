@@ -23,7 +23,7 @@ function TestScreen() {
   const endTestRef = useRef(() => endTest());
   
   // Update refs when functions change
-  const { isFullscreen, isCursorHidden, exitFullscreen } = useFullscreenManager(
+  const { exitFullscreen } = useFullscreenManager(
     phase,
     useCallback(() => {
       exitFullscreenRef.current().then(() => {
@@ -40,8 +40,8 @@ function TestScreen() {
   
   // Call useTestInput to enable click/spacebar responses
   const { resetResponse } = useTestInput(phase);
-  
-  const { 
+
+  const {
     testEvents, 
     lastEvent, 
     elapsedTimeMs, 
@@ -80,15 +80,6 @@ function TestScreen() {
     return () => unsubscribe();
   }, [setPhase]);
 
-  // Handle exit test (exit fullscreen and return to home)
-  const handleExitTest = useCallback(async () => {
-    if (isFullscreen) {
-      await exitFullscreen();
-    }
-    endTest();
-  }, [isFullscreen, exitFullscreen, endTest]);
-
-  // Email capture handlers
   const handleEmailCaptureSuccess = useCallback((subjectInfo: SubjectInfo) => {
     calculateMetrics(subjectInfo);
     setShowEmailCapture(false);
@@ -102,12 +93,8 @@ function TestScreen() {
   }, [calculateMetrics, setPhase]);
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center bg-black" style={{ cursor: isCursorHidden ? 'none' : 'default' }}>
-      <TestHeader 
-        phase={phase} 
-        isCursorHidden={isCursorHidden}
-        onExitTest={handleExitTest}
-      />
+    <div className="h-screen flex flex-col justify-center items-center bg-black" style={{ cursor: phase === 'running' ? 'none' : 'default' }}>
+      <TestHeader phase={phase} onExitTest={endTest} />
 
       {/* Countdown display */}
       {phase === 'countdown' && <CountdownDisplay countdown={countdown} />}

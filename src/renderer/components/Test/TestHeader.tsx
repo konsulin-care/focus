@@ -1,32 +1,21 @@
-import { useNavigation } from '../../store';
-import { TestPhase } from '../../hooks/useTestPhase';
-
 interface TestHeaderProps {
-  phase: TestPhase;
-  isCursorHidden?: boolean;
-  onExitTest?: () => void;
+  phase: string;
+  onExitTest: () => void;
 }
 
-export function TestHeader({ phase, isCursorHidden = false, onExitTest }: TestHeaderProps) {
-  const { endTest } = useNavigation();
-
-  const shouldDim = phase === 'running' && isCursorHidden;
-  const handleExit = onExitTest || endTest;
+export function TestHeader({ phase, onExitTest }: TestHeaderProps) {
+  if (phase !== 'completed') {
+    return null;
+  }
 
   return (
-    <>
-      {/* Exit Test button */}
+    <div className="absolute top-4 right-4 z-50">
       <button
-        onClick={handleExit}
-        aria-hidden={shouldDim}
-        className={`absolute top-4 left-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium transition-all ${
-          shouldDim
-            ? 'opacity-20 cursor-not-allowed pointer-events-none'
-            : 'hover:bg-gray-300'
-        }`}
+        onClick={onExitTest}
+        className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm font-medium transition-colors"
       >
-        ← Exit Test
+        Exit Test
       </button>
-    </>
+    </div>
   );
 }

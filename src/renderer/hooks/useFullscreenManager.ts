@@ -1,11 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TestPhase } from './useTestPhase';
-
-const MOUSE_HIDE_RADIUS = 600;
 
 interface UseFullscreenManagerReturn {
   isFullscreen: boolean;
-  isCursorHidden: boolean;
   requestFullscreen: () => Promise<void>;
   exitFullscreen: () => Promise<void>;
 }
@@ -15,8 +12,6 @@ export function useFullscreenManager(
   onExitRequest: () => void
 ): UseFullscreenManagerReturn {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isCursorHidden, setIsCursorHidden] = useState(false);
-  const mousePositionRef = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLElement | null>(null);
   const hasEnteredRef = useRef(false);
 
@@ -87,7 +82,7 @@ export function useFullscreenManager(
   // Handle ESC key for graceful exit
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'Escape' && isFullscreen) {
+      if (event.code === 'Escape') {
         event.preventDefault();
         onExitRequest();
       }
@@ -98,45 +93,19 @@ export function useFullscreenManager(
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullscreen, onExitRequest]);
+  }, [onExitRequest]);
 
-  // Track mouse position and calculate cursor visibility
+  // Placeholder for mouse tracking removal
   useEffect(() => {
-    if (!isFullscreen) {
-      setIsCursorHidden(false);
-      return;
-    }
-
-    const handleMouseMove = (event: MouseEvent) => {
-      mousePositionRef.current = { x: event.clientX, y: event.clientY };
-
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const dx = event.clientX - centerX;
-      const dy = event.clientY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      setIsCursorHidden(distance > MOUSE_HIDE_RADIUS);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [isFullscreen]);
-
-  // Reset cursor visibility when exiting fullscreen
-  useEffect(() => {
-    if (!isFullscreen) {
-      setIsCursorHidden(false);
-    }
-  }, [isFullscreen]);
+    // Mouse tracking removed - cursor hiding handled by parent component
+    return () => {};
+  }, []);
 
   return {
     isFullscreen,
-    isCursorHidden,
     requestFullscreen,
     exitFullscreen,
   };
 }
+
+import { useRef } from 'react';
