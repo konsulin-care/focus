@@ -15,17 +15,6 @@ export function useFullscreenManager(
   const elementRef = useRef<HTMLElement | null>(null);
   const hasEnteredRef = useRef(false);
 
-  // Auto-enter fullscreen when phase becomes 'running'
-  useEffect(() => {
-    if (_phase === 'running' && !hasEnteredRef.current && !document.fullscreenElement) {
-      hasEnteredRef.current = true;
-      requestFullscreen();
-    }
-    if (_phase !== 'running') {
-      hasEnteredRef.current = false;
-    }
-  }, [_phase]);
-
   // Request fullscreen with cross-browser compatibility
   const requestFullscreen = useCallback(async () => {
     const element = document.documentElement;
@@ -58,6 +47,17 @@ export function useFullscreenManager(
       console.error('[useFullscreenManager] Failed to exit fullscreen:', error);
     }
   }, []);
+
+  // Auto-enter fullscreen when phase becomes 'running'
+  useEffect(() => {
+    if (_phase === 'running' && !hasEnteredRef.current && !document.fullscreenElement) {
+      hasEnteredRef.current = true;
+      requestFullscreen();
+    }
+    if (_phase !== 'running') {
+      hasEnteredRef.current = false;
+    }
+  }, [_phase, requestFullscreen]);
 
   // Handle fullscreen change events
   useEffect(() => {
