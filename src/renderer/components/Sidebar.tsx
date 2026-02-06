@@ -72,11 +72,13 @@ export default function Sidebar() {
       <div
         className={`
           absolute right-0 top-8 z-10
-          ${isSidebarCollapsed
-            ? 'translate-x-full ml-2'  // Full width + gap (8px) from collapsed sidebar
-            : 'translate-x-1/2'         // Half hanging off expanded sidebar edge
+          ${
+            /* Position toggle: full offset when collapsed, half-hanging when expanded */
+            isSidebarCollapsed
+              ? 'translate-x-full ml-2'
+              : 'translate-x-1/2'
           }
-          -translate-y-1/2  // Center toggle vertically (toggle is 32px, logo center at 32px)
+          -translate-y-1/2
           transition-all duration-300
         `}
       >

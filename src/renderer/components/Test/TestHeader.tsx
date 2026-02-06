@@ -1,5 +1,7 @@
+import { TestPhase } from '../../hooks/useTestPhase';
+
 interface TestHeaderProps {
-  phase: string;
+  phase: TestPhase;
   onExitTest: () => void;
 }
 

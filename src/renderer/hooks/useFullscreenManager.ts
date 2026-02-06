@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TestPhase } from './useTestPhase';
 
 interface UseFullscreenManagerReturn {
@@ -107,5 +107,3 @@ export function useFullscreenManager(
     exitFullscreen,
   };
 }
-
-import { useRef } from 'react';
