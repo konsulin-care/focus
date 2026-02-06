@@ -60,7 +60,7 @@ export default function About() {
           For technical support or questions about the F.O.C.U.S. Assessment, please contact your healthcare provider or system administrator.
         </p>
         <p className="text-gray-600">
-          <strong>Email:</strong> hello@konsulin.care
+          <strong>Email:</strong> <a href="mailto:hello@konsulin.care">hello@konsulin.care</a>
         </p>
       </div>
 

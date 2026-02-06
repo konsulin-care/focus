@@ -92,7 +92,7 @@ export default function Settings() {
                 type="number"
                 value={config.stimulusDurationMs}
                 onChange={(e) => handleChange('stimulusDurationMs', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="10"
                 max="1000"
               />
@@ -106,7 +106,7 @@ export default function Settings() {
                 type="number"
                 value={config.interstimulusIntervalMs}
                 onChange={(e) => handleChange('interstimulusIntervalMs', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="100"
                 max="5000"
               />
@@ -120,7 +120,7 @@ export default function Settings() {
                 type="number"
                 value={normalizedTotalTrials}
                 onChange={(e) => handleChange('totalTrials', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="2"
                 step="2"
               />
@@ -145,7 +145,7 @@ export default function Settings() {
                 type="number"
                 value={config.bufferMs}
                 onChange={(e) => handleChange('bufferMs', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="0"
                 max="2000"
               />
@@ -155,7 +155,7 @@ export default function Settings() {
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
             >
               Save Settings
             </button>

@@ -1,89 +1,60 @@
 import React from 'react';
+import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigation, Page } from '../store';
 import SidebarButton from './SidebarButton';
-
-// Inline SVG Icons
-function HomeIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function InfoIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4" />
-      <path d="M12 8h.01" />
-    </svg>
-  );
-}
-
-function ChevronLeftIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-
-function ChevronRightIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
+import logoUrl from '@/../public/images/logo.svg';
 
 export default function Sidebar() {
   const { currentPage, setPage, isSidebarCollapsed, toggleSidebar } = useNavigation();
 
   const navItems: { page: Page; icon: React.ReactNode; label: string }[] = [
-    { page: 'home', icon: <HomeIcon />, label: 'Home' },
-    { page: 'test', icon: <PlayIcon />, label: 'Start Test' },
-    { page: 'settings', icon: <SettingsIcon />, label: 'Settings' },
-    { page: 'about', icon: <InfoIcon />, label: 'About' },
+    { page: 'home', icon: <Home size={20} strokeWidth={2} />, label: 'Home' },
+    { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, label: 'Start Test' },
+    { page: 'settings', icon: <Cog size={20} strokeWidth={2} />, label: 'Settings' },
+    { page: 'about', icon: <Info size={20} strokeWidth={2} />, label: 'About' },
   ];
 
+  // Store logo element to avoid repetition
+  const logoElement = (
+    <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0">
+      <img
+        src={logoUrl}
+        alt="F.O.C.U.S. Logo"
+        className="w-full h-full"
+      />
+    </div>
+  );
+
   return (
-    <aside
-      className={`
-        bg-gray-900 text-white transition-all duration-300
-        flex flex-col h-screen
-        ${isSidebarCollapsed ? 'w-16' : 'w-64'}
-      `}
-    >
-      {/* Logo */}
-      <div className="p-4 border-b border-gray-700 flex items-center justify-center">
-        {isSidebarCollapsed ? (
-          <span className="text-2xl font-bold text-blue-400">F</span>
-        ) : (
-          <span className="text-xl font-bold">F.O.C.U.S. Assessment</span>
-        )}
-      </div>
+    // Wrapper container for sidebar and toggle positioning
+    <div className="relative flex h-screen">
+      {/* Sidebar */}
+      <aside
+        className={`
+          bg-sidebar-bg backdrop-blur-sm text-sidebar-fg transition-all duration-300
+          flex flex-col border-r border-sidebar-border
+          ${isSidebarCollapsed ? 'w-16' : 'w-64'}
+        `}
+      >
+        {/* Logo and Collapse Toggle */}
+        <div className={`
+          px-4 h-16 border-b border-sidebar-border flex items-center justify-center relative
+        `}>
+          {isSidebarCollapsed ? (
+            logoElement
+          ) : (
+            <div className="flex items-center gap-2 w-full pr-8">
+              {logoElement}
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold truncate">F.O.C.U.S. Assessment</span>
+                <span className="text-[10px] text-muted truncate">By Konsulin Care</span>
+              </div>
+            </div>
+          )}
+        </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-4 px-2 items-stretch">
         {navItems.map((item) => (
           <SidebarButton
             key={item.page}
@@ -95,15 +66,30 @@ export default function Sidebar() {
           />
         ))}
       </nav>
+      </aside>
 
-      {/* Collapse Toggle */}
-      <button
-        onClick={toggleSidebar}
-        className="p-4 hover:bg-gray-700 border-t border-gray-700 transition-colors duration-200 flex items-center justify-center"
-        title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      {/* Collapse Toggle - Positioned relative to wrapper, not sidebar */}
+      <div
+        className={`
+          absolute right-0 top-8 z-10
+          ${
+            /* Position toggle: full offset when collapsed, half-hanging when expanded */
+            isSidebarCollapsed
+              ? 'translate-x-full ml-2'
+              : 'translate-x-1/2'
+          }
+          -translate-y-1/2
+          transition-all duration-300
+        `}
       >
-        {isSidebarCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-      </button>
-    </aside>
+        <button
+          onClick={toggleSidebar}
+          className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
+          title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isSidebarCollapsed ? <ChevronRight size={20} strokeWidth={2} /> : <ChevronLeft size={20} strokeWidth={2} />}
+        </button>
+      </div>
+    </div>
   );
 }

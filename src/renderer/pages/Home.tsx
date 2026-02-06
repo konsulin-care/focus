@@ -25,7 +25,7 @@ export default function Home() {
       </div>
       <button
         onClick={() => setPage('test')}
-        className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-sm cursor-pointer"
+        className="bg-primary text-white px-8 py-4 rounded-lg hover:bg-[#099B9E] transition-colors font-semibold text-lg shadow-sm cursor-pointer"
       >
         Start Test
       </button>

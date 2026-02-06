@@ -134,7 +134,7 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip }: EmailCaptureFo
           type="checkbox"
           checked={consent}
           onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
           disabled={isSubmitting}
           required
         />
@@ -157,7 +157,7 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip }: EmailCaptureFo
         <button
           type="submit"
           disabled={!consent || !email || !gender || age < 0 || age > 120 || isSubmitting}
-          className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
+          className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-[#099B9E] disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
         >
           {isSubmitting ? 'Saving...' : 'Save and Preview'}
         </button>

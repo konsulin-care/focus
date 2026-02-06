@@ -42,7 +42,7 @@ export default function Test() {
       <div className="flex justify-center">
         <button
           onClick={startTest}
-          className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-semibold rounded-lg transition-colors shadow-lg"
+          className="px-8 py-4 bg-primary hover:bg-[#099B9E] text-white text-xl font-semibold rounded-lg transition-colors shadow-lg"
         >
           Next →
         </button>

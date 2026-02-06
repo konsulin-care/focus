@@ -19,20 +19,24 @@ export default function SidebarButton({
     <button
       onClick={onClick}
       className={`
-        w-full flex items-center gap-3 px-4 py-3 transition-all duration-200
-        ${
-          isActive
-            ? 'bg-blue-600 text-white'
-            : 'hover:bg-gray-700 text-gray-300 hover:text-white'
-        }
-        ${isCollapsed ? 'justify-center' : 'justify-start'}
+        w-full relative
+        flex ${isCollapsed ? 'justify-center' : 'justify-start'}
+        items-center px-4 py-2 transition-all duration-200 mx-0
       `}
       title={isCollapsed ? label : undefined}
     >
-      <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-        {icon}
-      </span>
-      {!isCollapsed && <span className="font-medium truncate">{label}</span>}
+      {/* Selection indicator: fills button with px-4 for edge gaps */}
+      {isActive && (
+        <div className="absolute inset-0 bg-primary rounded-lg -z-10" />
+      )}
+      
+      {/* Content container: gap-3 for icon spacing */}
+      <div className="relative flex items-center gap-3">
+        <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          {icon}
+        </span>
+        {!isCollapsed && <span className="font-medium truncate">{label}</span>}
+      </div>
     </button>
   );
 }

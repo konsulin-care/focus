@@ -1,23 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { StimulusType } from './types/electronAPI';
 import { SubjectInfo } from './types/trial';
 import { useTestPhase } from './hooks/useTestPhase';
 import { useTestEvents } from './hooks/useTestEvents';
 import { useTestInput } from './hooks/useTestInput';
 import { useAttentionMetrics } from './hooks/useAttentionMetrics';
+import { useFullscreenManager } from './hooks/useFullscreenManager';
+import { useNavigation } from './store';
 import { EmailCaptureForm } from './components/EmailCaptureForm';
 import { TestHeader, CountdownDisplay, BufferDisplay, TrialProgress } from './components/Test';
 import { StimulusContainer } from './components/Stimulus';
 import { ResultsSummary } from './components/Results';
 
 function TestScreen() {
+  const { endTest } = useNavigation();
+  
   // Custom hooks for test logic
   const { phase, setPhase, countdown, testConfig } = useTestPhase();
   
+  // Use ref to avoid circular dependency between useFullscreenManager and handleExitTest
+  const exitFullscreenRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const endTestRef = useRef(() => endTest());
+  
+  // Update refs when functions change
+  const { exitFullscreen } = useFullscreenManager(
+    phase,
+    useCallback(() => {
+      exitFullscreenRef.current().then(() => {
+        endTestRef.current();
+      });
+    }, [])
+  );
+  
+  // Keep refs in sync with actual functions
+  useEffect(() => {
+    exitFullscreenRef.current = exitFullscreen;
+    endTestRef.current = endTest;
+  }, [exitFullscreen, endTest]);
+  
   // Call useTestInput to enable click/spacebar responses
   const { resetResponse } = useTestInput(phase);
-  
-  const { 
+
+  const {
     testEvents, 
     lastEvent, 
     elapsedTimeMs, 
@@ -56,18 +80,6 @@ function TestScreen() {
     return () => unsubscribe();
   }, [setPhase]);
 
-  // Stop test handler
-  const handleStopTest = useCallback(async () => {
-    try {
-      await window.electronAPI.stopTest();
-      setPhase('email-capture');
-      setShowEmailCapture(true);
-    } catch (error) {
-      console.error('Failed to stop test:', error);
-    }
-  }, [setPhase]);
-
-  // Email capture handlers
   const handleEmailCaptureSuccess = useCallback((subjectInfo: SubjectInfo) => {
     calculateMetrics(subjectInfo);
     setShowEmailCapture(false);
@@ -81,8 +93,8 @@ function TestScreen() {
   }, [calculateMetrics, setPhase]);
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center bg-black">
-      <TestHeader phase={phase} onStopTest={handleStopTest} />
+    <div className="h-screen flex flex-col justify-center items-center bg-black" style={{ cursor: phase === 'running' ? 'none' : 'default' }}>
+      <TestHeader phase={phase} onExitTest={endTest} />
 
       {/* Countdown display */}
       {phase === 'countdown' && <CountdownDisplay countdown={countdown} />}
