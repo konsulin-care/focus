@@ -1,0 +1,34 @@
+{
+  "button": {
+    "start": "Start Test",
+    "stop": "Stop",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "preview": "Preview",
+    "retry": "Retry"
+  },
+  "nav": {
+    "home": "Home",
+    "test": "Test",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "indonesian": "Bahasa Indonesia"
+  },
+  "error": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidAge": "Please enter a valid age between 0 and 120",
+    "invalidGender": "Please select a gender",
+    "saveFailed": "Failed to save. Please try again.",
+    "networkError": "Network error. Please check your connection."
+  },
+  "loading": "Loading...",
+  "success": "Success"
+}

@@ -100,15 +100,15 @@ function TestScreen() {
       {phase === 'countdown' && <CountdownDisplay countdown={countdown} />}
 
       {/* Buffer period display */}
-      {phase === 'buffer' && <BufferDisplay />}
+      {phase === 'buffer' && <BufferDisplay countdown={countdown} />}
 
       {/* Trial progress */}
       {phase === 'running' && (
         <TrialProgress currentTrial={trialCount} totalTrials={testConfig.totalTrials} />
       )}
 
-      {/* Stimulus container */}
-      {phase !== 'completed' && (
+      {/* Stimulus container - hidden during countdown */}
+      {phase !== 'completed' && phase !== 'countdown' && (
         <StimulusContainer isVisible={isStimulusVisible} stimulusType={currentStimulus} />
       )}
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TestPhase } from '../../hooks/useTestPhase';
 
 interface TestHeaderProps {
@@ -6,6 +7,8 @@ interface TestHeaderProps {
 }
 
 export function TestHeader({ phase, onExitTest }: TestHeaderProps) {
+  const { t } = useTranslation('translation');
+  
   if (phase !== 'completed') {
     return null;
   }
@@ -16,7 +19,7 @@ export function TestHeader({ phase, onExitTest }: TestHeaderProps) {
         onClick={onExitTest}
         className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm font-medium transition-colors"
       >
-        Exit Test
+        {t('test.exitTest')}
       </button>
     </div>
   );

@@ -1,0 +1,182 @@
+{
+  "app": {
+    "title": "F.O.C.U.S. Assessment",
+    "tagline": "Following Ongoing Cues Under Structure"
+  },
+  "home": {
+    "description": "F.O.C.U.S. is a computer-based visual attention task designed to examine how users track and respond to ongoing visual cues presented at a fixed pace.",
+    "metrics": {
+      "responseTime": "Response Time",
+      "responseVariability": "Response Time Variability",
+      "commissionErrors": "Commission Errors",
+      "omissionErrors": "Omission Errors"
+    },
+    "duration": {
+      "title": "Assessment Duration",
+      "text": "The assessment takes approximately {{duration}} minutes to complete."
+    },
+    "instructions": {
+      "text": "During this time, you will see alternating visual stimuli and should respond by pressing the button or key when the target stimulus appears."
+    }
+  },
+  "test": {
+    "buffer": {
+      "title": "Get Ready",
+      "description": "The assessment will begin shortly",
+      "remaining": "Starting in {{seconds}} seconds..."
+    },
+    "countdown": {
+      "title": "Get Ready",
+      "description": "Assessment starting now"
+    },
+    "running": {
+      "target": "Press now!",
+      "progress": "Trial {{current}} of {{total}}"
+    },
+    "instructions": "Press the button when you see the TARGET square",
+    "exitTest": "Exit Assessment",
+    "complete": "Assessment Complete",
+    "page": {
+      "title": "F.O.C.U.S. Assessment",
+      "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) is a visual attention task that measures how consistently a user responds to structured cues and how effectively they withhold responses when required.",
+      "duration": "Duration: approximately {{duration}} minutes",
+      "respondTarget": "Left-click or press the spacebar when the target stimulus appears",
+      "noRespondNonTarget": "Do not respond to non-target stimuli",
+      "precision": "High-precision timing captures your response accuracy",
+      "beforeBegin": "Before You Begin",
+      "quietEnvironment": "Find a quiet, comfortable environment",
+      "seeClearly": "Ensure you can see the screen clearly",
+      "useEither": "You may use either mouse click or spacebar",
+      "cannotPause": "The assessment cannot be paused once started"
+    }
+  },
+  "results": {
+    "title": "Your Results",
+    "sendResults": "Send Results to Email",
+    "emailSent": "Results sent to {{email}}",
+    "previewResults": "Preview Results",
+    "acs": {
+      "score": "Attention Comparison Score",
+      "interpretation": {
+        "normal": "Within Normal Limits",
+        "borderline": "Borderline",
+        "impaired": "Not Within Normal Limits"
+      }
+    },
+    "metrics": {
+      "hits": "Hits",
+      "hitRate": "Hit Rate",
+      "falseAlarms": "False Alarms",
+      "falseAlarmRate": "False Alarm Rate",
+      "misses": "Misses",
+      "omissionRate": "Omission Rate",
+      "dPrime": "D Prime Score",
+      "responseTimeMean": "Mean Response Time",
+      "responseTimeVariability": "Response Time Variability"
+    },
+    "zScores": {
+      "title": "Z-Scores (compared to normative data)",
+      "responseTime": "Response Time Z-Score",
+      "variability": "Variability Z-Score",
+      "dPrime": "D' Z-Score"
+    },
+    "validity": {
+      "title": "Assessment Validity",
+      "valid": "Valid Assessment - Results are reliable",
+      "invalid": "Invalid Assessment - Too many anticipatory responses"
+    },
+    "trialOutcomes": {
+      "title": "Trial Outcomes",
+      "correct": "Correct Responses",
+      "commission": "Commission Errors",
+      "omission": "Omission Errors"
+    }
+  },
+  "emailForm": {
+    "title": "Receive Your Results",
+    "description": "Konsulin will provide secure access to your results through email",
+    "fields": {
+      "age": "Age (years)",
+      "gender": "Gender",
+      "selectGender": "Select",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "email": "Email Address"
+    },
+    "consent": {
+      "text": "I consent to receive my assessment results at this email address. My email will be securely processed and deleted after results are sent. Data is retained for 7 days unless successfully transmitted.",
+      "privacyLink": "Privacy Policy"
+    },
+    "gdpr": "Your data is protected under GDPR regulations.",
+    "saving": "Saving..."
+  },
+  "settings": {
+    "title": "Settings",
+    "display": {
+      "title": "Display",
+      "fullscreen": "Fullscreen Mode"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose your preferred language"
+    },
+    "timing": {
+      "title": "Timing Settings",
+      "configDescription": "Configure test parameters for the F.O.C.U.S. assessment.",
+      "stimulusDuration": "Stimulus Duration (ms)",
+      "interstimulusInterval": "Inter-Stimulus Interval (ms)",
+      "totalTrials": "Total Trials",
+      "totalTrialsDescription": "Must be an even number for balanced two-half test design",
+      "oddValuesRounded": "Odd values are rounded up to {{value}}",
+      "bufferTime": "Buffer Time (ms)"
+    },
+    "dataManagement": {
+      "title": "Data Management",
+      "description": "Manage local test data and upload settings.",
+      "pendingUploads": "Pending Uploads: {{count}}",
+      "clearCache": "Clear Local Cache"
+    }
+  },
+  "about": {
+    "title": "About F.O.C.U.S.",
+    "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) is a visual attention assessment designed for clinical and research settings.",
+    "version": "Version",
+    "appInfo": "Application Information",
+    "build": "Build",
+    "buildDetails": "Electron {{electron}} / React {{react}}",
+    "platform": "Platform",
+    "platformDesktop": "Desktop Application",
+    "focusTitle": "About the F.O.C.U.S. Assessment",
+    "focusDescription": "The Following Ongoing Cues Under Structure (F.O.C.U.S.) is a computerized visual continuous performance test used to assess attention and inhibitory control. It is adapted from T.O.V.A. manual, which is widely used in the diagnosis and monitoring of attention disorders such as ADHD. F.O.C.U.S. is intended as a research tool to standardize the assessment of attention using an open-source platform.",
+    "focusMetrics": "The test measures four key variables: Response Time, Response Time Variability, Commission Errors (false alarms), and Omission Errors (missed targets).",
+    "technicalFeatures": "Technical Features",
+    "supportContact": "Support & Contact",
+    "supportText": "For technical support or questions about the F.O.C.U.S. Assessment, please contact your healthcare provider or system administrator.",
+    "emailLabel": "Email:",
+    "backToHome": "Back to Home",
+    "features": {
+      "precision": "High-precision timing (±1ms)",
+      "metrics": "Four key attention metrics",
+      "normative": "Age and gender-adjusted normative data",
+      "privacy": "GDPR compliant data handling"
+    }
+  },
+  "sidebar": {
+    "language": "Language"
+  },
+  "button": {
+    "start": "Start Assessment",
+    "next": "Next →",
+    "saveSettings": "Save Settings",
+    "resetDefaults": "Reset to Defaults",
+    "saveAndPreview": "Save & Preview",
+    "backToHome": "Back to Home"
+  },
+  "status": {
+    "loadFailed": "Failed to load settings",
+    "saveSuccess": "Settings saved successfully",
+    "saveFailed": "Failed to save settings",
+    "resetSuccess": "Settings reset to defaults",
+    "resetFailed": "Failed to reset settings"
+  }
+}
