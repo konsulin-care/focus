@@ -34,12 +34,12 @@
       "progress": "Percobaan {{current}} dari {{total}}"
     },
     "instructions": "Tekan tombol saat melihat KOTAK TARGET",
-    "exitPenilaiant": "Keluar Penilaian",
+    "exitAssessment": "Keluar Penilaian",
     "complete": "Penilaian Selesai",
     "page": {
       "title": "Penilaian F.O.C.U.S.",
       "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) adalah tugas perhatian visual yang mengukur seberapa konsisten pengguna menanggapi petunjuk terstruktur dan seberapa efektif mereka menahan respons saat diperlukan.",
-      "duration": "Durasi: sekitar 21,6 menit",
+      "duration": "Durasi: sekitar {{duration}} menit",
       "respondTarget": "Klik kiri atau tekan spasi saat stimulus target muncul",
       "noRespondNonTarget": "Jangan merespons stimulus non-target",
       "precision": "Waktu presisi tinggi menangkap akurasi respons Anda",

@@ -39,7 +39,7 @@
     "page": {
       "title": "F.O.C.U.S. Assessment",
       "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) is a visual attention task that measures how consistently a user responds to structured cues and how effectively they withhold responses when required.",
-      "duration": "Duration: approximately 21.6 minutes",
+      "duration": "Duration: approximately {{duration}} minutes",
       "respondTarget": "Left-click or press the spacebar when the target stimulus appears",
       "noRespondNonTarget": "Do not respond to non-target stimuli",
       "precision": "High-precision timing captures your response accuracy",

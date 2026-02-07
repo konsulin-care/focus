@@ -1,11 +1,33 @@
 import { useTranslation } from '@/i18n';
 import { useNavigation } from '@/renderer/store';
+import { useEffect, useState } from 'react';
+import { calculateTestDuration } from '@/renderer/utils/duration';
+import { TestConfig } from '@/renderer/types/electronAPI';
 
 export default function Home() {
   const { t } = useTranslation('translation', { keyPrefix: 'home' });
   const { t: buttonT } = useTranslation('translation', { keyPrefix: 'button' });
   const { t: appT } = useTranslation('translation'); // For root-level keys like app.title
   const { setPage } = useNavigation();
+  const [testDuration, setTestDuration] = useState<number>(21.6); // Default fallback
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTestConfig = async () => {
+      try {
+        const config: TestConfig = await window.electronAPI.getTestConfig();
+        const duration = calculateTestDuration(config);
+        setTestDuration(duration);
+      } catch (error) {
+        console.error('Failed to fetch test config:', error);
+        // Keep default 21.6 value on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTestConfig();
+  }, []);
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -20,7 +42,7 @@ export default function Home() {
           {t('duration.title')}
         </h2>
         <p className="text-blue-700">
-          {t('duration.text', { duration: 21.6 })}
+          {isLoading ? t('duration.text', { duration: '...' }) : t('duration.text', { duration: testDuration.toString() })}
         </p>
         <p className="text-blue-700 mt-3">
           {t('instructions.text')}

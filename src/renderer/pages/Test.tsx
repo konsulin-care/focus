@@ -1,11 +1,33 @@
 import { useTranslation } from '@/i18n';
 import { useNavigation } from '../store';
 import StimulusDemo from '../components/StimulusDemo';
+import { useEffect, useState } from 'react';
+import { calculateTestDuration } from '@/renderer/utils/duration';
+import { TestConfig } from '@/renderer/types/electronAPI';
 
 export default function Test() {
   const { t } = useTranslation('translation', { keyPrefix: 'test.page' });
   const { t: buttonT } = useTranslation('translation', { keyPrefix: 'button' });
   const { startTest } = useNavigation();
+  const [testDuration, setTestDuration] = useState<number>(21.6); // Default fallback
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTestConfig = async () => {
+      try {
+        const config: TestConfig = await window.electronAPI.getTestConfig();
+        const duration = calculateTestDuration(config);
+        setTestDuration(duration);
+      } catch (error) {
+        console.error('Failed to fetch test config:', error);
+        // Keep default 21.6 value on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTestConfig();
+  }, []);
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -18,7 +40,7 @@ export default function Test() {
           {t('description')}
         </p>
         <ul className="list-disc list-inside mt-4 text-yellow-800 space-y-2">
-          <li>{t('duration')}</li>
+          <li>{isLoading ? t('duration') : t('duration', { duration: testDuration.toString() })}</li>
           <li>{t('respondTarget')}</li>
           <li>{t('noRespondNonTarget')}</li>
           <li>{t('precision')}</li>
