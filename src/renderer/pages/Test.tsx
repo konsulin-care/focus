@@ -40,7 +40,7 @@ export default function Test() {
           {t('description')}
         </p>
         <ul className="list-disc list-inside mt-4 text-yellow-800 space-y-2">
-          <li>{isLoading ? t('duration') : t('duration', { duration: testDuration.toString() })}</li>
+          <li>{isLoading ? t('duration', { duration: testDuration.toString() }) : t('duration', { duration: testDuration.toString() })}</li>
           <li>{t('respondTarget')}</li>
           <li>{t('noRespondNonTarget')}</li>
           <li>{t('precision')}</li>

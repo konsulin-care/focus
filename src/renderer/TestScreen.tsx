@@ -107,8 +107,8 @@ function TestScreen() {
         <TrialProgress currentTrial={trialCount} totalTrials={testConfig.totalTrials} />
       )}
 
-      {/* Stimulus container */}
-      {phase !== 'completed' && (
+      {/* Stimulus container - hidden during countdown */}
+      {phase !== 'completed' && phase !== 'countdown' && (
         <StimulusContainer isVisible={isStimulusVisible} stimulusType={currentStimulus} />
       )}
 

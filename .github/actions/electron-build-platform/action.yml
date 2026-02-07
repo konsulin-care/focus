@@ -107,7 +107,7 @@ runs:
       run: |
         $ErrorActionPreference = "Stop"
         Set-Location release
-        $filename = "focus-${VERSION}.exe"
+        $filename = "focus-$env:VERSION.exe"
         Get-FileHash -Algorithm SHA256 $filename | ForEach-Object { $_.Hash } | Out-File -FilePath "${filename}.sha256sum"
 
     # Upload artifact
