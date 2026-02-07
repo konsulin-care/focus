@@ -15,7 +15,7 @@ export function ZScoresGrid({ metrics }: ZScoresGridProps) {
         <div className="text-xl">{metrics.zScores.responseTime.toFixed(2)}</div>
       </div>
       <div>
-        <div className="text-gray-400 text-sm">D' Z-Score</div>
+        <div className="text-gray-400 text-sm">{t('results.zScores.dPrime')}</div>
         <div className="text-xl">{metrics.zScores.dPrime.toFixed(2)}</div>
       </div>
       <div>

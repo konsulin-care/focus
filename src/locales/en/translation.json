@@ -77,7 +77,8 @@
     "zScores": {
       "title": "Z-Scores (compared to normative data)",
       "responseTime": "Response Time Z-Score",
-      "variability": "Variability Z-Score"
+      "variability": "Variability Z-Score",
+      "dPrime": "D' Z-Score"
     },
     "validity": {
       "title": "Assessment Validity",

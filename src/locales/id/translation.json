@@ -77,7 +77,8 @@
     "zScores": {
       "title": "Z-Scores (dibandingkan dengan data normatif)",
       "responseTime": "Z-Score Waktu Respons",
-      "variability": "Z-Score Variabilitas"
+      "variability": "Z-Score Variabilitas",
+      "dPrime": "Z-Score D Prime"
     },
     "validity": {
       "title": "Validitas Penilaian",
