@@ -14,7 +14,11 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "jsx": "react-jsx",
-    "types": ["node", "better-sqlite3"]
+    "types": ["node", "better-sqlite3"],
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": ["src/**/*", "./src/vite-env-override.d.ts"],
   "exclude": ["node_modules", "dist"]
