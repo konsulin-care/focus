@@ -97,6 +97,7 @@
     "fields": {
       "age": "Age (years)",
       "gender": "Gender",
+      "selectGender": "Select",
       "genderMale": "Male",
       "genderFemale": "Female",
       "email": "Email Address"
@@ -165,6 +166,7 @@
     "next": "Next →",
     "saveSettings": "Save Settings",
     "resetDefaults": "Reset to Defaults",
+    "saveAndPreview": "Save & Preview",
     "backToHome": "Back to Home"
   },
   "status": {

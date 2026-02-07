@@ -97,6 +97,7 @@
     "fields": {
       "age": "Usia (tahun)",
       "gender": "Jenis Kelamin",
+      "selectGender": "Pilih",
       "genderMale": "Laki-laki",
       "genderFemale": "Perempuan",
       "email": "Alamat Email"
@@ -165,6 +166,7 @@
     "next": "Berikutnya →",
     "saveSettings": "Simpan Pengaturan",
     "resetDefaults": "Kembalikan ke Bawaan",
+    "saveAndPreview": "Simpan & Pratinjau",
     "backToHome": "Kembali ke Beranda"
   },
   "status": {

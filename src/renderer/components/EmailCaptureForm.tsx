@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { SubjectInfo } from '../types/trial';
 
@@ -10,13 +10,20 @@ export interface EmailCaptureFormProps {
 }
 
 export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCaptureFormProps) {
-  const { t } = useTranslation(lng);
+  const { t, i18n } = useTranslation();
   const [age, setAge] = useState<number>(0);
   const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update i18n language when lng prop changes
+  useEffect(() => {
+    if (lng && lng !== i18n.language) {
+      i18n.changeLanguage(lng);
+    }
+  }, [lng, i18n]);
 
   const subjectInfo: SubjectInfo = { age, gender: gender as 'Male' | 'Female' };
 
@@ -109,7 +116,7 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
               disabled={isSubmitting}
               required
             >
-              <option value="">{t('error.required')}</option>
+              <option value="" disabled hidden>{t('emailForm.fields.selectGender')}</option>
               <option value="Male">{t('emailForm.fields.genderMale')}</option>
               <option value="Female">{t('emailForm.fields.genderFemale')}</option>
             </select>
@@ -160,7 +167,7 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
           disabled={!consent || !email || !gender || age < 0 || age > 120 || isSubmitting}
           className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-[#099B9E] disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
         >
-          {isSubmitting ? t('emailForm.saving') : `${t('button.save')} ${t('button.preview')}`}
+          {isSubmitting ? t('emailForm.saving') : t('button.saveAndPreview')}
         </button>
         <button
           type="button"
