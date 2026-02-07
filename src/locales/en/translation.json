@@ -34,7 +34,7 @@
       "progress": "Trial {{current}} of {{total}}"
     },
     "instructions": "Press the button when you see the TARGET square",
-    "exitAssessment": "Exit Assessment",
+    "exitTest": "Exit Assessment",
     "complete": "Assessment Complete",
     "page": {
       "title": "F.O.C.U.S. Assessment",

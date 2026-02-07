@@ -34,7 +34,7 @@
       "progress": "Percobaan {{current}} dari {{total}}"
     },
     "instructions": "Tekan tombol saat melihat KOTAK TARGET",
-    "exitAssessment": "Keluar Penilaian",
+    "exitTest": "Keluar Penilaian",
     "complete": "Penilaian Selesai",
     "page": {
       "title": "Penilaian F.O.C.U.S.",
