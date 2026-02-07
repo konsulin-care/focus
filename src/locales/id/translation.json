@@ -1,0 +1,131 @@
+{
+  "app": {
+    "title": "Penilaian F.O.C.U.S.",
+    "tagline": "Mengikuti Petunjuk Berkelanjutan Di Bawah Struktur"
+  },
+  "home": {
+    "description": "F.O.C.U.S. adalah tugas perhatian visual berbasis komputer yang dirancang untuk memeriksa bagaimana pengguna melacak dan menanggapi petunjuk visual berkelanjutan yang disajikan dengan kecepatan tetap.",
+    "metrics": {
+      "responseTime": "Waktu Respons",
+      "responseVariability": "Variabilitas Waktu Respons",
+      "commissionErrors": "Kesalahan Komisi",
+      "omissionErrors": "Kesalahan Kelalaian"
+    },
+    "duration": {
+      "title": "Durasi Tes",
+      "text": "Penilaian ini membutuhkan waktu sekitar {{duration}} menit untuk diselesaikan."
+    },
+    "instructions": {
+      "text": "Selama waktu ini, Anda akan melihat stimulus visual bergantian dan harus merespons dengan menekan tombol atau tombol saat stimulus target muncul."
+    }
+  },
+  "test": {
+    "buffer": {
+      "title": "Bersiaplah",
+      "description": "Tes akan segera dimulai",
+      "remaining": "Dimulai dalam {{seconds}} detik..."
+    },
+    "countdown": {
+      "title": "Bersiaplah",
+      "description": "Tes dimulai sekarang"
+    },
+    "running": {
+      "target": "Tekan sekarang!",
+      "progress": "Percobaan {{current}} dari {{total}}"
+    },
+    "instructions": "Tekan tombol saat melihat KOTAK TARGET",
+    "exitTest": "Keluar Tes",
+    "complete": "Tes Selesai"
+  },
+  "results": {
+    "title": "Hasil Anda",
+    "sendResults": "Kirim Hasil ke Email",
+    "emailSent": "Hasil dikirim ke {{email}}",
+    "previewResults": "Pratinjau Hasil",
+    "acs": {
+      "score": "Skor Perbandingan Perhatian",
+      "interpretation": {
+        "normal": "Dalam Batas Normal",
+        "borderline": "Batas",
+        "impaired": "Tidak Dalam Batas Normal"
+      }
+    },
+    "metrics": {
+      "hits": "Sukses",
+      "hitRate": "Tingkat Sukses",
+      "falseAlarms": "Alarm Palsu",
+      "falseAlarmRate": "Tingkat Alarm Palsu",
+      "misses": "Kegagalan",
+      "omissionRate": "Tingkat Kegagalan",
+      "dPrime": "Skor D Prime",
+      "responseTimeMean": "Rata-rata Waktu Respons",
+      "responseTimeVariability": "Variabilitas Waktu Respons"
+    },
+    "zScores": {
+      "title": "Z-Scores (dibandingkan dengan data normatif)",
+      "responseTime": "Z-Score Waktu Respons",
+      "variability": "Z-Score Variabilitas"
+    },
+    "validity": {
+      "title": "Validitas Tes",
+      "valid": "Tes Valid - Hasil dapat dipercaya",
+      "invalid": "Tes Tidak Valid - Terlalu banyak respons antisipatori"
+    },
+    "trialOutcomes": {
+      "title": "Hasil Percobaan",
+      "correct": "Respons Benar",
+      "commission": "Kesalahan Komisi",
+      "omission": "Kesalahan Kelalaian"
+    }
+  },
+  "emailForm": {
+    "title": "Terima Hasil Anda",
+    "description": "Konsulin akan memberikan akses aman ke hasil Anda melalui email",
+    "fields": {
+      "age": "Usia (tahun)",
+      "gender": "Jenis Kelamin",
+      "genderMale": "Laki-laki",
+      "genderFemale": "Perempuan",
+      "email": "Alamat Email"
+    },
+    "consent": {
+      "text": "Saya menyetujui untuk menerima hasil tes di alamat email ini. Email saya akan diproses dengan aman dan dihapus setelah hasil dikirim. Data disimpan selama 7 hari kecuali berhasil dikirimkan.",
+      "privacyLink": "Kebijakan Privasi"
+    },
+    "gdpr": "Data Anda dilindungi oleh peraturan GDPR.",
+    "saving": "Menyimpan..."
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "display": {
+      "title": "Tampilan",
+      "fullscreen": "Mode Layar Penuh"
+    },
+    "language": {
+      "title": "Bahasa",
+      "description": "Pilih bahasa pilihan Anda"
+    },
+    "timing": {
+      "title": "Pengaturan Waktu",
+      "stimulusDuration": "Durasi Stimulus (md)",
+      "interstimulusInterval": "Interval Inter-Stimulus (md)"
+    }
+  },
+  "about": {
+    "title": "Tentang F.O.C.U.S.",
+    "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) adalah penilaian perhatian visual yang dirancang untuk pengaturan klinis dan penelitian.",
+    "version": "Versi",
+    "features": {
+      "precision": "Waktu presisi tinggi (±1md)",
+      "metrics": "Empat metrik perhatian utama",
+      "normative": "Data normatif disesuaikan dengan usia dan jenis kelamin",
+      "privacy": "Penanganan data sesuai GDPR"
+    }
+  },
+  "sidebar": {
+    "language": "Bahasa"
+  },
+  "button": {
+    "start": "Mulai Tes"
+  }
+}

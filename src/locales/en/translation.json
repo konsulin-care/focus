@@ -1,0 +1,131 @@
+{
+  "app": {
+    "title": "F.O.C.U.S. Assessment",
+    "tagline": "Following Ongoing Cues Under Structure"
+  },
+  "home": {
+    "description": "F.O.C.U.S. is a computer-based visual attention task designed to examine how users track and respond to ongoing visual cues presented at a fixed pace.",
+    "metrics": {
+      "responseTime": "Response Time",
+      "responseVariability": "Response Time Variability",
+      "commissionErrors": "Commission Errors",
+      "omissionErrors": "Omission Errors"
+    },
+    "duration": {
+      "title": "Test Duration",
+      "text": "The assessment takes approximately {{duration}} minutes to complete."
+    },
+    "instructions": {
+      "text": "During this time, you will see alternating visual stimuli and should respond by pressing the button or key when the target stimulus appears."
+    }
+  },
+  "test": {
+    "buffer": {
+      "title": "Get Ready",
+      "description": "The test will begin shortly",
+      "remaining": "Starting in {{seconds}} seconds..."
+    },
+    "countdown": {
+      "title": "Get Ready",
+      "description": "Test starting now"
+    },
+    "running": {
+      "target": "Press now!",
+      "progress": "Trial {{current}} of {{total}}"
+    },
+    "instructions": "Press the button when you see the TARGET square",
+    "exitTest": "Exit Test",
+    "complete": "Test Complete"
+  },
+  "results": {
+    "title": "Your Results",
+    "sendResults": "Send Results to Email",
+    "emailSent": "Results sent to {{email}}",
+    "previewResults": "Preview Results",
+    "acs": {
+      "score": "Attention Comparison Score",
+      "interpretation": {
+        "normal": "Within Normal Limits",
+        "borderline": "Borderline",
+        "impaired": "Not Within Normal Limits"
+      }
+    },
+    "metrics": {
+      "hits": "Hits",
+      "hitRate": "Hit Rate",
+      "falseAlarms": "False Alarms",
+      "falseAlarmRate": "False Alarm Rate",
+      "misses": "Misses",
+      "omissionRate": "Omission Rate",
+      "dPrime": "D Prime Score",
+      "responseTimeMean": "Mean Response Time",
+      "responseTimeVariability": "Response Time Variability"
+    },
+    "zScores": {
+      "title": "Z-Scores (compared to normative data)",
+      "responseTime": "Response Time Z-Score",
+      "variability": "Variability Z-Score"
+    },
+    "validity": {
+      "title": "Test Validity",
+      "valid": "Valid Test - Results are reliable",
+      "invalid": "Invalid Test - Too many anticipatory responses"
+    },
+    "trialOutcomes": {
+      "title": "Trial Outcomes",
+      "correct": "Correct Responses",
+      "commission": "Commission Errors",
+      "omission": "Omission Errors"
+    }
+  },
+  "emailForm": {
+    "title": "Receive Your Results",
+    "description": "Konsulin will provide secure access to your results through email",
+    "fields": {
+      "age": "Age (years)",
+      "gender": "Gender",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "email": "Email Address"
+    },
+    "consent": {
+      "text": "I consent to receive my test results at this email address. My email will be securely processed and deleted after results are sent. Data is retained for 7 days unless successfully transmitted.",
+      "privacyLink": "Privacy Policy"
+    },
+    "gdpr": "Your data is protected under GDPR regulations.",
+    "saving": "Saving..."
+  },
+  "settings": {
+    "title": "Settings",
+    "display": {
+      "title": "Display",
+      "fullscreen": "Fullscreen Mode"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose your preferred language"
+    },
+    "timing": {
+      "title": "Timing Settings",
+      "stimulusDuration": "Stimulus Duration (ms)",
+      "interstimulusInterval": "Inter-Stimulus Interval (ms)"
+    }
+  },
+  "about": {
+    "title": "About F.O.C.U.S.",
+    "description": "F.O.C.U.S. (Following Ongoing Cues Under Structure) is a visual attention assessment designed for clinical and research settings.",
+    "version": "Version",
+    "features": {
+      "precision": "High-precision timing (±1ms)",
+      "metrics": "Four key attention metrics",
+      "normative": "Age and gender-adjusted normative data",
+      "privacy": "GDPR compliant data handling"
+    }
+  },
+  "sidebar": {
+    "language": "Language"
+  },
+  "button": {
+    "start": "Start Test"
+  }
+}

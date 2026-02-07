@@ -1,0 +1,34 @@
+{
+  "button": {
+    "start": "Mulai Tes",
+    "stop": "Berhenti",
+    "next": "Berikutnya",
+    "previous": "Sebelumnya",
+    "submit": "Kirim",
+    "cancel": "Batal",
+    "save": "Simpan",
+    "preview": "Pratinjau",
+    "retry": "Coba Lagi"
+  },
+  "nav": {
+    "home": "Beranda",
+    "test": "Tes",
+    "settings": "Pengaturan",
+    "about": "Tentang"
+  },
+  "language": {
+    "label": "Bahasa",
+    "english": "English",
+    "indonesian": "Bahasa Indonesia"
+  },
+  "error": {
+    "required": "Kolom ini wajib diisi",
+    "invalidEmail": "Masukkan alamat email yang valid",
+    "invalidAge": "Masukkan usia yang valid antara 0 dan 120",
+    "invalidGender": "Pilih jenis kelamin",
+    "saveFailed": "Gagal menyimpan. Silakan coba lagi.",
+    "networkError": "Kesalahan jaringan. Periksa koneksi Anda."
+  },
+  "loading": "Memuat...",
+  "success": "Berhasil"
+}
