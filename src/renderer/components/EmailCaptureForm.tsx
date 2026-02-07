@@ -180,7 +180,7 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
       </div>
       
       <p className="text-xs text-gray-500 text-center">
-        {t('emailForm.gdpr')} <a href="#" className="text-blue-600 hover:underline">{t('emailForm.consent.privacyLink')}</a>
+        {t('emailForm.gdpr')} <a href="https://konsulin.care/gdpr-compliance" className="text-blue-600 hover:underline">{t('emailForm.consent.privacyLink')}</a>
       </p>
     </form>
   );

@@ -25,6 +25,9 @@ runs:
     - name: Extract version from PR commits and auto-tag merge commit
       id: version
       shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base_sha }}
+        HEAD_SHA: ${{ inputs.head_sha }}
       run: |
         # Enable error handling - exit on error, undefined variable, and pipe failure
         set -euo pipefail
@@ -33,9 +36,7 @@ runs:
         readonly MERGE_SHA="$(git rev-parse HEAD)"
         echo "Merge commit SHA: ${MERGE_SHA}"
 
-        # Get PR commit range
-        readonly BASE_SHA="${{ inputs.base_sha }}"
-        readonly HEAD_SHA="${{ inputs.head_sha }}"
+        # Get PR commit range (from environment variable - safe from injection)
         echo "PR range: ${BASE_SHA}..${HEAD_SHA}"
 
         # Check if merge commit has a version tag; prioritizes vX.Y.Z over vX.Y.Z-release
