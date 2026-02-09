@@ -181,3 +181,19 @@ sequenceDiagram
 - All privileged operations proxied through preload context bridge
 - SQLite database encrypted at rest
 - HTTPS enforced for all server communication
+
+## Utility Modules
+
+### Metrics Calculation Layer
+- `attention-metrics.ts`: Main entry point for attention metrics calculation
+- `acs-shared.ts`: Shared ACS calculation logic used by results display and modal
+- `basic-stats.ts`: Basic statistical functions (mean, std dev, z-score)
+- `clinical-metrics.ts`: Clinical-specific metrics (D Prime with TOVA formula)
+- `trial-processing.ts`: Event to trial result processing
+- `normative-data.ts`: Normative reference data lookup
+- `trial-constants.ts`: Constants for ACS thresholds and validation
+
+### Test Layer
+- `attention-metrics.test.ts`: Comprehensive unit tests validating TOVA manual calculations
+- Uses Vitest framework with floating-point comparisons
+- Tests D Prime, variability, and ACS calculations

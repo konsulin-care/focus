@@ -11,8 +11,8 @@
 // Basic statistics
 export * from './basic-stats';
 
-// Probability distributions
+// Probability distributions (pure statistical functions)
 export * from './distributions';
 
-// Clinical metrics
+// Clinical metrics (domain-specific functions combining distributions)
 export * from './clinical-metrics';

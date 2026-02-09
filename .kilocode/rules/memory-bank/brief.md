@@ -16,6 +16,11 @@ Building a desktop application that implements the F.O.C.U.S. (Following Ongoing
 - Attention Comparison Score (ACS) with normative data comparison
 - Signal detection metrics (D Prime, hit rate, false alarm rate)
 - Validity assessment with anticipatory response detection
+- Multi-language support (English, Indonesian) with i18next
+- Home, About, and Settings pages with sidebar navigation
+- Configurable test parameters (stimulus duration, ISI, trial count, buffer)
+- Detailed ACS calculation modal with step-by-step breakdown
+- Unit testing with Vitest for attention metrics validation
 
 ### Partially Implemented
 - N8N webhook integration for result submission (structure exists, needs endpoint URL)
@@ -33,3 +38,4 @@ Building a desktop application that implements the F.O.C.U.S. (Following Ongoing
 - Data integrity and HIPAA/GDPR compliance throughout the workflow
 - Minimal ongoing infrastructure costs through serverless architecture
 - Support for abbreviated tests (proportional scaling for shorter tests)
+- Multi-language support for international deployment

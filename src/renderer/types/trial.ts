@@ -67,21 +67,21 @@ export interface ValidityAssessment {
  */
 export interface AttentionZScores {
   /** Z-score for response time (first half of test) */
-  responseTime: number;
+  responseTime: number | null;
   /** Z-score for D Prime (second half of test) */
-  dPrime: number;
+  dPrime: number | null;
   /** Z-score for response time variability (total test) */
-  variability: number;
+  variability: number | null;
 }
 
 /**
  * Comprehensive attention metrics including ACS scoring.
  */
 export interface AttentionMetrics {
-  /** Attention Comparison Score */
-  acs: number;
-  /** Interpretation of ACS score */
-  acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits';
+  /** Attention Comparison Score (null if normative data unavailable) */
+  acs: number | null;
+  /** Interpretation of ACS score (unavailable if no normative data) */
+  acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits' | 'unavailable';
   
   // Raw response counts (for accurate total responses calculation)
   /** Number of correct target detections (CORTGT) */
@@ -118,4 +118,95 @@ export interface AttentionMetrics {
   scalingFactor: number;
   /** Z-scores for individual components */
   zScores: AttentionZScores;
+}
+
+/**
+ * Detailed ACS calculation breakdown for display in modal
+ */
+export interface AcsCalculationDetails {
+  // Subject information
+  /** Subject age in years */
+  age: number;
+  /** Subject gender */
+  gender: string;
+  /** Normative reference group age range */
+  normativeGroup: string;
+  /** Whether normative data was found for this subject */
+  normativeAvailable: boolean;
+  
+  // D' Calculation details
+  dPrime: {
+    /** Raw hit rate (0-1) */
+    hitRate: number;
+    /** Raw false alarm rate (0-1) */
+    falseAlarmRate: number;
+    /** Adjusted hit rate (TOVA methodology: bounded 0.00001-0.99999) */
+    adjustedHitRate: number;
+    /** Adjusted false alarm rate (TOVA methodology: bounded 0.00001-0.99999) */
+    adjustedFARate: number;
+    /** Z-score for hit rate */
+    zHit: number;
+    /** Z-score for false alarm rate */
+    zFA: number;
+    /** Final D' value */
+    result: number;
+  };
+  
+  // Variability details
+  variability: {
+    /** Mean response time in ms */
+    mean: number;
+    /** Standard deviation of response times */
+    sd: number;
+    /** All valid response times used in calculation */
+    responseTimes: number[];
+  };
+  
+  // Z-score calculations
+  zScores: {
+    responseTime: {
+      /** Subject's response time value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number | null;
+      /** Normative standard deviation */
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
+    };
+    dPrime: {
+      /** Subject's D' value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number | null;
+      /** Normative standard deviation */
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
+    };
+    variability: {
+      /** Subject's variability value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number | null;
+      /** Normative standard deviation */
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
+    };
+  };
+  
+  // Final ACS calculation (null if no normative data available)
+  acs: {
+    /** Response Time Z-score (Half 1, null if no normative data) */
+    rtZ: number | null;
+    /** D' Z-score (Half 2, null if no normative data) */
+    dPrimeZ: number | null;
+    /** Variability Z-score (Total, null if no normative data) */
+    variabilityZ: number | null;
+    /** ACS constant (1.80) */
+    constant: number;
+    /** Final ACS result */
+    result: number;
+  } | null;
 }

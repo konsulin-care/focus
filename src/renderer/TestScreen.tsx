@@ -55,7 +55,7 @@ function TestScreen() {
     resetResponse  // Pass resetResponse to reset on new trial
   );
   
-  const { metrics, calculateMetrics } = useAttentionMetrics(testEvents);
+  const { metrics, subjectInfo, calculateMetrics } = useAttentionMetrics(testEvents);
 
   // Local state for stimulus management
   const [currentStimulus, setCurrentStimulus] = useState<StimulusType | null>(null);
@@ -122,10 +122,12 @@ function TestScreen() {
       )}
 
       {/* Results summary */}
-      {phase === 'completed' && !showEmailCapture && metrics && (
+      {phase === 'completed' && !showEmailCapture && metrics && subjectInfo && (
         <ResultsSummary 
           metrics={metrics} 
           elapsedTimeMs={elapsedTimeMs}
+          testEvents={testEvents}
+          subjectInfo={subjectInfo}
         />
       )}
 

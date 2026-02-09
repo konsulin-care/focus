@@ -65,12 +65,12 @@ export function determineTrialOutcome(
  * Process raw test events into an array of trial results.
  * 
  * @param events - Array of raw test events
- * @param config - Test configuration
+ * @param config - Test configuration (partial, only totalTrials is required)
  * @returns Array of processed trial results
  */
 export function processTestEvents(
   events: TestEvent[],
-  config: TestConfig
+  config: Partial<TestConfig> & { totalTrials: number }
 ): TrialResult[] {
   const trialResults: TrialResult[] = [];
   
