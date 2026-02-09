@@ -78,10 +78,10 @@ export interface AttentionZScores {
  * Comprehensive attention metrics including ACS scoring.
  */
 export interface AttentionMetrics {
-  /** Attention Comparison Score */
-  acs: number;
-  /** Interpretation of ACS score */
-  acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits';
+  /** Attention Comparison Score (null if normative data unavailable) */
+  acs: number | null;
+  /** Interpretation of ACS score (unavailable if no normative data) */
+  acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits' | 'unavailable';
   
   // Raw response counts (for accurate total responses calculation)
   /** Number of correct target detections (CORTGT) */

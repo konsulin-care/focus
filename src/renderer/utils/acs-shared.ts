@@ -36,8 +36,8 @@ export interface AcsIntermediateResult {
   dPrimeZ: number | null;
   variabilityZ: number | null;
   
-  // Final ACS
-  acs: number;
+  // Final ACS (null when normative data is unavailable)
+  acs: number | null;
 }
 
 /**
@@ -124,8 +124,11 @@ export function computeAcsValues(
     }
   }
   
-  // === Final ACS Calculation (use 0 for z-scores if null) ===
-  const acs = (rtZ ?? 0) + (dPrimeZ ?? 0) + (variabilityZ ?? 0) + TRIAL_CONSTANTS.ACS_CONSTANT;
+  // === Final ACS Calculation (null if normative data unavailable) ===
+  const hasNormativeData = rtZ !== null || dPrimeZ !== null || variabilityZ !== null;
+  const acs = hasNormativeData
+    ? (rtZ ?? 0) + (dPrimeZ ?? 0) + (variabilityZ ?? 0) + TRIAL_CONSTANTS.ACS_CONSTANT
+    : null;
   
   return {
     trials,

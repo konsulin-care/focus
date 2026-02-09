@@ -90,7 +90,8 @@
       "interpretation": {
         "normal": "Within Normal Limits",
         "borderline": "Borderline",
-        "impaired": "Not Within Normal Limits"
+        "impaired": "Not Within Normal Limits",
+        "unavailable": "Normative Data Unavailable"
       }
     },
     "metrics": {

@@ -11,7 +11,7 @@ interface ZScoreRowProps {
  * Z-score table row component displaying a single metric comparison.
  */
 export function ZScoreRow({ label, subjectValue, normMean, normSD, result, unit = '' }: ZScoreRowProps) {
-  const formatValue = (value: number | null, suffix: string = '') => {
+  const formatValue = (value: number | null, suffix = '') => {
     if (value === null) return <span className="text-gray-500">—</span>;
     return `${value.toFixed(2)}${suffix}`;
   };

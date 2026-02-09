@@ -384,10 +384,14 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       
       const metrics = calculateAttentionMetrics(events, subjectInfo);
       
+      // Ensure acs is not null (assertion will fail if normative data unavailable)
+      expect(metrics.acs).not.toBeNull();
+      const acs = metrics.acs as number;
+      
       console.log('[TEST] Full ACS Calculation:');
       console.log('[TEST]   DPrime:', metrics.dPrime.toFixed(4));
       console.log('[TEST]   Variability:', metrics.variability.toFixed(2));
-      console.log('[TEST]   ACS:', metrics.acs.toFixed(2));
+      console.log('[TEST]   ACS:', acs.toFixed(2));
       console.log('[TEST]   DPrime Z:', metrics.zScores.dPrime?.toFixed(2) ?? 'N/A');
       console.log('[TEST]   Variability Z:', metrics.zScores.variability?.toFixed(2) ?? 'N/A');
       console.log('[TEST]   RT Z:', metrics.zScores.responseTime?.toFixed(2) ?? 'N/A');
@@ -403,7 +407,7 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       
       // ACS should be close to manual calculation (10.59)
       // Using 1.0 tolerance due to normative data differences
-      expect(Math.abs(metrics.acs - 10.59)).toBeLessThan(0.1);
+      expect(Math.abs(acs - 10.59)).toBeLessThan(0.1);
     });
   });
   
@@ -470,14 +474,16 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       const metrics = calculateAttentionMetrics(events, subjectInfo);
       
       // ACS should be a combination of scaled Z-scores + constant
+      // Note: acs is number | null per AttentionMetrics type
+      expect(metrics.acs).not.toBeNull();
       expect(typeof metrics.acs).toBe('number');
       expect(Number.isFinite(metrics.acs)).toBe(true);
       
       // Z-scores should be present (or null if normative data unavailable)
-      // Check for null first, then assert number type
-      expect(metrics.zScores.responseTime === null || typeof metrics.zScores.responseTime === 'number').toBe(true);
-      expect(metrics.zScores.dPrime === null || typeof metrics.zScores.dPrime === 'number').toBe(true);
-      expect(metrics.zScores.variability === null || typeof metrics.zScores.variability === 'number').toBe(true);
+      // Use explicit null/number checks for clearer intent
+      expect(metrics.zScores.responseTime).toSatisfy((v: number | null) => v === null || typeof v === 'number');
+      expect(metrics.zScores.dPrime).toSatisfy((v: number | null) => v === null || typeof v === 'number');
+      expect(metrics.zScores.variability).toSatisfy((v: number | null) => v === null || typeof v === 'number');
       
       // Interpretation should be valid
       expect(['normal', 'borderline', 'not-within-normal-limits']).toContain(metrics.acsInterpretation);
@@ -539,6 +545,10 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
         zScoreScaled(overallVariability, normativeStats.variabilityMean, normativeStats.variabilitySD, 1) +
         TRIAL_CONSTANTS.ACS_CONSTANT;
       
+      // Ensure acs is not null before assertions
+      expect(metrics.acs).not.toBeNull();
+      const acs = metrics.acs as number;
+      
       console.log('[TEST] === ACS Manual Calculation ===');
       console.log('[TEST] Trial Count:', metrics.trialCount);
       console.log('[TEST] First Half Mean RT:', firstHalfMeanRT.toFixed(2));
@@ -547,12 +557,12 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       console.log('[TEST] Normative RT Mean:', normativeStats.responseTimeMean, 'SD:', normativeStats.responseTimeSD);
       console.log('[TEST] Normative DPrime Mean:', normativeStats.dPrimeMean, 'SD:', normativeStats.dPrimeSD);
       console.log('[TEST] Normative Variability Mean:', normativeStats.variabilityMean, 'SD:', normativeStats.variabilitySD);
-      console.log('[TEST] Library ACS:', metrics.acs.toFixed(4));
+      console.log('[TEST] Library ACS:', acs.toFixed(4));
       console.log('[TEST] Manual ACS:', manualACS.toFixed(4));
-      console.log('[TEST] Difference:', (metrics.acs - manualACS).toFixed(6));
+      console.log('[TEST] Difference:', (acs - manualACS).toFixed(6));
       
       // ACS should match between library and manual calculation
-      expect(Math.abs(metrics.acs - manualACS)).toBeLessThan(0.01);
+      expect(Math.abs(acs - manualACS)).toBeLessThan(0.01);
     });
   });
   

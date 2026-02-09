@@ -45,19 +45,27 @@ export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps)
           )}
         </div>
         <div className="text-center">
-          <div className="text-5xl font-bold text-white">{metrics.acs.toFixed(2)}</div>
-          <div className={`mt-2 text-lg font-medium ${
-            metrics.acsInterpretation === 'normal' ? 'text-green-400' :
-            metrics.acsInterpretation === 'borderline' ? 'text-yellow-400' :
-            'text-red-400'
-          }`}>
-            {metrics.acsInterpretation === 'normal' ? t('results.acs.interpretation.normal') :
-             metrics.acsInterpretation === 'borderline' ? t('results.acs.interpretation.borderline') :
-             t('results.acs.interpretation.impaired')}
-          </div>
-          <div className="text-blue-300 text-sm mt-2">
-            F.O.C.U.S. Score: {normalCDF(metrics.acs - 1.80).toFixed(1)}%
-          </div>
+          {metrics.acs !== null ? (
+            <>
+              <div className="text-5xl font-bold text-white">{metrics.acs.toFixed(2)}</div>
+              <div className={`mt-2 text-lg font-medium ${
+                metrics.acsInterpretation === 'normal' ? 'text-green-400' :
+                metrics.acsInterpretation === 'borderline' ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {metrics.acsInterpretation === 'normal' ? t('results.acs.interpretation.normal') :
+                 metrics.acsInterpretation === 'borderline' ? t('results.acs.interpretation.borderline') :
+                 t('results.acs.interpretation.impaired')}
+              </div>
+              <div className="text-blue-300 text-sm mt-2">
+                F.O.C.U.S. Score: {normalCDF(metrics.acs - 1.80).toFixed(1)}%
+              </div>
+            </>
+          ) : (
+            <div className="text-3xl font-bold text-yellow-400">
+              {t('results.acs.interpretation.unavailable')}
+            </div>
+          )}
         </div>
       </button>
 

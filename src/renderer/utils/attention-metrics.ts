@@ -75,9 +75,11 @@ export function calculateAttentionMetrics(
     };
   }
   
-  // Interpret ACS
-  let acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits';
-  if (acs >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {
+  // Interpret ACS (handle null case when no normative data)
+  let acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits' | 'unavailable';
+  if (acs === null) {
+    acsInterpretation = 'unavailable';
+  } else if (acs >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {
     acsInterpretation = 'normal';
   } else if (acs >= TRIAL_CONSTANTS.ACS_BORDERLINE_THRESHOLD) {
     acsInterpretation = 'borderline';

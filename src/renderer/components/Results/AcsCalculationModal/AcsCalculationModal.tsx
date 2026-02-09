@@ -33,15 +33,16 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
   // Show/hide dialog using native API
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (dialog && !dialog.open) {
-      dialog.showModal();
-      const handleCancel = () => onClose();
-      dialog.addEventListener('close', handleCancel);
-      return () => {
-        dialog.removeEventListener('close', handleCancel);
-        dialog.close()
-      };
-    }
+    if (!dialog) return;
+    
+    dialog.showModal();
+    const handleCancel = () => onClose();
+    dialog.addEventListener('close', handleCancel);
+    
+    return () => {
+      dialog.removeEventListener('close', handleCancel);
+      dialog.close();
+    };
   }, [onClose]);
   
   // Handle backdrop click - dialog element handles Escape key natively
@@ -80,6 +81,15 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
 
         {/* D' Calculation */}
         <DPrimeSection dPrime={details.dPrime} />
+
+        {/* Warning when normative data is unavailable */}
+        {!details.normativeAvailable && (
+          <div className="bg-yellow-600/20 border border-yellow-600 p-4 rounded-lg mb-6" role="alert">
+            <p className="text-yellow-200 text-sm">
+              {t('results.acs.noNormativeData')}
+            </p>
+          </div>
+        )}
 
         {/* Z-Score Comparison Table */}
         <ZScoreTable zScores={details.zScores} />
