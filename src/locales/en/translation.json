@@ -86,6 +86,7 @@
       "constantFormula": "Constant",
       "finalResult": "ACS",
       "closeModal": "Close",
+      "noNormativeData": "No normative data available for this age/gender combination. ACS cannot be calculated.",
       "interpretation": {
         "normal": "Within Normal Limits",
         "borderline": "Borderline",

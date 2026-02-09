@@ -156,12 +156,14 @@ export function generateAcsCalculationDetails(
       },
     },
     
-    acs: {
-      rtZ: result.rtZ,
-      dPrimeZ: result.dPrimeZ,
-      variabilityZ: result.variabilityZ,
-      constant: TRIAL_CONSTANTS.ACS_CONSTANT,
-      result: result.acs,
-    },
+    acs: normativeAvailable
+      ? {
+          rtZ: result.rtZ,
+          dPrimeZ: result.dPrimeZ,
+          variabilityZ: result.variabilityZ,
+          constant: TRIAL_CONSTANTS.ACS_CONSTANT,
+          result: result.acs,
+        }
+      : null,
   };
 }

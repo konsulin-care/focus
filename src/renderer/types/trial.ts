@@ -196,7 +196,7 @@ export interface AcsCalculationDetails {
     };
   };
   
-  // Final ACS calculation
+  // Final ACS calculation (null if no normative data available)
   acs: {
     /** Response Time Z-score (Half 1, null if no normative data) */
     rtZ: number | null;
@@ -208,5 +208,5 @@ export interface AcsCalculationDetails {
     constant: number;
     /** Final ACS result */
     result: number;
-  };
+  } | null;
 }

@@ -10,11 +10,12 @@ export interface AcsDetails {
 }
 
 interface AcsResultSectionProps {
-  acs: AcsDetails;
+  acs: AcsDetails | null;
 }
 
 /**
  * Final ACS calculation section showing formula breakdown.
+ * Displays a "no normative data" message when acs is null.
  */
 export function AcsResultSection({ acs }: AcsResultSectionProps) {
   const { t } = useTranslation();
@@ -23,6 +24,20 @@ export function AcsResultSection({ acs }: AcsResultSectionProps) {
     if (value === null) return <span className="text-gray-500">—</span>;
     return value.toFixed(2);
   };
+
+  // Show "no normative data" message when acs is null
+  if (!acs) {
+    return (
+      <div className="bg-blue-900/50 p-4 rounded-lg mb-6">
+        <h3 className="text-blue-400 font-medium mb-2">
+          {t('results.acs.finalAcs')}
+        </h3>
+        <p className="text-gray-400 text-sm">
+          {t('results.acs.noNormativeData') || 'No normative data available for ACS calculation'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-blue-900/50 p-4 rounded-lg mb-6">
