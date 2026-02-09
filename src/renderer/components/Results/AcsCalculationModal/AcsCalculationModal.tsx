@@ -35,10 +35,13 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
     const dialog = dialogRef.current;
     if (dialog) {
       dialog.showModal();
+      const handleCancel = () => onClose();
+      dialog.addEventListener('close', handleCancel);
+      return () => {
+        dialog.removeEventListener('close', handleCancel);
+        dialog.close()
+      };
     }
-    return () => {
-      dialog?.close();
-    };
   }, []);
   
   // Handle backdrop click - dialog element handles Escape key natively

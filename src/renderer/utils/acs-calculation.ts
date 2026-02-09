@@ -70,11 +70,15 @@ function calculateDPrimeIntermediates(result: AcsIntermediateResult) {
   const hitRate = secondHalfTargets > 0 ? secondHalfHits / secondHalfTargets : 0.5;
   const falseAlarmRate = secondHalfNonTargets > 0 ? secondHalfCommissions / secondHalfNonTargets : 0.5;
   
+  // Calculate adjusted rates first (uses clampProbability internally)
+  const { adjustedHitRate, adjustedFARate } = calculateAdjustedRates(hitRate, falseAlarmRate);
+  
   return {
     hitRate,
     falseAlarmRate,
-    ...calculateAdjustedRates(hitRate, falseAlarmRate),
-    ...calculateZScoresForDisplay(hitRate, falseAlarmRate),
+    adjustedHitRate,
+    adjustedFARate,
+    ...calculateZScoresForDisplay(adjustedHitRate, adjustedFARate),
     dPrime: result.dPrime,
   };
 }

@@ -45,7 +45,7 @@ export function AcsResultSection({ acs }: AcsResultSectionProps) {
         />
         <GridRow 
           label={t('results.acs.constantFormula')} 
-          value={`+${acs.constant.toFixed(2)}`}
+          value={acs.constant >= 0 ? `+${acs.constant.toFixed(2)}` : acs.constant.toFixed(2)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
