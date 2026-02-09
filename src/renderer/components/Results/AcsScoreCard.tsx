@@ -24,7 +24,7 @@ export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps)
     setIsModalOpen(false);
   }, []);
 
-  const handleKeyDown = useCallback((e) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       openModal();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { AcsCalculationDetails } from '../../types/trial';
@@ -16,21 +16,26 @@ interface AcsCalculationModalProps {
  * Follows WAI-ARIA modal dialog patterns for accessibility.
  */
 export function AcsCalculationModal({ details, onClose }: AcsCalculationModalProps) {
-  const handleBackdropKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  
+  const handleBackdropClick = useCallback(() => {
+    onClose();
+  }, [onClose]);
+  const handleBackdropKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       handleBackdropClick();
     }
   }, [handleBackdropClick]);
-  const handleContentClick = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleContentClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
   }, []);
-  const handleContentKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleContentKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     e.stopPropagation();
   }, []);
 
   return createPortal(
-    <button
-      type="button"
+    <div
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
@@ -54,20 +59,18 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
         </h2>
 
         {/* Subject Information */}
-        <SubjectInformation />
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">{t('results.acs.age')}:</span>
-              <span className="text-white ml-2">{details.age}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">{t('results.acs.gender')}:</span>
-              <span className="text-white ml-2">{details.gender}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">{t('results.acs.normativeGroup')}:</span>
-              <span className="text-white ml-2">{details.normativeGroup}</span>
-            </div>
+        <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+          <div>
+            <span className="text-gray-400">{t('results.acs.age')}:</span>
+            <span className="text-white ml-2">{details.age}</span>
+          </div>
+          <div>
+            <span className="text-gray-400">{t('results.acs.gender')}:</span>
+            <span className="text-white ml-2">{details.gender}</span>
+          </div>
+          <div>
+            <span className="text-gray-400">{t('results.acs.normativeGroup')}:</span>
+            <span className="text-white ml-2">{details.normativeGroup}</span>
           </div>
         </div>
 
