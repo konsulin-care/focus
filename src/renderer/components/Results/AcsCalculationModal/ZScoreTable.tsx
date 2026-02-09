@@ -1,23 +1,24 @@
 import { useTranslation } from 'react-i18next';
+import { ZScoreRow } from './ZScoreRow';
 
 export interface ZScoreDetails {
   responseTime: {
     subjectValue: number;
-    normMean: number;
-    normSD: number;
-    result: number;
+    normMean: number | null;
+    normSD: number | null;
+    result: number | null;
   };
   dPrime: {
     subjectValue: number;
-    normMean: number;
-    normSD: number;
-    result: number;
+    normMean: number | null;
+    normSD: number | null;
+    result: number | null;
   };
   variability: {
     subjectValue: number;
-    normMean: number;
-    normSD: number;
-    result: number;
+    normMean: number | null;
+    normSD: number | null;
+    result: number | null;
   };
 }
 
@@ -47,27 +48,29 @@ export function ZScoreTable({ zScores }: ZScoreTableProps) {
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-gray-700">
-            <td className="py-2 text-white">{t('results.acs.responseTime')}</td>
-            <td className="text-right text-gray-300">{zScores.responseTime.subjectValue.toFixed(2)} ms</td>
-            <td className="text-right text-gray-400">{zScores.responseTime.normMean.toFixed(2)}</td>
-            <td className="text-right text-gray-400">{zScores.responseTime.normSD.toFixed(2)}</td>
-            <td className="text-right text-green-400 font-medium">{zScores.responseTime.result.toFixed(2)}</td>
-          </tr>
-          <tr className="border-b border-gray-700">
-            <td className="py-2 text-white">{t('results.acs.dPrime')}</td>
-            <td className="text-right text-gray-300">{zScores.dPrime.subjectValue.toFixed(2)}</td>
-            <td className="text-right text-gray-400">{zScores.dPrime.normMean.toFixed(2)}</td>
-            <td className="text-right text-gray-400">{zScores.dPrime.normSD.toFixed(2)}</td>
-            <td className="text-right text-green-400 font-medium">{zScores.dPrime.result.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td className="py-2 text-white">{t('results.acs.variability')}</td>
-            <td className="text-right text-gray-300">{zScores.variability.subjectValue.toFixed(2)} ms</td>
-            <td className="text-right text-gray-400">{zScores.variability.normMean.toFixed(2)}</td>
-            <td className="text-right text-gray-400">{zScores.variability.normSD.toFixed(2)}</td>
-            <td className="text-right text-green-400 font-medium">{zScores.variability.result.toFixed(2)}</td>
-          </tr>
+          <ZScoreRow 
+            label={t('results.acs.responseTime')}
+            subjectValue={zScores.responseTime.subjectValue}
+            normMean={zScores.responseTime.normMean}
+            normSD={zScores.responseTime.normSD}
+            result={zScores.responseTime.result}
+            unit=" ms"
+          />
+          <ZScoreRow 
+            label={t('results.acs.dPrime')}
+            subjectValue={zScores.dPrime.subjectValue}
+            normMean={zScores.dPrime.normMean}
+            normSD={zScores.dPrime.normSD}
+            result={zScores.dPrime.result}
+          />
+          <ZScoreRow 
+            label={t('results.acs.variability')}
+            subjectValue={zScores.variability.subjectValue}
+            normMean={zScores.variability.normMean}
+            normSD={zScores.variability.normSD}
+            result={zScores.variability.result}
+            unit=" ms"
+          />
         </tbody>
       </table>
     </div>

@@ -31,10 +31,10 @@ export interface AcsIntermediateResult {
   // Normative data
   normativeStats: NormativeStats | null;
   
-  // Z-scores
-  rtZ: number;
-  dPrimeZ: number;
-  variabilityZ: number;
+  // Z-scores (null when normative data is unavailable)
+  rtZ: number | null;
+  dPrimeZ: number | null;
+  variabilityZ: number | null;
   
   // Final ACS
   acs: number;
@@ -100,8 +100,10 @@ export function computeAcsValues(
     ? calculateStdDevWithMean(validHitResponseTimes, overallMeanRT)
     : 0;
   
-  // === Z-Score Calculations ===
-  let rtZ = 0, dPrimeZ = 0, variabilityZ = 0;
+  // === Z-Score Calculations (null if no normative data) ===
+  let rtZ: number | null = null;
+  let dPrimeZ: number | null = null;
+  let variabilityZ: number | null = null;
   
   if (normativeStats) {
     rtZ = (firstHalfMeanRT - normativeStats.responseTimeMean) / normativeStats.responseTimeSD;
@@ -109,8 +111,8 @@ export function computeAcsValues(
     variabilityZ = (variability - normativeStats.variabilityMean) / normativeStats.variabilitySD;
   }
   
-  // === Final ACS Calculation ===
-  const acs = rtZ + dPrimeZ + variabilityZ + TRIAL_CONSTANTS.ACS_CONSTANT;
+  // === Final ACS Calculation (use 0 for z-scores if null) ===
+  const acs = (rtZ ?? 0) + (dPrimeZ ?? 0) + (variabilityZ ?? 0) + TRIAL_CONSTANTS.ACS_CONSTANT;
   
   return {
     trials,

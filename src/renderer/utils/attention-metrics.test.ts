@@ -387,9 +387,9 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       console.log('[TEST]   DPrime:', metrics.dPrime.toFixed(4));
       console.log('[TEST]   Variability:', metrics.variability.toFixed(2));
       console.log('[TEST]   ACS:', metrics.acs.toFixed(2));
-      console.log('[TEST]   DPrime Z:', metrics.zScores.dPrime.toFixed(2));
-      console.log('[TEST]   Variability Z:', metrics.zScores.variability.toFixed(2));
-      console.log('[TEST]   RT Z:', metrics.zScores.responseTime.toFixed(2));
+      console.log('[TEST]   DPrime Z:', metrics.zScores.dPrime?.toFixed(2) ?? 'N/A');
+      console.log('[TEST]   Variability Z:', metrics.zScores.variability?.toFixed(2) ?? 'N/A');
+      console.log('[TEST]   RT Z:', metrics.zScores.responseTime?.toFixed(2) ?? 'N/A');
       
       // Verify D Prime is positive for good performance
       expect(metrics.dPrime).toBeGreaterThan(0);

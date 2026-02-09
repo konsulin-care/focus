@@ -1,6 +1,8 @@
+import React from 'react';
+
 interface GridRowProps {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   labelClassName?: string;
   valueClassName?: string;
 }

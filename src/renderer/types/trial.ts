@@ -67,11 +67,11 @@ export interface ValidityAssessment {
  */
 export interface AttentionZScores {
   /** Z-score for response time (first half of test) */
-  responseTime: number;
+  responseTime: number | null;
   /** Z-score for D Prime (second half of test) */
-  dPrime: number;
+  dPrime: number | null;
   /** Z-score for response time variability (total test) */
-  variability: number;
+  variability: number | null;
 }
 
 /**
@@ -131,6 +131,8 @@ export interface AcsCalculationDetails {
   gender: string;
   /** Normative reference group age range */
   normativeGroup: string;
+  /** Whether normative data was found for this subject */
+  normativeAvailable: boolean;
   
   // D' Calculation details
   dPrime: {
@@ -166,42 +168,42 @@ export interface AcsCalculationDetails {
       /** Subject's response time value */
       subjectValue: number;
       /** Normative mean */
-      normMean: number;
+      normMean: number | null;
       /** Normative standard deviation */
-      normSD: number;
-      /** Calculated Z-score */
-      result: number;
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
     };
     dPrime: {
       /** Subject's D' value */
       subjectValue: number;
       /** Normative mean */
-      normMean: number;
+      normMean: number | null;
       /** Normative standard deviation */
-      normSD: number;
-      /** Calculated Z-score */
-      result: number;
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
     };
     variability: {
       /** Subject's variability value */
       subjectValue: number;
       /** Normative mean */
-      normMean: number;
+      normMean: number | null;
       /** Normative standard deviation */
-      normSD: number;
-      /** Calculated Z-score */
-      result: number;
+      normSD: number | null;
+      /** Calculated Z-score (null if no normative data) */
+      result: number | null;
     };
   };
   
   // Final ACS calculation
   acs: {
-    /** Response Time Z-score (Half 1) */
-    rtZ: number;
-    /** D' Z-score (Half 2) */
-    dPrimeZ: number;
-    /** Variability Z-score (Total) */
-    variabilityZ: number;
+    /** Response Time Z-score (Half 1, null if no normative data) */
+    rtZ: number | null;
+    /** D' Z-score (Half 2, null if no normative data) */
+    dPrimeZ: number | null;
+    /** Variability Z-score (Total, null if no normative data) */
+    variabilityZ: number | null;
     /** ACS constant (1.80) */
     constant: number;
     /** Final ACS result */

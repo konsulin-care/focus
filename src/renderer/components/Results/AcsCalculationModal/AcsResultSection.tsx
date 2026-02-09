@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { GridRow } from './GridRow';
 
 export interface AcsDetails {
-  rtZ: number;
-  dPrimeZ: number;
-  variabilityZ: number;
+  rtZ: number | null;
+  dPrimeZ: number | null;
+  variabilityZ: number | null;
   constant: number;
   result: number;
 }
@@ -19,6 +19,11 @@ interface AcsResultSectionProps {
 export function AcsResultSection({ acs }: AcsResultSectionProps) {
   const { t } = useTranslation();
   
+  const formatZScore = (value: number | null) => {
+    if (value === null) return <span className="text-gray-500">—</span>;
+    return value.toFixed(2);
+  };
+
   return (
     <div className="bg-blue-900/50 p-4 rounded-lg mb-6">
       <h3 className="text-blue-400 font-medium mb-2">
@@ -27,19 +32,19 @@ export function AcsResultSection({ acs }: AcsResultSectionProps) {
       <div className="space-y-2 text-sm">
         <GridRow 
           label={t('results.acs.rtZFormula')} 
-          value={acs.rtZ.toFixed(2)}
+          value={formatZScore(acs.rtZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
         <GridRow 
           label={t('results.acs.dPrimeZFormula')} 
-          value={acs.dPrimeZ.toFixed(2)}
+          value={formatZScore(acs.dPrimeZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
         <GridRow 
           label={t('results.acs.variabilityZFormula')} 
-          value={acs.variabilityZ.toFixed(2)}
+          value={formatZScore(acs.variabilityZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />

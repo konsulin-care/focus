@@ -97,6 +97,9 @@ export function generateAcsCalculationDetails(
   // Use shared helper for all core calculations
   const result = computeAcsValues(events, subjectInfo);
   
+  // Check if normative data is available
+  const normativeAvailable = result.normativeStats !== null;
+  
   // Calculate D' intermediate values for display
   const dPrimeIntermediates = calculateDPrimeIntermediates(result);
   
@@ -105,11 +108,16 @@ export function generateAcsCalculationDetails(
     .filter(t => t.outcome === 'hit' && t.responseTimeMs !== null && !t.isAnticipatory)
     .map(t => t.responseTimeMs as number);
   
+  // Helper to get norm values or null when not available
+  const getNormMean = () => normativeAvailable ? result.normativeStats!.responseTimeMean : null;
+  const getNormSD = () => normativeAvailable ? result.normativeStats!.responseTimeSD : null;
+  
   // Build and return detailed breakdown
   return {
     age: subjectInfo.age,
     gender: subjectInfo.gender,
     normativeGroup: result.normativeStats?.ageRange || 'Unknown',
+    normativeAvailable,
     
     dPrime: {
       hitRate: dPrimeIntermediates.hitRate,
@@ -130,20 +138,20 @@ export function generateAcsCalculationDetails(
     zScores: {
       responseTime: {
         subjectValue: result.firstHalfMeanRT,
-        normMean: result.normativeStats?.responseTimeMean || 0,
-        normSD: result.normativeStats?.responseTimeSD || 1,
+        normMean: getNormMean(),
+        normSD: getNormSD(),
         result: result.rtZ,
       },
       dPrime: {
         subjectValue: result.dPrime,
-        normMean: result.normativeStats?.dPrimeMean || 0,
-        normSD: result.normativeStats?.dPrimeSD || 1,
+        normMean: normativeAvailable ? result.normativeStats!.dPrimeMean : null,
+        normSD: normativeAvailable ? result.normativeStats!.dPrimeSD : null,
         result: result.dPrimeZ,
       },
       variability: {
         subjectValue: result.variability,
-        normMean: result.normativeStats?.variabilityMean || 0,
-        normSD: result.normativeStats?.variabilitySD || 1,
+        normMean: normativeAvailable ? result.normativeStats!.variabilityMean : null,
+        normSD: normativeAvailable ? result.normativeStats!.variabilitySD : null,
         result: result.variabilityZ,
       },
     },
