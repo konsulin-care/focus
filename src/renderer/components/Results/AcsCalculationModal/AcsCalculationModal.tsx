@@ -33,7 +33,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
   // Show/hide dialog using native API
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (dialog) {
+    if (dialog && !dialog.open) {
       dialog.showModal();
       const handleCancel = () => onClose();
       dialog.addEventListener('close', handleCancel);
@@ -42,7 +42,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
         dialog.close()
       };
     }
-  }, []);
+  }, [onClose]);
   
   // Handle backdrop click - dialog element handles Escape key natively
   const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {

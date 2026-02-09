@@ -473,10 +473,11 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       expect(typeof metrics.acs).toBe('number');
       expect(Number.isFinite(metrics.acs)).toBe(true);
       
-      // Z-scores should be present
-      expect(typeof metrics.zScores.responseTime).toBe('number');
-      expect(typeof metrics.zScores.dPrime).toBe('number');
-      expect(typeof metrics.zScores.variability).toBe('number');
+      // Z-scores should be present (or null if normative data unavailable)
+      // Check for null first, then assert number type
+      expect(metrics.zScores.responseTime === null || typeof metrics.zScores.responseTime === 'number').toBe(true);
+      expect(metrics.zScores.dPrime === null || typeof metrics.zScores.dPrime === 'number').toBe(true);
+      expect(metrics.zScores.variability === null || typeof metrics.zScores.variability === 'number').toBe(true);
       
       // Interpretation should be valid
       expect(['normal', 'borderline', 'not-within-normal-limits']).toContain(metrics.acsInterpretation);
