@@ -7,7 +7,8 @@
 import { TestEvent, TestConfig } from '../types/electronAPI';
 import { SubjectInfo, AcsCalculationDetails } from '../types/trial';
 import { getNormativeStats } from './normative-data';
-import { calculateDPrime, inverseNormalCDF } from './distributions';
+import { calculateDPrime } from './clinical-metrics';
+import { inverseNormalCDF } from './distributions';
 import { calculateStdDev } from './basic-stats';
 import { processTestEvents } from './trial-processing';
 import { TRIAL_CONSTANTS } from './trial-constants';
