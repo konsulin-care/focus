@@ -7,10 +7,23 @@
 import { TestEvent, TestConfig } from '../types/electronAPI';
 import { SubjectInfo, AttentionMetrics } from '../types/trial';
 import { getNormativeStats } from './normative-data';
-import { zScore, calculateMean, calculateVariability } from './basic-stats';
+import { calculateMean, calculateVariability } from './basic-stats';
 import { calculateDPrime } from './clinical-metrics';
 import { processTestEvents } from './trial-processing';
 import { TRIAL_CONSTANTS } from './trial-constants';
+
+/**
+ * Calculate Z-score with optional scaled normative SD for abbreviated tests.
+ * Formula: Z = (X - μ) / (σ × SF)
+ * If scalingFactor is null/undefined, uses unscaled SD: Z = (X - μ) / σ
+ */
+function zScoreScaled(value: number, mean: number, sd: number, scalingFactor?: number | null): number {
+  if (scalingFactor) {
+    const scaledSD = sd * scalingFactor;
+    return (value - mean) / scaledSD;
+  }
+  return (value - mean) / sd;
+}
 
 /**
  * Calculate comprehensive attention metrics with ACS scoring.
@@ -82,6 +95,15 @@ export function calculateAttentionMetrics(
   const falseAlarmRate = secondHalfNonTargets > 0 ? secondHalfCommissions / secondHalfNonTargets : 0.5;
   const dPrime = calculateDPrime(hitRate, falseAlarmRate);
   
+  // DEBUG: Log d' calculation details
+  console.log('[DEBUG] === D Prime Calculation ===');
+  console.log('[DEBUG] Second Half Stats:');
+  console.log('[DEBUG]   Hits:', secondHalfHits, 'Omissions:', secondHalfOmissions);
+  console.log('[DEBUG]   Commissions:', secondHalfCommissions, 'Correct Rejections:', secondHalfCorrectRejections);
+  console.log('[DEBUG]   Targets:', secondHalfTargets, 'Non-Targets:', secondHalfNonTargets);
+  console.log('[DEBUG] Hit Rate:', hitRate.toFixed(6), 'False Alarm Rate:', falseAlarmRate.toFixed(6));
+  console.log('[DEBUG] dPrime (raw):', dPrime);
+  
   // Total: Variability Z
   const hitResponseTimesAll = totalTrials
     .filter(t => t.outcome === 'hit' && !t.isAnticipatory)
@@ -94,46 +116,70 @@ export function calculateAttentionMetrics(
   // Get normative data
   const normativeStats = getNormativeStats(subjectInfo.age, subjectInfo.gender);
   
-  // Calculate proportional scaling factor based on trial count
-  // For n trials, use SD * sqrt(n/648) to scale Z-scores proportionally
-  const trialCount = trials.length;
-  const scalingFactor = Math.sqrt(trialCount / TRIAL_CONSTANTS.FULL_TEST_TRIALS);
+  // DEBUG: Log normative data
+  console.log('[DEBUG] === Normative Data ===');
+  console.log('[DEBUG] Age:', subjectInfo.age, 'Gender:', subjectInfo.gender);
+  console.log('[DEBUG] Normative Stats:', normativeStats);
+  if (normativeStats) {
+    console.log('[DEBUG] dPrimeMean:', normativeStats.dPrimeMean, 'dPrimeSD:', normativeStats.dPrimeSD);
+    console.log('[DEBUG] responseTimeMean:', normativeStats.responseTimeMean, 'responseTimeSD:', normativeStats.responseTimeSD);
+    console.log('[DEBUG] variabilityMean:', normativeStats.variabilityMean, 'variabilitySD:', normativeStats.variabilitySD);
+  }
   
-  // Calculate Z-scores
+  // Calculate Z-scores with normative SD (no scaling)
+  const trialCount = trials.length;
   let rtZ = 0;
   let dPrimeZ = 0;
   let variabilityZ = 0;
   
   if (normativeStats) {
-    // Response Time Z (first half) - note: higher RT is worse, so we negate
-    // Apply proportional scaling
-    rtZ = -zScore(firstHalfMeanRT, normativeStats.responseTimeMean, normativeStats.responseTimeSD) * scalingFactor;
+    // Response Time Z (first half) - direct Z-score (higher RT = more similar to ADHD)
+    // Z = (X - μ) / σ
+    rtZ = zScoreScaled(firstHalfMeanRT, normativeStats.responseTimeMean, normativeStats.responseTimeSD);
     
-    // D' Z (second half) - higher is better
-    dPrimeZ = zScore(dPrime, normativeStats.dPrimeMean, normativeStats.dPrimeSD) * scalingFactor;
+    // D' Z (second half) - direct Z-score (higher D' = better attention)
+    // Note: D' is calculated with TOVA-compliant sign handling:
+    // - Perfect performance (100% hits, 0% FA) gives high positive D'
+    // - Poor performance gives low/negative D'
+    // - Higher D' Z-score indicates better than average attention
+    dPrimeZ = zScoreScaled(dPrime, normativeStats.dPrimeMean, normativeStats.dPrimeSD);
     
-    // Variability Z (total) - higher variability is worse, so we negate
-    variabilityZ = -zScore(overallVariability, normativeStats.variabilityMean, normativeStats.variabilitySD) * scalingFactor;
+    // DEBUG: Log dPrimeZ calculation
+    console.log('[DEBUG] === Z-Score Calculations ===');
+    console.log('[DEBUG] dPrime:', dPrime);
+    console.log('[DEBUG] zScoreScaled(dPrime,', normativeStats.dPrimeMean, ',', normativeStats.dPrimeSD, ') =', (dPrime - normativeStats.dPrimeMean) / normativeStats.dPrimeSD);
+    console.log('[DEBUG] dPrimeZ:', dPrimeZ);
+    
+    // Variability Z (total) - direct Z-score (higher variability = more similar to ADHD)
+    variabilityZ = zScoreScaled(overallVariability, normativeStats.variabilityMean, normativeStats.variabilitySD);
   }
   
-  // Calculate ACS: scaled Z-scores + constant
-  // The constant (1.80) is adjusted proportionally: 1.80 * scalingFactor
-  // Note: Z-scores are already scaled individually (lines 112, 115, 118), so no additional scaling here
-  const acs = (rtZ + dPrimeZ + variabilityZ) + (TRIAL_CONSTANTS.ACS_CONSTANT * scalingFactor);
+  // Calculate ACS: scaled Z-scores + constant (constant NOT scaled)
+  const acs = rtZ + dPrimeZ + variabilityZ + TRIAL_CONSTANTS.ACS_CONSTANT;
+  
+  // DEBUG: Log final ACS calculation
+  console.log('[DEBUG] === Final ACS Calculation ===');
+  console.log('[DEBUG] rtZ:', rtZ, 'dPrimeZ:', dPrimeZ, 'variabilityZ:', variabilityZ);
+  console.log('[DEBUG] Using normative SDs (no scaling):');
+  console.log('[DEBUG]   RT SD:', normativeStats?.responseTimeSD);
+  console.log('[DEBUG]   DPrime SD:', normativeStats?.dPrimeSD);
+  console.log('[DEBUG]   Var SD:', normativeStats?.variabilitySD);
+  console.log('[DEBUG] ACS Constant:', TRIAL_CONSTANTS.ACS_CONSTANT);
+  console.log('[DEBUG] Final ACS:', acs);
   
   // Interpret ACS
   let acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits';
-  if (acs >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD * scalingFactor) {
+  if (acs >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {
     acsInterpretation = 'normal';
-  } else if (acs >= TRIAL_CONSTANTS.ACS_BORDERLINE_THRESHOLD * scalingFactor) {
+  } else if (acs >= TRIAL_CONSTANTS.ACS_BORDERLINE_THRESHOLD) {
     acsInterpretation = 'borderline';
   } else {
     acsInterpretation = 'not-within-normal-limits';
   }
   
-  // Validity assessment - proportional to trial count
+  // Validity assessment
   const anticipatoryPercent = totalTargets > 0 ? (anticipatoryResponses / totalTargets) * 100 : 0;
-  const minValidResponses = Math.max(TRIAL_CONSTANTS.MIN_VALID_RESPONSES, Math.floor(10 * scalingFactor));
+  const minValidResponses = TRIAL_CONSTANTS.MIN_VALID_RESPONSES;
   let validity: AttentionMetrics['validity'];
   
   if (anticipatoryPercent > TRIAL_CONSTANTS.MAX_ANTICIPATORY_PERCENT) {
@@ -178,7 +224,7 @@ export function calculateAttentionMetrics(
     meanResponseTimeMs,
     validity,
     trialCount,
-    scalingFactor,
+    scalingFactor: 1,
     zScores: {
       responseTime: rtZ,
       dPrime: dPrimeZ,

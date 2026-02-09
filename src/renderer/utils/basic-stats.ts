@@ -56,14 +56,16 @@ export function zScore(value: number, mean: number, sd: number): number {
 }
 
 /**
- * Calculate response time variability (variance of response times).
+ * Calculate response time variability (standard deviation of response times).
+ * Per TOVA methodology: SD of response times for correct targets.
  * 
  * @param responseTimes - Array of response times in milliseconds
  * @param meanRT - Mean response time
- * @returns Variability (sum of squared differences / count)
+ * @returns Variability as standard deviation in milliseconds
  */
 export function calculateVariability(responseTimes: number[], meanRT: number): number {
   if (responseTimes.length === 0) return 0;
   const squaredDiffs = responseTimes.map(rt => Math.pow(rt - meanRT, 2));
-  return squaredDiffs.reduce((a, b) => a + b, 0) / responseTimes.length;
+  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / responseTimes.length;
+  return Math.sqrt(variance);
 }
