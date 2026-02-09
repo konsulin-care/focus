@@ -19,3 +19,33 @@ html, body, #root {
   padding: 0;
   font-family: var(--font-sans);
 }
+
+/* Modal card-flip animation - horizontal flip like turning a card */
+@keyframes card-flip-in {
+  0% {
+    transform: perspective(1000px) rotateY(-90deg) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: perspective(1000px) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-swirl-pop {
+  animation: card-flip-in 0.5s ease-out forwards, pop-in 0.4s ease-out 0.3s forwards;
+}

@@ -119,3 +119,92 @@ export interface AttentionMetrics {
   /** Z-scores for individual components */
   zScores: AttentionZScores;
 }
+
+/**
+ * Detailed ACS calculation breakdown for display in modal
+ */
+export interface AcsCalculationDetails {
+  // Subject information
+  /** Subject age in years */
+  age: number;
+  /** Subject gender */
+  gender: string;
+  /** Normative reference group age range */
+  normativeGroup: string;
+  
+  // D' Calculation details
+  dPrime: {
+    /** Raw hit rate (0-1) */
+    hitRate: number;
+    /** Raw false alarm rate (0-1) */
+    falseAlarmRate: number;
+    /** Adjusted hit rate (TOVA methodology: bounded 0.00001-0.99999) */
+    adjustedHitRate: number;
+    /** Adjusted false alarm rate (TOVA methodology: bounded 0.00001-0.99999) */
+    adjustedFARate: number;
+    /** Z-score for hit rate */
+    zHit: number;
+    /** Z-score for false alarm rate */
+    zFA: number;
+    /** Final D' value */
+    result: number;
+  };
+  
+  // Variability details
+  variability: {
+    /** Mean response time in ms */
+    mean: number;
+    /** Standard deviation of response times */
+    sd: number;
+    /** All valid response times used in calculation */
+    responseTimes: number[];
+  };
+  
+  // Z-score calculations
+  zScores: {
+    responseTime: {
+      /** Subject's response time value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number;
+      /** Normative standard deviation */
+      normSD: number;
+      /** Calculated Z-score */
+      result: number;
+    };
+    dPrime: {
+      /** Subject's D' value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number;
+      /** Normative standard deviation */
+      normSD: number;
+      /** Calculated Z-score */
+      result: number;
+    };
+    variability: {
+      /** Subject's variability value */
+      subjectValue: number;
+      /** Normative mean */
+      normMean: number;
+      /** Normative standard deviation */
+      normSD: number;
+      /** Calculated Z-score */
+      result: number;
+    };
+  };
+  
+  // Final ACS calculation
+  acs: {
+    /** Response Time Z-score (Half 1) */
+    rtZ: number;
+    /** D' Z-score (Half 2) */
+    dPrimeZ: number;
+    /** Variability Z-score (Total) */
+    variabilityZ: number;
+    /** ACS constant (1.80) */
+    constant: number;
+    /** Final ACS result */
+    result: number;
+  };
+}
