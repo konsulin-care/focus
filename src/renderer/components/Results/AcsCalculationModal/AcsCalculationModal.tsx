@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { AcsCalculationDetails } from '../../../types/trial';
@@ -18,48 +18,53 @@ interface AcsCalculationModalProps {
 /**
  * Modal component for displaying detailed ACS calculation breakdown.
  * Uses React Portal for proper DOM isolation and z-index management.
- * Follows WAI-ARIA modal dialog patterns for accessibility.
+ * Uses native HTML <dialog> element for built-in accessibility:
+ * - Focus trapping
+ * - Keyboard navigation (Escape to close)
+ * - Screen reader support
+ * - Touch support
  * 
  * Maximum JSX nesting depth: 4 levels
  */
 export function AcsCalculationModal({ details, onClose }: AcsCalculationModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const { t } = useTranslation();
   
-  const handleBackdropClick = useCallback(() => {
-    onClose();
-  }, [onClose]);
-  
-  const handleBackdropKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      handleBackdropClick();
+  // Show/hide dialog using native API
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog) {
+      dialog.showModal();
     }
-  }, [handleBackdropClick]);
-  
-  const handleContentClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+    return () => {
+      dialog?.close();
+    };
   }, []);
   
-  const handleContentKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-  }, []);
+  // Handle backdrop click - dialog element handles Escape key natively
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const rect = dialogRef.current?.getBoundingClientRect();
+    const isInDialog =
+      rect &&
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom;
+    
+    if (!isInDialog) {
+      onClose();
+    }
+  };
 
   return createPortal(
-    <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+    <dialog
+      ref={dialogRef}
       onClick={handleBackdropClick}
-      onKeyDown={handleBackdropKeyDown}
+      className="fixed inset-0 z-50 bg-transparent p-6 max-w-2xl w-full mx-auto max-h-[90vh] outline-none"
+      aria-labelledby="acs-modal-title"
     >
-      <div
-        ref={modalRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="acs-modal-title"
-        className="animate-swirl-pop bg-gray-900 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto outline-none"
-        onClick={handleContentClick}
-        onKeyDown={handleContentKeyDown}
-      >
+      {/* Inner container for styling - this is the visible modal */}
+      <div className="animate-swirl-pop bg-gray-900 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto outline-none">
         {/* Header */}
         <ModalHeader title="results.acs.calculationDetails" />
 
@@ -88,7 +93,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
           {t('results.acs.closeModal')}
         </button>
       </div>
-    </div>,
+    </dialog>,
     document.body
   );
 }

@@ -49,3 +49,21 @@ html, body, #root {
 .animate-swirl-pop {
   animation: card-flip-in 0.5s ease-out forwards, pop-in 0.4s ease-out 0.3s forwards;
 }
+
+/* Native dialog element styling for accessible modals */
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Ensure dialog displays properly in all browsers */
+dialog {
+  padding: 0;
+  border: none;
+  border-radius: 0.75rem;
+  max-width: 42rem;
+  width: 100%;
+}
+
+dialog:not([open]) {
+  display: none;
+}
