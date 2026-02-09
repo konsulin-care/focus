@@ -18,8 +18,11 @@ export function clampProbability(p: number): number {
 }
 
 /**
- * Inverse normal cumulative distribution function (quantile function).
- * Uses the Beasley-Springer-Moro algorithm for approximation.
+ * Abramowitz & Stegun approximation for inverse normal CDF.
+ * This is the TOVA-compliant formula used in clinical practice.
+ * 
+ * Reference: Handbook of Mathematical Functions (Abramowitz & Stegun, 1964)
+ * Equation 26.2.23
  * 
  * @param p - Probability between 0 and 1
  * @returns Z-score corresponding to the probability
@@ -30,44 +33,29 @@ export function inverseNormalCDF(p: number): number {
   if (p >= 1) return Infinity;
   if (p === 0.5) return 0;
 
-  // Constants for Beasley-Springer-Moro algorithm
-  const a0 = 2.50662823884;
-  const a1 = -18.61500062529;
-  const a2 = 41.39119773534;
-  const a3 = -25.44106049637;
-  const b0 = -8.47351093090;
-  const b1 = 23.08336743743;
-  const b2 = -21.06224101826;
-  const b3 = 3.13082909833;
-  const c0 = -2.78718931138;
-  const c1 = -2.29796479134;
-  const c2 = 4.85014127135;
-  const c3 = 2.32121276858;
-  const d0 = 4.36977536806e-02;
-  const d1 = 1.23173951645e-01;
-  const d2 = -3.54388924762e-01;
-  const d3 = 7.37046012451e-02;
+  // TOVA manual: if p > 0.5, use 1-p for calculation
+  const pCalc = p > 0.5 ? (1 - p) : p;
 
-  let q = p - 0.5;
-  let r: number;
+  // Calculate T = sqrt(-2 * ln(p)) per Abramowitz-Stegun
+  const T = Math.sqrt(-2 * Math.log(pCalc));
 
-  if (Math.abs(q) <= 0.42) {
-    // Use rational approximation for central region
-    r = q * q;
-    return q * (((a3 * r + a2) * r + a1) * r + a0) /
-           ((((b3 * r + b2) * r + b1) * r + b0) * r + 1);
-  } else {
-    // Use rational approximation for tails
-    r = p;
-    if (q > 0) r = 1 - p;
-    r = Math.sqrt(-Math.log(r));
-    
-    let result = (((c3 * r + c2) * r + c1) * r + c0) /
-                 ((((d3 * r + d2) * r + d1) * r + d0) * r + 1);
-    
-    if (q < 0) result = -result;
-    return result;
-  }
+  // Apply Abramowitz and Stegun approximation constants
+  const c0 = 2.515517;
+  const c1 = 0.802853;
+  const c2 = 0.010328;
+  const numerator = c0 + c1 * T + c2 * T * T;
+
+  const d1 = 1.432788;
+  const d2 = 0.189269;
+  const d3 = 0.001308;
+  const denominator = 1 + d1 * T + d2 * T * T + d3 * T * T * T;
+
+  const z = T - numerator / denominator;
+
+  // Sign adjustment per TOVA manual:
+  // - For FA rate (p <= 0.5): zFA should be POSITIVE for low FA rate
+  // - For HIT rate (p > 0.5): zHit should be NEGATIVE for high hit rate
+  return p > 0.5 ? -z : z;
 }
 
 /**
@@ -166,4 +154,30 @@ export function normalCDF(z: number): number {
   
   const result = 0.5 * (1.0 + sign * y);
   return result * 100;
+}
+
+/**
+ * Calculate D Prime (signal detection sensitivity measure).
+ * Uses T.O.V.A. formula: D' = zFA - zHit
+ * Uses Abramowitz & Stegun inverse CDF for TOVA compliance.
+ * 
+ * @param hitRate - Proportion of hits (0-1)
+ * @param falseAlarmRate - Proportion of false alarms (0-1)
+ * @returns D Prime value (higher = better perceptual sensitivity)
+ */
+export function calculateDPrime(hitRate: number, falseAlarmRate: number): number {
+  // Apply boundary adjustments per TOVA manual
+  const adjustedHitRate = clampProbability(hitRate);
+  const adjustedFARate = clampProbability(falseAlarmRate);
+  
+  // Calculate z-scores using TOVA-compliant Abramowitz-Stegun formula
+  const zHit = inverseNormalCDF(adjustedHitRate);
+  const zFA = inverseNormalCDF(adjustedFARate);
+  
+  // T.O.V.A. formula: D' = zFA - zHit
+  // Per TOVA methodology:
+  // - zFA: positive for low false alarm rates
+  // - zHit: negative for high hit rates
+  // - D' = positive - negative = positive for good performance
+  return zFA - zHit;
 }

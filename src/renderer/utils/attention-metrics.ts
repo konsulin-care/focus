@@ -7,8 +7,8 @@
 import { TestEvent, TestConfig } from '../types/electronAPI';
 import { SubjectInfo, AttentionMetrics } from '../types/trial';
 import { getNormativeStats } from './normative-data';
-import { calculateMean, calculateVariability } from './basic-stats';
-import { calculateDPrime } from './clinical-metrics';
+import { calculateMean, calculateVariability, zScore } from './basic-stats';
+import { calculateDPrime } from './distributions';
 import { processTestEvents } from './trial-processing';
 import { TRIAL_CONSTANTS } from './trial-constants';
 
@@ -18,11 +18,11 @@ import { TRIAL_CONSTANTS } from './trial-constants';
  * If scalingFactor is null/undefined, uses unscaled SD: Z = (X - μ) / σ
  */
 function zScoreScaled(value: number, mean: number, sd: number, scalingFactor?: number | null): number {
-  if (scalingFactor) {
+  if (scalingFactor && scalingFactor !== 1) {
     const scaledSD = sd * scalingFactor;
     return (value - mean) / scaledSD;
   }
-  return (value - mean) / sd;
+  return zScore(value, mean, sd);
 }
 
 /**
