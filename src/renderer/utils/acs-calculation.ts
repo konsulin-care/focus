@@ -109,8 +109,10 @@ export function generateAcsCalculationDetails(
     .map(t => t.responseTimeMs as number);
   
   // Helper to get norm values or null when not available
-  const getNormMean = () => normativeAvailable ? result.normativeStats!.responseTimeMean : null;
-  const getNormSD = () => normativeAvailable ? result.normativeStats!.responseTimeSD : null;
+  const getNormMean = (): number | null => 
+    normativeAvailable && result.normativeStats ? result.normativeStats.responseTimeMean : null;
+  const getNormSD = (): number | null => 
+    normativeAvailable && result.normativeStats ? result.normativeStats.responseTimeSD : null;
   
   // Build and return detailed breakdown
   return {
@@ -144,14 +146,14 @@ export function generateAcsCalculationDetails(
       },
       dPrime: {
         subjectValue: result.dPrime,
-        normMean: normativeAvailable ? result.normativeStats!.dPrimeMean : null,
-        normSD: normativeAvailable ? result.normativeStats!.dPrimeSD : null,
+        normMean: normativeAvailable && result.normativeStats ? result.normativeStats.dPrimeMean : null,
+        normSD: normativeAvailable && result.normativeStats ? result.normativeStats.dPrimeSD : null,
         result: result.dPrimeZ,
       },
       variability: {
         subjectValue: result.variability,
-        normMean: normativeAvailable ? result.normativeStats!.variabilityMean : null,
-        normSD: normativeAvailable ? result.normativeStats!.variabilitySD : null,
+        normMean: normativeAvailable && result.normativeStats ? result.normativeStats.variabilityMean : null,
+        normSD: normativeAvailable && result.normativeStats ? result.normativeStats.variabilitySD : null,
         result: result.variabilityZ,
       },
     },
