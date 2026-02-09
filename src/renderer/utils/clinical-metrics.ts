@@ -32,9 +32,3 @@ export function calculateDPrime(hitRate: number, falseAlarmRate: number): number
   // - D' = positive - negative = positive for good performance
   return zFA - zHit;
 }
-
-/**
- * Inverse normal CDF per TOVA manual.
- * Re-exported from distributions.ts for backward compatibility.
- */
-export { inverseNormalCDF } from './distributions';
