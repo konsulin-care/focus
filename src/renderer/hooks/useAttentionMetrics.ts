@@ -5,15 +5,17 @@ import { calculateAttentionMetrics } from '../utils/trial-metrics';
 
 export function useAttentionMetrics(testEvents: TestEvent[]) {
   const [metrics, setMetrics] = useState<AttentionMetrics | null>(null);
+  const [subjectInfo, setSubjectInfo] = useState<SubjectInfo | null>(null);
 
-  const calculateMetrics = useCallback((subjectInfo: SubjectInfo) => {
+  const calculateMetrics = useCallback((info: SubjectInfo) => {
     if (testEvents.length > 0) {
-      const result = calculateAttentionMetrics(testEvents, subjectInfo);
+      setSubjectInfo(info);
+      const result = calculateAttentionMetrics(testEvents, info);
       setMetrics(result);
       return result;
     }
     return null;
   }, [testEvents]);
 
-  return { metrics, calculateMetrics, setMetrics };
+  return { metrics, subjectInfo, calculateMetrics, setMetrics };
 }
