@@ -356,10 +356,8 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       // Get normative stats for 30-39 age group, Male
       const normativeStats = getNormativeStats(32, 'Male');
       
-      if (!normativeStats) {
-        console.log('[TEST] No normative data available');
-        return;
-      }
+      expect(normativeStats).not.toBeNull();
+      if (!normativeStats) return;
       
       // Calculate Z-scores using actual normative data
       // Note: Manual used different normative values; we use actual data
@@ -397,13 +395,14 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       expect(metrics.dPrime).toBeGreaterThan(0);
       
       // Verify key metrics are in expected ranges (using reasonable tolerances)
-      expect(metrics.dPrime).toBeCloseTo(8.52, 0.5);
+      expect(Math.abs(metrics.dPrime - 8.52)).toBeLessThan(0.01);
+
       // Note: Actual variability may differ slightly from manual due to different response times
       expect(metrics.variability).toBeGreaterThan(0);
       
       // ACS should be close to manual calculation (10.59)
       // Using 1.0 tolerance due to normative data differences
-      expect(metrics.acs).toBeCloseTo(10.59, 1.0);
+      expect(Math.abs(metrics.acs - 10.59)).toBeLessThan(0.1);
     });
   });
   
@@ -445,6 +444,9 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
           !e.isAnticipatory
         )
         .map((e: TestEvent) => e.responseTimeMs as number);
+      
+      // Hard assertion: test must have valid hit data to proceed
+      expect(validHitResponseTimes.length).toBeGreaterThan(0);
       
       if (validHitResponseTimes.length > 0) {
         const manualVariability = manualCalculateVariability(validHitResponseTimes);
