@@ -68,6 +68,29 @@ During the refactoring, a critical bug was discovered and fixed:
 - Valid responses are now correctly recognized regardless of stimulus duration
 - Extended stimulus configurations work correctly
 
+### Unit Testing Implementation (Completed)
+
+Comprehensive unit tests have been implemented using Vitest to validate attention metric calculations against TOVA manual specifications:
+
+**Test Coverage:**
+- `src/renderer/utils/attention-metrics.test.ts` (644 lines)
+- Tests validate D Prime, variability, and ACS calculations
+- Uses TOVA-compliant Abramowitz & Stegun inverse CDF formula
+- Floating-point comparisons with `toBeCloseTo()` for precision
+
+**Key Test Suites:**
+- Mean and variability calculations
+- D Prime signal detection metric
+- Z-score normalization
+- ACS scoring integration
+- Anticipatory response exclusion
+- D Prime sign convention validation
+
+**Test Data:**
+- Real test data loaded from `data/test-data.json`
+- Tests validate against manual TOVA calculations
+- Boundary conditions for 0% and 100% hit/false alarm rates
+
 ### Test Engine & Timing (Completed)
 - High-precision test engine with `process.hrtime.bigint()` nanosecond timestamps
 - Drift-corrected stimulus scheduling for timing accuracy
@@ -163,7 +186,21 @@ During the refactoring, a critical bug was discovered and fixed:
 - Stimulus components: `src/renderer/components/Stimulus/`
 - Test components: `src/renderer/components/Test/`
 
+### Metrics & Calculation Utilities
+- Attention metrics calculation: `src/renderer/utils/attention-metrics.ts`
+- Shared ACS calculation: `src/renderer/utils/acs-shared.ts`
+- Basic statistics: `src/renderer/utils/basic-stats.ts`
+- Clinical metrics (D Prime): `src/renderer/utils/clinical-metrics.ts`
+- Trial processing: `src/renderer/utils/trial-processing.ts`
+- Normative data: `src/renderer/utils/normative-data.ts`
+- Trial constants: `src/renderer/utils/trial-constants.ts`
+
+### Unit Tests
+- Attention metrics tests: `src/renderer/utils/attention-metrics.test.ts`
+- Test data: `data/test-data.json`
+
 ### Configuration & Build
 - Vite config: `vite.config.mjs`
 - Package: `package.json`
+- Vitest config: `vitest.config.ts`
 - Plans: `plans/test-engine-refactoring-plan.md`

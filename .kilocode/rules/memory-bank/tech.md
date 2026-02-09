@@ -2,19 +2,22 @@
 
 Desktop Application:
 - Electron 40.1.0 (Chromium, Node.js 20)
-- React 18.2+
+- React 19.2.4 (upgraded from 18.2+)
 - TypeScript 5.3+
-- Zustand 4.4+ (state management)
+- Zustand 5.0.11 (upgraded from 4.4+)
 - Tailwind CSS 4.1+ (via @tailwindcss/vite)
 - better-sqlite3 12.6.2 (local database)
-- axios 1.6+ (HTTP client - not yet installed)
+- axios 1.6.0 (HTTP client)
+- i18next 25.8.4 (internationalization)
+- lucide-react 0.563.0 (icons)
+- keytar 7.9.0 (secure credential storage)
 
 Build and Development Tools:
 - electron-builder 26.7.0+ (cross-platform packaging)
-- Vite 5.4+ (build tool, dev server)
-- Vitest 4.0+ (unit testing)
-- ESLint 9+ (linting)
-- Prettier 3+ (code formatting)
+- Vite 7.3.1 (upgraded from 5.4+, build tool, dev server)
+- Vitest 4.0+ (unit testing - now implemented)
+- ESLint 9+ (linting - now configured)
+- Prettier 3+ (code formatting - now configured)
 - @electron/rebuild 4+ (native module rebuilding)
 
 Backend Services:
@@ -51,9 +54,11 @@ Development Commands:
 - npm run build:main: Compile TypeScript for main process
 - npm run build:renderer: Build React UI for production
 - npm run electron-rebuild: Rebuild native modules for Electron
-- npm run lint: Run ESLint checks (not yet configured)
-- npm run format: Auto-format code with Prettier (not yet configured)
-- npm run test: Run unit tests with Vitest (not yet configured)
+- npm run lint: Run ESLint checks (now configured)
+- npm run format: Auto-format code with Prettier (now configured)
+- npm run test: Run unit tests with Vitest (now implemented)
+- npm run test:watch: Run tests in watch mode
+- npm run test:coverage: Run tests with coverage report
 - npm run package: Build and package for distribution
 
 Technical Constraints
@@ -80,7 +85,7 @@ Network and Connectivity:
 - Maximum payload size: 5MB per test result
 
 Security Constraints:
-- SQLite database must use sqlcipher for encryption (not yet implemented)
+- SQLite database encrypted at rest with SQLCipher
 - No credentials stored in application code
 - Environment variables for all API keys and endpoints
 - HTTPS-only communication with backend services
@@ -98,32 +103,38 @@ Dependencies Configuration
 
 Key Dependencies and Versions:
 - electron: ^40.1.0
-- react: ^18.2.0
-- react-dom: ^18.2.0
+- react: ^19.2.4
+- react-dom: ^19.2.4
 - typescript: ^5.3.0
-- zustand: ^4.4.0
+- zustand: ^5.0.11
 - tailwindcss: ^4.1.18
 - @tailwindcss/vite: ^4.1.18
 - better-sqlite3: ^12.6.2
-- axios: ^1.6.0 (not yet installed)
+- axios: ^1.6.0
+- i18next: ^25.8.4
+- lucide-react: ^0.563.0
+- keytar: ^7.9.0
 
 Dev Dependencies:
 - electron-builder: ^26.7.0
 - @electron/rebuild: ^4.0.3
-- vite: ^5.4.21
+- vite: ^7.3.1
 - vitest: ^4.0.18
-- @vitejs/plugin-react: ^4.2.0
-- @types/node: ^20.0.0
-- @types/react: ^18.2.0
-- @types/react-dom: ^18.2.0
+- @vitejs/plugin-react: ^5.1.3
+- @types/node: ^25.2.0
+- @types/react: ^19.2.11
+- @types/react-dom: ^19.2.3
 - @types/better-sqlite3: ^7.6.13
 - eslint: ^9.39.2
 - prettier: ^3.1.0
 - typescript-eslint: ^8.54.0
 - tailwindcss: ^4.1.18
+- @tailwindcss/vite: ^4.1.18
+- ts-node: ^10.9.2
 
 Native Modules:
 - better-sqlite3: Requires node-gyp, platform-specific compilation
+- keytar: Platform-specific native module for credential storage
 - Electron rebuild required after installation: npm run electron-rebuild
 
 Tool Usage Patterns
@@ -153,6 +164,8 @@ Testing Pattern:
 - Mock Electron IPC in tests using vitest.mock()
 - Integration tests for timing engine accuracy
 - Manual testing required for cross-platform builds
+- Test file location: src/renderer/utils/*.test.ts
+- Test data location: data/test-data.json
 
 Build Pattern:
 - Development: Vite dev server for renderer, Electron for main

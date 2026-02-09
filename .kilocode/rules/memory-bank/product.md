@@ -105,6 +105,13 @@ Why This Approach:
 - Z-scores display
 - Validity warnings
 
+## Testing & Validation
+- Unit tests with Vitest for attention metrics calculations
+- Tests validate against TOVA manual specifications
+- D Prime signal detection validation
+- Z-score normalization verification
+- Anticipatory response exclusion tests
+
 # Future Enhancements
 
 - N8N webhook integration for backend processing
