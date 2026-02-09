@@ -110,6 +110,7 @@ function manualCalculateDPrime(
  */
 function zScoreScaled(value: number, mean: number, sd: number, scalingFactor: number): number {
   const scaledSD = sd * scalingFactor;
+  if (scaledSD === 0) return 0;
   return (value - mean) / scaledSD;
 }
 
@@ -222,8 +223,8 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
       console.log('[TEST] Library variability:', metrics.variability);
       console.log('[TEST] Hit count:', hitResponseTimes.length);
       
-      // The metrics should be close when using same data
-      expect(metrics.variability).toBeGreaterThan(0);
+      // The metrics should match the manual calculation
+      expect(metrics.variability).toBeCloseTo(manualVariability, 2);
     });
   });
   
@@ -263,13 +264,19 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
         { hitRate: 0.75, faRate: 0.25, description: 'moderate sensitivity' },
       ];
       
-      testCases.forEach(({ hitRate, faRate, description }) => {
+      testCases.forEach(({ hitRate, faRate, description, expectedDPrime }) => {
         const manual = manualCalculateDPrime(hitRate, faRate);
         const library = clinicalCalculateDPrime(hitRate, faRate);
         
-        console.log(`[TEST] ${description}: HR=${hitRate}, FAR=${faRate}, manual=${manual.toFixed(4)}, library=${library.toFixed(4)}`);
+        console.log(`[TEST] ${description || `HR=${hitRate}, FAR=${faRate}`}: manual=${manual.toFixed(4)}, library=${library.toFixed(4)}`);
         
+        // Assert manual matches library
         expect(Math.abs(manual - library)).toBeLessThan(0.01);
+        
+        // Assert against expectedDPrime when present
+        if (expectedDPrime !== undefined) {
+          expect(library).toBeCloseTo(expectedDPrime, 1);
+        }
       });
     });
     
