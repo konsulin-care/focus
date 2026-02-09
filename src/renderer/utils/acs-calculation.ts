@@ -164,7 +164,7 @@ export function generateAcsCalculationDetails(
           dPrimeZ: result.dPrimeZ,
           variabilityZ: result.variabilityZ,
           constant: TRIAL_CONSTANTS.ACS_CONSTANT,
-          result: result.acs,
+          result: result.acs ?? 0,
         }
       : null,
   };
