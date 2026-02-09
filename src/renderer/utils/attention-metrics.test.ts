@@ -212,7 +212,8 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
         .filter((e: TestEvent) => 
           e.eventType === 'response' && 
           e.responseCorrect === true &&
-          !e.isAnticipatory
+          !e.isAnticipatory &&
+          e.stimulusType === 'target'
         )
         .map((e: TestEvent) => e.responseTimeMs as number);
       
@@ -441,7 +442,8 @@ describe('Attention Metrics - TOVA Manual Validation', () => {
         .filter((e: TestEvent) => 
           e.eventType === 'response' && 
           e.responseCorrect === true && 
-          !e.isAnticipatory
+          !e.isAnticipatory &&
+          e.stimulusType === 'target'
         )
         .map((e: TestEvent) => e.responseTimeMs as number);
       

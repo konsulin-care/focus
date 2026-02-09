@@ -6,7 +6,7 @@
  * - generateAcsCalculationDetails (modal display)
  */
 
-import { TestEvent, TestConfig } from '../types/electronAPI';
+import { TestEvent } from '../types/electronAPI';
 import { SubjectInfo, TrialResult } from '../types/trial';
 import { getNormativeStats, NormativeStats } from './normative-data';
 import { calculateDPrime } from './clinical-metrics';
@@ -55,7 +55,7 @@ export function computeAcsValues(
   // Process events into trial results
   const trials = processTestEvents(events, {
     totalTrials: events.filter(e => e.eventType === 'stimulus-onset').length
-  } as TestConfig);
+  });
   
   // Get normative statistics
   const normativeStats = getNormativeStats(subjectInfo.age, subjectInfo.gender);
@@ -106,9 +106,22 @@ export function computeAcsValues(
   let variabilityZ: number | null = null;
   
   if (normativeStats) {
-    rtZ = (firstHalfMeanRT - normativeStats.responseTimeMean) / normativeStats.responseTimeSD;
-    dPrimeZ = (dPrime - normativeStats.dPrimeMean) / normativeStats.dPrimeSD;
-    variabilityZ = (variability - normativeStats.variabilityMean) / normativeStats.variabilitySD;
+    const responseTimeSD = normativeStats.responseTimeSD;
+    const dPrimeSD = normativeStats.dPrimeSD;
+    const variabilitySD = normativeStats.variabilitySD;
+    
+    // Guard against division by zero by checking for positive finite values
+    if (Number.isFinite(responseTimeSD) && responseTimeSD > 0) {
+      rtZ = (firstHalfMeanRT - normativeStats.responseTimeMean) / responseTimeSD;
+    }
+    
+    if (Number.isFinite(dPrimeSD) && dPrimeSD > 0) {
+      dPrimeZ = (dPrime - normativeStats.dPrimeMean) / dPrimeSD;
+    }
+    
+    if (Number.isFinite(variabilitySD) && variabilitySD > 0) {
+      variabilityZ = (variability - normativeStats.variabilityMean) / variabilitySD;
+    }
   }
   
   // === Final ACS Calculation (use 0 for z-scores if null) ===
