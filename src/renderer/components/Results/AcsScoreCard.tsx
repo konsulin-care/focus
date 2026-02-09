@@ -24,7 +24,14 @@ export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps)
     setIsModalOpen(false);
   }, []);
 
-  const isClickable = !!calculationDetails;
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openModal();
+    }
+  }, [openModal]);
+
+  const isClickable = Boolean(calculationDetails);
 
   return (
     <>
@@ -37,16 +44,7 @@ export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps)
         onClick={openModal}
         role={isClickable ? 'button' : undefined}
         tabIndex={isClickable ? 0 : undefined}
-        onKeyDown={
-          isClickable
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  openModal();
-                }
-              }
-            : undefined
-        }
+        onKeyDown={isClickable ? handleKeyDown : undefined}
       >
         <div className="text-blue-300 text-sm mb-1">
           {t('results.acs.score')}

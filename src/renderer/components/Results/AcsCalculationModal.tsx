@@ -16,52 +16,34 @@ interface AcsCalculationModalProps {
  * Follows WAI-ARIA modal dialog patterns for accessibility.
  */
 export function AcsCalculationModal({ details, onClose }: AcsCalculationModalProps) {
-  const { t } = useTranslation();
-  const modalRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
-
-  // Store previous focus and trap focus in modal
-  useEffect(() => {
-    previousFocusRef.current = document.activeElement as HTMLElement;
-    modalRef.current?.focus();
-
-    return () => {
-      previousFocusRef.current?.focus();
-    };
+  const handleBackdropKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleBackdropClick();
+    }
+  }, [handleBackdropClick]);
+  const handleContentClick = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  }, []);
+  const handleContentKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    e.stopPropagation();
   }, []);
 
-  // Handle escape key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  // Handle backdrop click
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }, [onClose]);
-
-  // Use React Portal to render outside parent hierarchy
   return createPortal(
-    <div
+    <button
+      type="button"
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="acs-modal-title"
       onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
     >
       <div
         ref={modalRef}
         tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="acs-modal-title"
         className="animate-swirl-pop bg-gray-900 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto outline-none"
-        onClick={(e) => e.stopPropagation()}
+        onClick={handleContentClick}
+        onKeyDown={handleContentKeyDown}
       >
         {/* Header */}
         <h2 
@@ -72,10 +54,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
         </h2>
 
         {/* Subject Information */}
-        <div className="bg-gray-800 p-4 rounded-lg mb-6">
-          <h3 className="text-blue-400 font-medium mb-2">
-            {t('results.acs.subjectInfo')}
-          </h3>
+        <SubjectInformation />
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-400">{t('results.acs.age')}:</span>

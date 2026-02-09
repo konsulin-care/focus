@@ -30,35 +30,35 @@ export function clampProbability(p: number): number {
  * @param p - Probability between 0 and 1
  * @returns Z-score corresponding to the probability
  */
-export function inverseNormalCDF(p: number): number {
+export function inverseNormalCDF(probability: number): number {
   // Handle edge cases
-  if (p <= 0) return -Infinity;
-  if (p >= 1) return Infinity;
-  if (p === 0.5) return 0;
+  if (probability <= 0) return -Infinity;
+  if (probability >= 1) return Infinity;
+  if (probability === 0.5) return 0;
 
   // TOVA manual: if p > 0.5, use 1-p for calculation
-  const pCalc = p > 0.5 ? (1 - p) : p;
+  const adjustedProbability = probability > 0.5 ? (1 - probability) : probability;
 
   // Calculate T = sqrt(-2 * ln(p)) per Abramowitz-Stegun
-  const T = Math.sqrt(-2 * Math.log(pCalc));
+  const sqrtTerm = Math.sqrt(-2 * Math.log(adjustedProbability));
 
   // Apply Abramowitz and Stegun approximation constants
-  const c0 = 2.515517;
-  const c1 = 0.802853;
-  const c2 = 0.010328;
-  const numerator = c0 + c1 * T + c2 * T * T;
+  const coeffA0 = 2.515517;
+  const coeffA1 = 0.802853;
+  const coeffA2 = 0.010328;
+  const numerator = coeffA0 + coeffA1 * sqrtTerm + coeffA2 * sqrtTerm * sqrtTerm;
 
-  const d1 = 1.432788;
-  const d2 = 0.189269;
-  const d3 = 0.001308;
-  const denominator = 1 + d1 * T + d2 * T * T + d3 * T * T * T;
+  const coeffB1 = 1.432788;
+  const coeffB2 = 0.189269;
+  const coeffB3 = 0.001308;
+  const denominator = 1 + coeffB1 * sqrtTerm + coeffB2 * sqrtTerm * sqrtTerm + coeffB3 * sqrtTerm * sqrtTerm * sqrtTerm;
 
-  const z = T - numerator / denominator;
+  const zScore = sqrtTerm - numerator / denominator;
 
   // Sign adjustment per TOVA manual:
   // - For FA rate (p <= 0.5): zFA should be POSITIVE for low FA rate
   // - For HIT rate (p > 0.5): zHit should be NEGATIVE for high hit rate
-  return p > 0.5 ? -z : z;
+  return probability > 0.5 ? -zScore : zScore;
 }
 
 /**

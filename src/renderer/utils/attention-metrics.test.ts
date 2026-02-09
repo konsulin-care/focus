@@ -51,34 +51,34 @@ function manualCalculateMean(responseTimes: number[]): number {
  * - For p > 0.5: negate z (HIT rate - high hit = negative z)
  * - For p <= 0.5: don't negate z (FA rate - low FA = positive z)
  */
-function manualInverseNormalCDF(p: number): number {
+function manualInverseNormalCDF(probability: number): number {
   // Boundary adjustments per TOVA manual
-  if (p <= 0) return -7.0;
-  if (p >= 1) return +7.0;
-  if (p === 0.5) return 0;
+  if (probability <= 0) return -7.0;
+  if (probability >= 1) return +7.0;
+  if (probability === 0.5) return 0;
   
-  // TOVA manual: if p > 0.5, use 1-p for calculation
-  const pCalc = p > 0.5 ? (1 - p) : p;
+  // TOVA manual: if probability > 0.5, use 1-probability for calculation
+  const adjustedProbability = probability > 0.5 ? (1 - probability) : probability;
   
-  // Calculate T = sqrt(-2 * ln(p)) per Abramowitz-Stegun
-  const T = Math.sqrt(-2.0 * Math.log(pCalc));
+  // Calculate T = sqrt(-2 * ln(adjustedProbability)) per Abramowitz-Stegun
+  const sqrtTerm = Math.sqrt(-2.0 * Math.log(adjustedProbability));
   
   // Apply Abramowitz and Stegun approximation
   const numerator = 2.515517 
-    + 0.802853 * T 
-    + 0.010328 * T * T;
+    + 0.802853 * sqrtTerm 
+    + 0.010328 * sqrtTerm * sqrtTerm;
   
   const denominator = 1.0 
-    + 1.432788 * T 
-    + 0.189269 * T * T 
-    + 0.001308 * T * T * T;
+    + 1.432788 * sqrtTerm 
+    + 0.189269 * sqrtTerm * sqrtTerm 
+    + 0.001308 * sqrtTerm * sqrtTerm * sqrtTerm;
   
-  let z = T - numerator / denominator;
+  const zScore = sqrtTerm - numerator / denominator;
   
   // CORRECT sign adjustment per TOVA manual:
-  // - For FA rate (p <= 0.5): zFA should be positive (low FA = good)
-  // - For HIT rate (p > 0.5): zHit should be negated (high hit = good)
-  return p > 0.5 ? -z : z;
+  // - For FA rate (probability <= 0.5): zFA should be positive (low FA = good)
+  // - For HIT rate (probability > 0.5): zHit should be negated (high hit = good)
+  return probability > 0.5 ? -zScore : zScore;
 }
 
 /**
