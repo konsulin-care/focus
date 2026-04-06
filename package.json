@@ -6,7 +6,7 @@
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "axios": "^1.6.0",
     "better-sqlite3": "^12.6.2",
-    "i18next": "^25.8.4",
+    "i18next": "^26.0.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "keytar": "^7.9.0",
     "lucide-react": "^0.574.0",
