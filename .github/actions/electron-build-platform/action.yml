@@ -47,29 +47,29 @@ runs:
           libappindicator3-1 \
           xdg-utils
 
-     # Build artifact based on platform
-     - name: Build ${{ inputs.platform }} artifact
-       shell: bash
-       env:
-         VERSION: ${{ inputs.version }}
-         DEBUG: electron-builder
-         CSC_IDENTITY_AUTO_DISCOVERY: false
-       run: |
-         set -e
-         if [ -n "$VERSION" ]; then
-           npm version "$VERSION" --no-git-tag-version
-         fi
-         case "${{ inputs.platform }}" in
-           linux)
-             npx electron-builder --linux AppImage
-             ;;
-           macos)
-             npx electron-builder --mac dmg --universal
-             ;;
-           windows)
-             npx electron-builder --win portable
-             ;;
-         esac
+    # Build artifact based on platform
+    - name: Build ${{ inputs.platform }} artifact
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        DEBUG: electron-builder
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+      run: |
+        set -e
+        if [ -n "$VERSION" ]; then
+          npm version "$VERSION" --no-git-tag-version
+        fi
+        case "${{ inputs.platform }}" in
+          linux)
+            npx electron-builder --linux AppImage
+            ;;
+          macos)
+            npx electron-builder --mac dmg --universal
+            ;;
+          windows)
+            npx electron-builder --win portable
+            ;;
+        esac
 
 
 

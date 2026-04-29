@@ -87,12 +87,12 @@ jobs:
       - name: Checkout and setup
         uses: ./.github/actions/electron-build-common
 
-       - name: Build ${{ matrix.platform }} artifact
-         id: build
-         uses: ./.github/actions/electron-build-platform
-         with:
-           platform: ${{ matrix.platform-name }}
-           version: ${{ env.VERSION }}
+      - name: Build ${{ matrix.platform }} artifact
+        id: build
+        uses: ./.github/actions/electron-build-platform
+        with:
+          platform: ${{ matrix.platform-name }}
+          version: ${{ env.VERSION }}
 
   # Create GitHub release
   create-release:
