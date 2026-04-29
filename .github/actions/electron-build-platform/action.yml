@@ -48,10 +48,11 @@ runs:
           xdg-utils
 
     # Build artifact based on platform
-    - name: Build ${{ inputs.platform }} artifact
+    - name: Build $PLATFORM artifact
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: ${{ inputs.platform }}
         DEBUG: electron-builder
         CSC_IDENTITY_AUTO_DISCOVERY: false
       run: |
@@ -59,7 +60,7 @@ runs:
         if [ -n "$VERSION" ]; then
           npm version "$VERSION" --no-git-tag-version
         fi
-        case "${{ inputs.platform }}" in
+        case "$PLATFORM" in
           linux)
             npx electron-builder --linux AppImage
             ;;
@@ -79,6 +80,7 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: ${{ inputs.platform }}
       run: |
         set -e
         cd release
@@ -90,6 +92,7 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: ${{ inputs.platform }}
       run: |
         set -e
         cd release
@@ -105,6 +108,7 @@ runs:
       shell: pwsh
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: ${{ inputs.platform }}
       run: |
         $ErrorActionPreference = "Stop"
         Set-Location release
@@ -115,8 +119,10 @@ runs:
     - name: Upload artifact (Linux)
       if: inputs.platform == 'linux'
       uses: actions/upload-artifact@v4
+      env:
+        PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        name: focus-$PLATFORM-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.AppImage
         retention-days: 7
         compression-level: 0
@@ -124,8 +130,10 @@ runs:
     - name: Upload artifact (macOS)
       if: inputs.platform == 'macos'
       uses: actions/upload-artifact@v4
+      env:
+        PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        name: focus-$PLATFORM-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.dmg
         retention-days: 7
         compression-level: 0
@@ -133,8 +141,10 @@ runs:
     - name: Upload artifact (Windows)
       if: inputs.platform == 'windows'
       uses: actions/upload-artifact@v4
+      env:
+        PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        name: focus-$PLATFORM-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.exe
         retention-days: 7
         compression-level: 0
