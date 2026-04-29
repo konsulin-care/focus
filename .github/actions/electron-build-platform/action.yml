@@ -122,7 +122,7 @@ runs:
       env:
         PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-$PLATFORM-${{ inputs.version }}
+        name: focus-${{ env.PLATFORM }}-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.AppImage
         retention-days: 7
         compression-level: 0
@@ -133,7 +133,7 @@ runs:
       env:
         PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-$PLATFORM-${{ inputs.version }}
+        name: focus-${{ env.PLATFORM }}-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.dmg
         retention-days: 7
         compression-level: 0
@@ -144,7 +144,7 @@ runs:
       env:
         PLATFORM: ${{ inputs.platform }}
       with:
-        name: focus-$PLATFORM-${{ inputs.version }}
+        name: focus-${{ env.PLATFORM }}-${{ inputs.version }}
         path: release/focus-${{ inputs.version }}.exe
         retention-days: 7
         compression-level: 0
