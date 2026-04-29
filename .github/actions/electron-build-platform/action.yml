@@ -64,7 +64,7 @@ runs:
              npx electron-builder --linux AppImage
              ;;
            macos)
-             npx electron-builder --mac dmg --x64 --arm64
+             npx electron-builder --mac dmg --universal
              ;;
            windows)
              npx electron-builder --win portable
