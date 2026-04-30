@@ -50,12 +50,13 @@
       "cannotPause": "The assessment cannot be paused once started"
     }
   },
-"results": {
-  "title": "Your Results",
-  "sendResults": "Send Results to Email",
-  "emailSent": "Results sent to {{email}}",
-  "previewResults": "Preview Results",
-  "copyAcsDetails": "Copy ACS details",
+   "results": {
+    "title": "Your Results",
+    "sendResults": "Send Results to Email",
+    "emailSent": "Results sent to {{email}}",
+    "previewResults": "Preview Results",
+    "copyAcsDetails": "Copy ACS details",
+    "copied": "Copied",
     "acs": {
       "score": "Attention Comparison Score (ACS)",
       "clickForDetails": "Click for details",

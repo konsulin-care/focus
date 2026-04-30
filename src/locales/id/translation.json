@@ -50,11 +50,13 @@
       "cannotPause": "Penilaian tidak dapat dijeda setelah dimulai"
     }
   },
-  "results": {
+   "results": {
     "title": "Hasil Anda",
     "sendResults": "Kirim Hasil ke Email",
     "emailSent": "Hasil dikirim ke {{email}}",
     "previewResults": "Pratinjau Hasil",
+    "copyAcsDetails": "Salin detail ACS",
+    "copied": "Tersalin",
     "acs": {
       "score": "Skor Perbandingan Perhatian",
       "clickForDetails": "Klik untuk detail",
