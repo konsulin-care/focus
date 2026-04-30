@@ -37,11 +37,21 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
       const jsonText = JSON.stringify(calculationDetails, null, 2);
       await navigator.clipboard.writeText(jsonText);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      setTimeout(() => { setIsCopied(false); }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
       setError('Unable to copy to clipboard. Please manually select and copy the text.');
     }
+  };
+
+  /**
+   * Wrapper for handleCopy to properly handle Promise in onClick handler
+   */
+  const handleCopyClick = () => {
+    handleCopy().catch(err => {
+      console.error('Unexpected error in copy handler:', err);
+      // Error is already handled in handleCopy, but this catches any unexpected errors
+    });
   };
 
   // Generate calculation details when we have events and subject info
@@ -55,8 +65,8 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
   // Clear error message after 5 seconds
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => { setError(null); }, 5000);
+      return () => { clearTimeout(timer); };
     }
   }, [error]);
 
@@ -68,22 +78,24 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
           {t('results.title')}
         </div>
 
-         <button
-           onClick={handleCopy}
-           disabled={!calculationDetails}
-           title={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
-           aria-label={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
-           className={`p-2 rounded transition-colors ${!calculationDetails ? 'bg-gray-400 opacity-50' : isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
-         >
-           {isCopied ? (
-             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check">
-               <title>{t('results.copied')}</title>
-               <path d="M20 6L9 17l-5-5" />
-             </svg>
-           ) : (
-             <Copy size={16} strokeWidth={1.5} />
-           )}
-         </button>
+          <button
+            type="button"
+            onClick={handleCopyClick}
+            disabled={!calculationDetails}
+            title={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
+            aria-label={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
+            className={`p-2 rounded transition-colors ${!calculationDetails ? 'bg-gray-400 opacity-50' : isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+          >
+            {isCopied ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check">
+                <title>{t('results.copied')}</title>
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <Copy size={16} strokeWidth={1.5} />
+            )}
+          </button>
+
         {error && (
           <div className="mt-2 text-sm text-red-400">
             {error}
