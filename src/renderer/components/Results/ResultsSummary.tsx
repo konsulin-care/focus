@@ -54,21 +54,23 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
     });
   };
 
-  // Generate calculation details when we have events and subject info
-  useEffect(() => {
-    if (testEvents && testEvents.length > 0 && subjectInfo) {
-      const details = generateAcsCalculationDetails(testEvents, subjectInfo);
-      setCalculationDetails(details);
-    }
-  }, [testEvents, subjectInfo]);
+   // Generate calculation details when we have events and subject info
+   useEffect(() => {
+     if (testEvents && testEvents.length > 0 && subjectInfo) {
+       const details = generateAcsCalculationDetails(testEvents, subjectInfo);
+       setCalculationDetails(details);
+     }
+     return undefined;
+   }, [testEvents, subjectInfo]);
 
-  // Clear error message after 5 seconds
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => { setError(null); }, 5000);
-      return () => { clearTimeout(timer); };
-    }
-  }, [error]);
+   // Clear error message after 5 seconds
+   useEffect(() => {
+     if (error) {
+       const timer = setTimeout(() => { setError(null); }, 5000);
+       return () => { clearTimeout(timer); };
+     }
+     return undefined;
+   }, [error]);
 
   return (
     <div className="mt-6 font-mono text-lg text-white max-w-2xl w-full">
