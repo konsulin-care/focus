@@ -10,11 +10,7 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss({
-      content: [
-        './src/renderer/**/*.{js,ts,jsx,tsx,html}'
-      ]
-    })
+    tailwindcss()
   ],
   base: './',
   root: 'src/renderer',
