@@ -122,14 +122,14 @@ function TestScreen() {
       )}
 
       {/* Results summary */}
-      {phase === 'completed' && !showEmailCapture && metrics && subjectInfo && (
-        <ResultsSummary 
-          metrics={metrics} 
-          elapsedTimeMs={elapsedTimeMs}
-          testEvents={testEvents}
-          subjectInfo={subjectInfo}
-        />
-      )}
+{phase === 'completed' && !showEmailCapture && metrics && subjectInfo && (
+  <ResultsSummary 
+    metrics={metrics} 
+    elapsedTimeMs={elapsedTimeMs}
+    testEvents={testEvents}
+    subjectInfo={subjectInfo}
+  />
+)}
 
       {/* Email capture form overlay */}
       {showEmailCapture && (
