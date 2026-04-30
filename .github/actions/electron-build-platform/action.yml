@@ -48,28 +48,33 @@ runs:
           xdg-utils
 
     # Build artifact based on platform
-    - name: Build ${{ inputs.platform }} artifact
+    - name: Build Electron artifact
       shell: bash
       env:
-        VERSION: ${{ inputs.version }}
         DEBUG: electron-builder
         CSC_IDENTITY_AUTO_DISCOVERY: false
+        PLATFORM: ${{ inputs.platform }}
+        VERSION: ${{ inputs.version }}
       run: |
         set -e
+        echo "Building for platform: $PLATFORM"
+        echo "Version: $VERSION"
         if [ -n "$VERSION" ]; then
           npm version "$VERSION" --no-git-tag-version
         fi
-        case "${{ inputs.platform }}" in
+        case "$PLATFORM" in
           linux)
             npx electron-builder --linux AppImage
             ;;
           macos)
-            npx electron-builder --mac dmg
+            npx electron-builder --mac dmg --universal
             ;;
           windows)
             npx electron-builder --win portable
             ;;
         esac
+
+
 
     # Generate SHA256 checksum (platform-specific)
     - name: Generate SHA256 checksum (Linux)
@@ -80,8 +85,8 @@ runs:
       run: |
         set -e
         cd release
-        sha256sum "focus-${VERSION}.AppImage" > "focus-${VERSION}.AppImage.sha256sum"
-        cat "focus-${VERSION}.AppImage.sha256sum"
+        sha256sum "focus-$VERSION.AppImage" > "focus-$VERSION.AppImage.sha256sum"
+        cat "focus-$VERSION.AppImage.sha256sum"
 
     - name: Generate SHA256 checksum (macOS)
       if: inputs.platform == 'macos'
@@ -92,11 +97,11 @@ runs:
         set -e
         cd release
         if command -v sha256sum &> /dev/null; then
-          sha256sum "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
+          sha256sum "focus-$VERSION.dmg" > "focus-$VERSION.dmg.sha256sum"
         else
-          shasum -a 256 "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
+          shasum -a 256 "focus-$VERSION.dmg" > "focus-$VERSION.dmg.sha256sum"
         fi
-        cat "focus-${VERSION}.dmg.sha256sum"
+        cat "focus-$VERSION.dmg.sha256sum"
 
     - name: Generate SHA256 checksum (Windows)
       if: inputs.platform == 'windows'
