@@ -5,7 +5,7 @@
  */
 
 import { BrowserWindow, Menu } from 'electron';
-import * as path from 'path';
+import * as path from 'node:path';
 
 /**
  * Create and configure the main application window.

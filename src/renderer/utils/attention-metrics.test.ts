@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { calculateAttentionMetrics } from './attention-metrics';
 import { calculateVariability } from './basic-stats';
 import { calculateDPrime as clinicalCalculateDPrime } from './clinical-metrics';

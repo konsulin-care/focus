@@ -5,7 +5,7 @@
  * Uses better-sqlite3 for local data persistence.
  */
 
-import * as path from 'path';
+import * as path from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { 

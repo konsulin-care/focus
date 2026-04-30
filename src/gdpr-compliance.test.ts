@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 // ===========================================
 // Test Utilities

@@ -5,8 +5,8 @@
  * Keys are stored in userData directory with restricted permissions.
  */
 
-import * as path from 'path';
-import * as crypto from 'crypto';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 
