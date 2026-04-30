@@ -8,9 +8,6 @@ inputs:
   version:
     description: 'Version string for artifact naming'
     required: true
-env:
-  PLATFORM: ${{ inputs.platform }}
-  VERSION: ${{ inputs.version }}
 
 runs:
   using: 'composite'
@@ -56,6 +53,8 @@ runs:
       env:
         DEBUG: electron-builder
         CSC_IDENTITY_AUTO_DISCOVERY: false
+        PLATFORM: ${{ inputs.platform }}
+        VERSION: ${{ inputs.version }}
       run: |
         set -e
         echo "Building for platform: $PLATFORM"
@@ -81,28 +80,34 @@ runs:
     - name: Generate SHA256 checksum (Linux)
       if: inputs.platform == 'linux'
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
         set -e
         cd release
-        sha256sum "focus-${VERSION}.AppImage" > "focus-${VERSION}.AppImage.sha256sum"
-        cat "focus-${VERSION}.AppImage.sha256sum"
+        sha256sum "focus-$VERSION.AppImage" > "focus-$VERSION.AppImage.sha256sum"
+        cat "focus-$VERSION.AppImage.sha256sum"
 
     - name: Generate SHA256 checksum (macOS)
       if: inputs.platform == 'macos'
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
         set -e
         cd release
         if command -v sha256sum &> /dev/null; then
-          sha256sum "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
+          sha256sum "focus-$VERSION.dmg" > "focus-$VERSION.dmg.sha256sum"
         else
-          shasum -a 256 "focus-${VERSION}.dmg" > "focus-${VERSION}.dmg.sha256sum"
+          shasum -a 256 "focus-$VERSION.dmg" > "focus-$VERSION.dmg.sha256sum"
         fi
-        cat "focus-${VERSION}.dmg.sha256sum"
+        cat "focus-$VERSION.dmg.sha256sum"
 
     - name: Generate SHA256 checksum (Windows)
       if: inputs.platform == 'windows'
       shell: pwsh
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
         $ErrorActionPreference = "Stop"
         Set-Location release
@@ -114,8 +119,8 @@ runs:
       if: inputs.platform == 'linux'
       uses: actions/upload-artifact@v4
       with:
-        name: focus-${{ env.PLATFORM }}-${{ env.VERSION }}
-        path: release/focus-${{ env.VERSION }}.AppImage
+        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        path: release/focus-${{ inputs.version }}.AppImage
         retention-days: 7
         compression-level: 0
 
@@ -123,8 +128,8 @@ runs:
       if: inputs.platform == 'macos'
       uses: actions/upload-artifact@v4
       with:
-        name: focus-${{ env.PLATFORM }}-${{ env.VERSION }}
-        path: release/focus-${{ env.VERSION }}.dmg
+        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        path: release/focus-${{ inputs.version }}.dmg
         retention-days: 7
         compression-level: 0
 
@@ -132,7 +137,7 @@ runs:
       if: inputs.platform == 'windows'
       uses: actions/upload-artifact@v4
       with:
-        name: focus-${{ env.PLATFORM }}-${{ env.VERSION }}
-        path: release/focus-${{ env.VERSION }}.exe
+        name: focus-${{ inputs.platform }}-${{ inputs.version }}
+        path: release/focus-${{ inputs.version }}.exe
         retention-days: 7
         compression-level: 0
