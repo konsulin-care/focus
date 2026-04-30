@@ -73,7 +73,7 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
           disabled={!calculationDetails}
           title={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
           aria-label={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
-          className={`p-2 rounded ${!calculationDetails ? 'bg-gray-400 opacity-50' : 'hover:bg-gray-700 transition-colors'} ${isCopied ? 'bg-green-600' : 'bg-gray-700'}`}
+          className={`p-2 rounded transition-colors ${!calculationDetails ? 'bg-gray-400 opacity-50' : isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
         >
           {isCopied ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check">
