@@ -45,7 +45,7 @@
 
 ## Node.js Built-in Imports
 - Use `node:` protocol for Node.js built-in modules (e.g., `import * as crypto from 'node:crypto'`).
-- This modern best practice improves clarity and avoids potential conflicts.
+- The `node:` protocol improves clarity and avoids potential conflicts.
 
 ## Sub‑module AGENTS.md locations
 - `src/main/AGENTS.md` – main‑process IPC and timing details.
