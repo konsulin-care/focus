@@ -15,5 +15,5 @@ module.exports = {
     'w-full',
     'border',
     'border-red-500'
-  ],
+  ]
 }
