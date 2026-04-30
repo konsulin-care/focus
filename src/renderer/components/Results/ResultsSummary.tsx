@@ -72,7 +72,7 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
         </button>
       </div>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-stretch text-center">
         <AcsScoreCard metrics={metrics} calculationDetails={calculationDetails ?? undefined} />
         <TrialOutcomesGrid metrics={metrics} />
         <ResponseStatsGrid metrics={metrics} />
