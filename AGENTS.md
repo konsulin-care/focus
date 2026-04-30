@@ -43,6 +43,10 @@
 - Encrypted SQLite (SQLCipher) stored in OS userData path.
 - No credentials in source; configure via `.env` (`N8N_WEBHOOK_URL`, `SUPERTOKENS_*`).
 
+## Node.js Built-in Imports
+- Use `node:` protocol for Node.js built-in modules (e.g., `import * as crypto from 'node:crypto'`).
+- This modern best practice improves clarity and avoids potential conflicts.
+
 ## Sub‑module AGENTS.md locations
 - `src/main/AGENTS.md` – main‑process IPC and timing details.
 - `src/renderer/AGENTS.md` – UI state, Zustand patterns, Tailwind usage.
