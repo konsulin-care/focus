@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+import type { TestCompleteResult } from '@/renderer/types/electronAPI';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand = 
