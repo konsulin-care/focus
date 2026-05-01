@@ -46,7 +46,7 @@
      "electron-rebuild": "electron-rebuild",
      "package": "npm run build && electron-builder",
      "prepare": "husky",
-     "validate-timing": "ts-node src/validate_timing.ts",
+     "validate-timing": "ts-node src/validate-timing.ts",
      "test": "vitest run",
      "test:watch": "vitest",
      "test:coverage": "vitest run --coverage"
