@@ -1,8 +1,10 @@
 /**
  * F.O.C.U.S. Assessment - Duration Utility
- * 
+ *
  * Utilities for calculating test duration from test configuration.
  */
+
+
 
 import { TestConfig } from '@/renderer/types/electronAPI';
 

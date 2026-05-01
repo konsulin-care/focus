@@ -13,7 +13,6 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-i18next": "^17.0.2",
-    "typescript": "^5.3.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -23,31 +22,35 @@
     "@types/node": "^25.2.0",
     "@types/react": "^19.2.11",
     "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "@typescript-eslint/parser": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
     "@vitejs/plugin-react": "^6.0.1",
     "electron": "^41.1.0",
     "electron-builder": "^26.7.0",
     "eslint": "^10.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.1.0",
     "tailwindcss": "^4.1.18",
     "ts-node": "^10.9.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1",
     "vite": "^8.0.4",
     "vitest": "^4.0.18"
   },
-  "scripts": {
-    "dev": "electron .",
-    "build": "tsc && vite build",
-    "build:main": "tsc",
-    "build:renderer": "vite build",
-    "electron-rebuild": "electron-rebuild",
-    "package": "npm run build && electron-builder",
-    "validate-timing": "ts-node src/validate-timing.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
-  },
+   "scripts": {
+     "dev": "electron .",
+     "build": "tsc && vite build",
+     "build:main": "tsc",
+     "build:renderer": "vite build",
+     "electron-rebuild": "electron-rebuild",
+     "package": "npm run build && electron-builder",
+     "prepare": "husky",
+     "validate-timing": "ts-node src/validate-timing.ts",
+     "test": "vitest run",
+     "test:watch": "vitest",
+     "test:coverage": "vitest run --coverage"
+   },
   "build": {
     "appId": "com.konsulin.focus",
     "productName": "F.O.C.U.S. Assessment",
@@ -78,10 +81,13 @@
       "artifactName": "focus-${version}.AppImage"
     }
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/konsulin-care/focus.git"
-  },
+   "lint-staged": {
+     "**/*.{ts,tsx}": ["eslint --fix"]
+   },
+   "repository": {
+     "type": "git",
+     "url": "git+https://github.com/konsulin-care/focus.git"
+   },
   "keywords": [],
   "author": "",
   "license": "ISC",

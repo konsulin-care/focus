@@ -30,11 +30,10 @@ jobs:
         with:
           fetch-depth: 0  # Full history for git diff
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
         with:
-          node-version: '20'
-          cache: 'npm'  # Built-in npm caching
+          cache: true
+          # mise reads node=24 and npm=11 from mise.toml
 
       - name: Cache node_modules
         uses: actions/cache@v5

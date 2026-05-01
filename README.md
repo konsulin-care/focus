@@ -96,23 +96,32 @@ The Konsulin ecosystem emphasizes:
 
 ### System Requirements
 
-- Node.js 18+ and npm 9+
+- **Node.js >=24.0** and npm 11+ (managed via mise for reproducibility)
 - Platform-specific build tools (Xcode, Visual Studio, or build-essential)
 - 4GB RAM minimum, 8GB recommended
 - Any display supported by the operating system
 
 ### Installation
 
+For `mise` installation and activation, [refer to the project documentation](https://mise.jdx.dev/getting-started.html).
+
 ```bash
 # Clone the repository
-git clone https://github.com/konsulin/focus-assessment.git
-cd focus-assessment
+git clone https://github.com/konsulin-care/focus.git
+cd focus
 
-# Install dependencies
-npm install
+# Install dependencies using mise-managed Node.js
+mise install  # Installs tools from mise.lock
+```
 
+At this point, you can check whether the installed tools are available in your environment, e.g., the command `mise where node` and `which node` should return the same path.
+
+```
 # Rebuild native modules for Electron
 npm run electron-rebuild
+
+# Build the project
+npm run build
 
 # Start development mode
 npm run dev
