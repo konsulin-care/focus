@@ -17,6 +17,14 @@ updated: 2026-05-01
 - `npm run validate-timing` – verify hardware meets ±1 ms precision
 - `npm run package` – produce OS‑specific installers (electron‑builder)
 
+## Development Environment
+- **mise** is used for Node.js version management to ensure reproducibility
+- Automatic activation occurs when entering the project directory (contains mise.toml)
+- Use `mise install` to install exact versions specified in mise.lock
+- Use `mise exec -- <command>` to run commands with mise-managed tools
+- Example: `mise exec -- npm test` or `mise exec -- npm run dev`
+- The environment provides Node.js >=24.0 (specifically v24.15.0 as locked in mise.lock) to satisfy ESLint/Vitest engine requirements
+
 ## Project Structure (high‑signal)
 - `src/main/` – Electron main process (timing engine, Inter-Process Communication/IPC, DB, network)
 - `src/renderer/` – React UI, Zustand store, Tailwind styling
