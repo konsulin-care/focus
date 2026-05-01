@@ -50,7 +50,8 @@
       "cannotPause": "The assessment cannot be paused once started"
     }
   },
-   "results": {
+  "results": {
+
     "title": "Your Results",
     "sendResults": "Send Results to Email",
     "emailSent": "Results sent to {{email}}",
