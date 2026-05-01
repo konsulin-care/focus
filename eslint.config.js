@@ -1,5 +1,5 @@
-const tsESLint = require('@typescript-eslint/eslint-plugin');
-const tsParser = require('@typescript-eslint/parser');
+const tsESLint = require('@typescript-eslint/eslint-plugin')
+const tsParser = require('@typescript-eslint/parser')
 
 module.exports = [
   {
@@ -24,4 +24,4 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'warn'
     }
   }
-];
+]
