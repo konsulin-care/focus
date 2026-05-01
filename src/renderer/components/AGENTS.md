@@ -1,4 +1,9 @@
-# Renderer Components AGENTS
+---
+title: Renderer Components AGENTS
+description: Component naming, export conventions, and styling guidelines for F.O.C.U.S. renderer process
+priority: high
+updated: 2026-05-01
+---
 
 - File Naming: Component files use PascalCase (e.g., `TestHeader.tsx`). Non-default exports are discouraged; use a default export when appropriate.
 - Barrel Export: Every component folder must contain an `index.ts` that re-exports the component. Import from the folder, not the file.

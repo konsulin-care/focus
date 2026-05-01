@@ -1,4 +1,9 @@
-# Renderer Hooks AGENTS
+---
+title: Renderer Hooks AGENTS
+description: Custom hook patterns and testing guidelines for F.O.C.U.S. renderer process
+priority: high
+updated: 2026-05-01
+---
 
 - Naming: Hook files must be named `use<Thing>.ts` and exported from `src/renderer/hooks/index.ts`.
 - Testing: Mock IPC in hook tests with `vitest.mock('electron')`. All tests belong under `src/renderer/hooks/*.test.ts`.
