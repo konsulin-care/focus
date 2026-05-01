@@ -1,4 +1,4 @@
-import { AttentionMetrics } from '../../types/trial';
+import { AttentionMetrics } from '@/renderer/types/trial';
 
 interface TestInfoProps {
   metrics: AttentionMetrics;

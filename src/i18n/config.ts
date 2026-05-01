@@ -3,10 +3,10 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translation resources
-import enTranslation from '../locales/en/translation.json';
-import enCommon from '../locales/en/common.json';
-import idTranslation from '../locales/id/translation.json';
-import idCommon from '../locales/id/common.json';
+import enTranslation from '@/locales/en/translation.json';
+import enCommon from '@/locales/en/common.json';
+import idTranslation from '@/locales/id/translation.json';
+import idCommon from '@/locales/id/common.json';
 
 i18n
   .use(LanguageDetector)

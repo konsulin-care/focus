@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '../store';
-import type { TestConfig } from '../types/electronAPI';
+import { useNavigation } from '@/renderer/store';
+import type { TestConfig } from '@/renderer/types/electronAPI';
 
 export default function Settings() {
   const { t } = useTranslation();

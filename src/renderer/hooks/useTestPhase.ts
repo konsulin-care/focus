@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TestConfig } from '../types/electronAPI';
+import { TestConfig } from '@/renderer/types/electronAPI';
 
 export type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture' | 'error';
 

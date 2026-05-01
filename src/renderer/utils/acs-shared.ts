@@ -6,8 +6,8 @@
  * - generateAcsCalculationDetails (modal display)
  */
 
-import { TestEvent } from '../types/electronAPI';
-import { SubjectInfo, TrialResult } from '../types/trial';
+import { TestEvent } from '@/renderer/types/electronAPI';
+import { SubjectInfo, TrialResult } from '@/renderer/types/trial';
 import { getNormativeStats, NormativeStats } from './normative-data';
 import { calculateDPrime } from './clinical-metrics';
 import { processTestEvents } from './trial-processing';

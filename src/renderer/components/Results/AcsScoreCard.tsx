@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AttentionMetrics, AcsCalculationDetails } from '../../types/trial';
-import { normalCDF } from '../../utils/statistics';
+import { AttentionMetrics, AcsCalculationDetails } from '@/renderer/types/trial';
+import { normalCDF } from '@/renderer/utils/statistics';
 import { AcsCalculationModal } from './AcsCalculationModal';
 
 interface AcsScoreCardProps {

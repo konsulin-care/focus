@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { TestPhase } from '../../hooks/useTestPhase';
+import { TestPhase } from '@/renderer/hooks/useTestPhase';
 
 interface TestHeaderProps {
   phase: TestPhase;

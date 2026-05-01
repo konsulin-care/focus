@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { useTranslation } from '../../i18n';
-import { SubjectInfo } from '../types/trial';
+import { useTranslation } from '@/i18n';
+import { SubjectInfo } from '@/renderer/types/trial';
 
 export interface EmailCaptureFormProps {
   testData: string;  // JSON string of test events

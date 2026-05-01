@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy } from 'lucide-react';
-import type { TestEvent } from '../../types/electronAPI';
-import type { AttentionMetrics, SubjectInfo, AcsCalculationDetails } from '../../types/trial';
-import { generateAcsCalculationDetails } from '../../utils/acs-calculation';
+import type { TestEvent } from '@/renderer/types/electronAPI';
+import type { AttentionMetrics, SubjectInfo, AcsCalculationDetails } from '@/renderer/types/trial';
+import { generateAcsCalculationDetails } from '@/renderer/utils/acs-calculation';
 import { AcsScoreCard } from './AcsScoreCard';
 import { TrialOutcomesGrid } from './TrialOutcomesGrid';
 import { ResponseStatsGrid } from './ResponseStatsGrid';

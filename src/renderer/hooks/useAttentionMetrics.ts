@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { TestEvent } from '../types/electronAPI';
-import { SubjectInfo, AttentionMetrics } from '../types/trial';
-import { calculateAttentionMetrics } from '../utils/trial-metrics';
+import { TestEvent } from '@/renderer/types/electronAPI';
+import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
+import { calculateAttentionMetrics } from '@/renderer/utils/trial-metrics';
 
 export function useAttentionMetrics(testEvents: TestEvent[]) {
   const [metrics, setMetrics] = useState<AttentionMetrics | null>(null);

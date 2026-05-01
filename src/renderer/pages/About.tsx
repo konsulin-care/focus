@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '../store';
+import { useNavigation } from '@/renderer/store';
 import packageInfo from '@/../package.json';
 
 export default function About() {

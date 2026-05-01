@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n';
-import { useNavigation } from '../store';
-import StimulusDemo from '../components/StimulusDemo';
+import { useNavigation } from '@/renderer/store';
+import { StimulusDemo } from '@/renderer/components';
 import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
 import { TestConfig } from '@/renderer/types/electronAPI';
