@@ -41,8 +41,8 @@ export interface ElectronAPI {
   onStimulusChange: (callback: (event: TestEvent) => void) => () => void;
   onTestComplete: (callback: (result: TestCompleteResult) => void) => () => void;
   
-  // Database API - safe query whitelist pattern
-  queryDatabase: (command: string, params?: any[]) => Promise<any>;
+   // Database API - safe query whitelist pattern
+   queryDatabase: (command: string, params?: unknown[]) => Promise<unknown>;
   
   // Test Result API - GDPR compliant email capture
   saveTestResultWithConsent: (

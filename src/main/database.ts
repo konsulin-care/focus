@@ -8,6 +8,7 @@
 import * as path from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
+import * as fs from 'node:fs';
 import { 
   DatabaseQueryCommand, 
   QueryWhitelistEntry
@@ -97,8 +98,7 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
  * Handles migration from unencrypted to encrypted format.
  */
 export function initDatabase(): void {
-  const dbPath = path.join(app.getPath('userData'), 'focus.db');
-  const fs = require('fs');
+   const dbPath = path.join(app.getPath('userData'), 'focus.db');
   
   // Get or create encryption key
   const encryptionKey = getOrCreateEncryptionKey();

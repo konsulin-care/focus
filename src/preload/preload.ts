@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand = 
@@ -41,24 +41,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getHighPrecisionTime: () => ipcRenderer.invoke('get-high-precision-time'),
   getEventTimestamp: () => ipcRenderer.invoke('get-event-timestamp'),
   
-  // Safe Database API - uses whitelist of predefined queries
-  queryDatabase: (command: DatabaseQueryCommand, params?: any[]) => 
-    ipcRenderer.invoke('query-database', command, params),
+   // Safe Database API - uses whitelist of predefined queries
+   queryDatabase: (command: DatabaseQueryCommand, params?: unknown[]) => 
+     ipcRenderer.invoke('query-database', command, params),
   
   // Test Control API - timing in main process for clinical precision
   startTest: () => ipcRenderer.invoke('start-test'),
   stopTest: () => ipcRenderer.invoke('stop-test'),
   recordResponse: (response: boolean) => ipcRenderer.invoke('record-response', response),
-  onStimulusChange: (callback: (event: TestEvent) => void) => {
-    const listener = (_event: any, data: TestEvent) => callback(data);
-    ipcRenderer.on('stimulus-change', listener);
-    return () => { ipcRenderer.removeListener('stimulus-change', listener); };
-  },
-  onTestComplete: (callback: (events: TestEvent[]) => void) => {
-    const listener = (_event: any, data: TestEvent[]) => callback(data);
-    ipcRenderer.on('test-complete', listener);
-    return () => { ipcRenderer.removeListener('test-complete', listener); };
-  },
+   onStimulusChange: (callback: (event: TestEvent) => void) => {
+     const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
+     ipcRenderer.on('stimulus-change', listener);
+     return () => { ipcRenderer.removeListener('stimulus-change', listener); };
+   },
+   onTestComplete: (callback: (events: TestEvent[]) => void) => {
+     const listener = (_event: IpcRendererEvent, data: TestEvent[]) => callback(data);
+     ipcRenderer.on('test-complete', listener);
+     return () => { ipcRenderer.removeListener('test-complete', listener); };
+   },
   
   // Test Config API
   getTestConfig: () => ipcRenderer.invoke('get-test-config'),

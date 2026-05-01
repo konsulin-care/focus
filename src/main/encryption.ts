@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
+import * as fs from 'node:fs';
 
 // ===========================================
 // Key Generation
@@ -36,8 +37,7 @@ export function generateEncryptionKey(): string {
  * @returns The encryption key as hex string
  */
 export function getOrCreateEncryptionKey(): string {
-  const fs = require('fs');
-  const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
+   const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
   
   // Check if key already exists
   if (fs.existsSync(keyPath)) {
@@ -80,9 +80,8 @@ export function getOrCreateEncryptionKey(): string {
  * @returns true if the database appears to be encrypted
  */
 export function isDatabaseEncrypted(dbPath: string): boolean {
-  const fs = require('fs');
-  
-  if (!fs.existsSync(dbPath)) {
+   
+   if (!fs.existsSync(dbPath)) {
     return false; // New database, not yet encrypted
   }
   
@@ -136,12 +135,11 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
     // Close current connection
     db.close();
     
-    // Rename current database to backup
-    const fs = require('fs');
-    if (fs.existsSync(tempDbPath)) {
-      fs.unlinkSync(tempDbPath);
-    }
-    fs.renameSync(encryptedDbPath, tempDbPath);
+     // Rename current database to backup
+     if (fs.existsSync(tempDbPath)) {
+       fs.unlinkSync(tempDbPath);
+     }
+     fs.renameSync(encryptedDbPath, tempDbPath);
     
     // Open backup and re-export with encryption
     const backupDb = new Database(tempDbPath);
