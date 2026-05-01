@@ -5,6 +5,9 @@ inputs:
   version:
     description: 'Version string'
     required: true
+  GITHUB_TOKEN:
+    description: 'GitHub token for authentication'
+    required: true
 
 outputs:
   release_notes:
@@ -61,4 +64,4 @@ runs:
         files: release/*
         body: ${{ steps.release_notes.outputs.content }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}

@@ -118,6 +118,7 @@ jobs:
         uses: ./.github/actions/prepare-release
         with:
           version: ${{ needs.prepare.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Summary job (always runs)
   summary:
