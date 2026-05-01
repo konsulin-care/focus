@@ -51,11 +51,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopTest: () => ipcRenderer.invoke('stop-test'),
   recordResponse: (response: boolean) => ipcRenderer.invoke('record-response', response),
   onStimulusChange: (callback: (event: TestEvent) => void) => {
+    /**
+     * Listener for stimulus-change IPC events
+     * @param _event - The IPC renderer event
+     * @param data - The test event data
+     */
     const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
     ipcRenderer.on('stimulus-change', listener);
     return () => { ipcRenderer.removeListener('stimulus-change', listener); };
   },
   onTestComplete: (callback: (result: TestCompleteResult) => void) => {
+    /**
+     * Listener for test-complete IPC events
+     * @param _event - The IPC renderer event
+     * @param data - The test complete result data
+     */
     const listener = (_event: IpcRendererEvent, data: TestCompleteResult) => callback(data);
     ipcRenderer.on('test-complete', listener);
     return () => { ipcRenderer.removeListener('test-complete', listener); };

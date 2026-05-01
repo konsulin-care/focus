@@ -8,7 +8,7 @@
 import * as path from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
-import * as fs from 'node:fs';
+import { existsSync } from 'node:fs';
 import { 
   DatabaseQueryCommand, 
   QueryWhitelistEntry
@@ -103,7 +103,7 @@ export function initDatabase(): void {
   // Get or create encryption key
   const encryptionKey = getOrCreateEncryptionKey();
   
-  const dbExists = fs.existsSync(dbPath);
+  const dbExists = existsSync(dbPath);
   
   // Check if we need to migrate from unencrypted to encrypted
   // Only migrate if: DB exists AND we can open it without key (meaning it's unencrypted)
