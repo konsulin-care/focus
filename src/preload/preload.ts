@@ -42,9 +42,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getHighPrecisionTime: () => ipcRenderer.invoke('get-high-precision-time'),
   getEventTimestamp: () => ipcRenderer.invoke('get-event-timestamp'),
   
-   // Safe Database API - uses whitelist of predefined queries
-   queryDatabase: (command: DatabaseQueryCommand, params?: unknown[]) => 
-     ipcRenderer.invoke('query-database', command, params),
+  // Safe Database API - uses whitelist of predefined queries
+  queryDatabase: (command: DatabaseQueryCommand, params?: unknown[]) => 
+    ipcRenderer.invoke('query-database', command, params),
   
   // Test Control API - timing in main process for clinical precision
   startTest: () => ipcRenderer.invoke('start-test'),
@@ -58,7 +58,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
      */
     const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
     ipcRenderer.on('stimulus-change', listener);
-    return () => { ipcRenderer.removeListener('stimulus-change', listener); };
+    return () => {
+      ipcRenderer.removeListener('stimulus-change', listener);
+    };
   },
   onTestComplete: (callback: (result: TestCompleteResult) => void) => {
     /**
@@ -68,7 +70,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
      */
     const listener = (_event: IpcRendererEvent, data: TestCompleteResult) => callback(data);
     ipcRenderer.on('test-complete', listener);
-    return () => { ipcRenderer.removeListener('test-complete', listener); };
+    return () => {
+      ipcRenderer.removeListener('test-complete', listener);
+    };
   },
   
   // Test Config API

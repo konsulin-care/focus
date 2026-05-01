@@ -80,8 +80,9 @@ export function getOrCreateEncryptionKey(): string {
  * @returns true if the database appears to be encrypted
  */
 export function isDatabaseEncrypted(dbPath: string): boolean {
-   
-    if (!existsSync(dbPath)) {
+    
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  if (!existsSync(dbPath)) {
     return false; // New database, not yet encrypted
   }
   
@@ -89,6 +90,7 @@ export function isDatabaseEncrypted(dbPath: string): boolean {
   try {
     // SQLCipher databases have a different header than standard SQLite
     const headerBuffer = Buffer.alloc(16);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fd = openSync(dbPath, 'r');
     readSync(fd, headerBuffer, 0, 16, 0);
     closeSync(fd);
@@ -136,10 +138,13 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
     db.close();
     
     // Rename current database to backup
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (existsSync(tempDbPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       unlinkSync(tempDbPath);
     }
-
+ 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     renameSync(encryptedDbPath, tempDbPath);
     
     // Open backup and re-export with encryption
