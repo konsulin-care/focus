@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand = 
@@ -49,16 +49,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startTest: () => ipcRenderer.invoke('start-test'),
   stopTest: () => ipcRenderer.invoke('stop-test'),
   recordResponse: (response: boolean) => ipcRenderer.invoke('record-response', response),
-   onStimulusChange: (callback: (event: TestEvent) => void) => {
-     const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
-     ipcRenderer.on('stimulus-change', listener);
-     return () => { ipcRenderer.removeListener('stimulus-change', listener); };
-   },
-   onTestComplete: (callback: (events: TestEvent[]) => void) => {
-     const listener = (_event: IpcRendererEvent, data: TestEvent[]) => callback(data);
-     ipcRenderer.on('test-complete', listener);
-     return () => { ipcRenderer.removeListener('test-complete', listener); };
-   },
+  onStimulusChange: (callback: (event: TestEvent) => void) => {
+    const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
+    ipcRenderer.on('stimulus-change', listener);
+    return () => { ipcRenderer.removeListener('stimulus-change', listener); };
+  },
+  onTestComplete: (callback: (result: TestCompleteResult) => void) => {
+    const listener = (_event: IpcRendererEvent, data: TestCompleteResult) => callback(data);
+    ipcRenderer.on('test-complete', listener);
+    return () => { ipcRenderer.removeListener('test-complete', listener); };
+  },
   
   // Test Config API
   getTestConfig: () => ipcRenderer.invoke('get-test-config'),
