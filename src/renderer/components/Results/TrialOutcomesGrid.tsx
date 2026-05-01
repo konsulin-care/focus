@@ -5,6 +5,10 @@ interface TrialOutcomesGridProps {
   metrics: AttentionMetrics;
 }
 
+/**
+ * Grid component for displaying trial outcomes (hits, omissions, commissions, correct rejections)
+ * @param props - Component props containing attention metrics
+ */
 export function TrialOutcomesGrid({ metrics }: TrialOutcomesGridProps) {
   const { t } = useTranslation();
   const hitCount = metrics.hits;

@@ -11,6 +11,10 @@ interface UseTestPhaseReturn {
   startTestSequence: () => Promise<void>;
 }
 
+/**
+ * Hook for managing test phase state and sequence
+ * @returns Object containing current phase, phase setter, countdown, test config, and test sequence starter
+ */
 export function useTestPhase(): UseTestPhaseReturn {
   const [phase, setPhase] = useState<TestPhase>('countdown');
   const [countdown, setCountdown] = useState(3);

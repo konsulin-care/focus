@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
 import { TestConfig } from '@/renderer/types/electronAPI';
 
+/**
+ * Test page component that runs the attention test and displays results
+ * Fetches test configuration and calculates test duration on mount
+ * @returns JSX element for the test page
+ */
 export default function Test() {
   const { t } = useTranslation('translation', { keyPrefix: 'test.page' });
   const { t: buttonT } = useTranslation('translation', { keyPrefix: 'button' });
@@ -12,6 +17,10 @@ export default function Test() {
   const [testDuration, setTestDuration] = useState<number>(21.6); // Default fallback
 
   useEffect(() => {
+    /**
+     * Fetches test configuration from electron API and calculates test duration
+     * Updates test duration state with the calculated value or keeps default on error
+     */
     const fetchTestConfig = async () => {
       try {
         const config: TestConfig = await window.electronAPI.getTestConfig();

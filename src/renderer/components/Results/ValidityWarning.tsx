@@ -5,6 +5,10 @@ interface ValidityWarningProps {
   metrics: AttentionMetrics;
 }
 
+/**
+ * Component for displaying validity warning when test results are invalid
+ * @param props - Component props containing attention metrics
+ */
 export function ValidityWarning({ metrics }: ValidityWarningProps) {
   const { t } = useTranslation();
   

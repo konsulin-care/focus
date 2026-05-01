@@ -7,6 +7,11 @@ interface TestHeaderProps {
   onExitTest: () => void;
 }
 
+/**
+ * Header component for the test page showing exit test button
+ * Only visible when test phase is completed
+ * @param props - Component props containing test phase and exit test callback
+ */
 export function TestHeader({ phase, onExitTest }: TestHeaderProps) {
   const { t } = useTranslation('translation');
   

@@ -10,6 +10,10 @@ interface AcsScoreCardProps {
   calculationDetails?: AcsCalculationDetails;
 }
 
+/**
+ * Component for displaying ACS score with optional detailed calculation modal
+ * @param props - Component props containing metrics and optional calculation details
+ */
 export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps) {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -10,6 +10,10 @@ const languages = [
   { code: 'id', name: 'Bahasa Indonesia', nativeName: 'Bahasa Indonesia' },
 ] as const;
 
+/**
+ * Language switcher component for changing application locale
+ * Displays current language and provides dropdown to switch languages
+ */
 export default function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +21,11 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
   const currentLanguage = languages.find(
     (lang) => lang.code === i18n.language
   ) || languages[0];
-
+  
+  /**
+   * Handles language selection change
+   * @param code - Language code to switch to
+   */
   const handleLanguageChange = (code: string) => {
     i18n.changeLanguage(code);
     setIsOpen(false);

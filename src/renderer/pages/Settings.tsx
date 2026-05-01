@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@/renderer/store';
 import type { TestConfig } from '@/renderer/types/electronAPI';
 
+/**
+ * Settings page component for configuring test parameters
+ * Allows users to adjust stimulus duration, inter-stimulus interval, total trials, and buffer time
+ * @returns JSX element for the settings page
+ */
 export default function Settings() {
   const { t } = useTranslation();
   const { setPage } = useNavigation();
@@ -34,10 +39,14 @@ export default function Settings() {
       .catch(() => setStatus(t('status.loadFailed')));
   }, []);
 
+  /**
+   * Handles saving of settings configuration
+   * Normalizes totalTrials to be even before saving
+   */
   const handleSave = async () => {
     try {
       // Normalize totalTrials on save
-      const normalized = config.totalTrials % 2 === 0 
+      const normalized = config.totalTrials % 2 === 0
         ? config.totalTrials 
         : config.totalTrials + 1;
       const configToSave = { ...config, totalTrials: normalized };
@@ -53,6 +62,10 @@ export default function Settings() {
     }
   };
 
+  /**
+   * Handles resetting of test configuration to default values
+   * Fetches default config from electron API and updates state
+   */
   const handleReset = async () => {
     try {
       await window.electronAPI.resetTestConfig();
@@ -66,6 +79,12 @@ export default function Settings() {
     }
   };
 
+  /**
+   * Handles changes to configuration fields
+   * For totalTrials, stores raw value while typing and normalizes on blur
+   * @param field - Configuration field to update
+   * @param value - New value for the field
+   */
   const handleChange = (field: keyof TestConfig, value: number) => {
     if (field === 'totalTrials') {
       // Store raw value while typing, normalize on blur
@@ -75,6 +94,11 @@ export default function Settings() {
     }
   };
 
+  /**
+   * Handles changes to the total trials input field
+   * Updates editing value and config in real-time while ensuring minimum value of 2
+   * @param e - Change event from the input element
+   */
   const handleTotalTrialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingValue(e.target.value);
     const num = parseInt(e.target.value) || 2;
@@ -95,6 +119,10 @@ export default function Settings() {
     setConfig(prev => ({ ...prev, totalTrials: value }));
   }, [config.totalTrials]);
 
+  /**
+   * Handles focus event on the total trials input field
+   * Sets focus state and prepares editing value for input
+   */
   const handleTotalTrialsFocus = () => {
     setIsTotalTrialsFocused(true);
     setEditingValue(String(config.totalTrials));
