@@ -1,4 +1,4 @@
-const tseslint = require('typescript-eslint');
+const tseslint = require('typescript-eslint')
 
 module.exports = tseslint.config(
   ...tseslint.configs.recommended,
@@ -19,4 +19,4 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn'
     }
   }
-);
+)
