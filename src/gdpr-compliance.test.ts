@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 // ===========================================
 // Test Utilities
@@ -98,7 +98,7 @@ describe('GDPR Compliance', () => {
     });
 
     it('should reject records with consent but no timestamp', () => {
-      const result = validateConsent(true, undefined);
+      const result = validateConsent(true);
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Consent timestamp is required');
     });

@@ -1,10 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { AttentionMetrics } from '../../types/trial';
+import { AttentionMetrics } from '@/renderer/types/trial';
 
 interface ResponseStatsGridProps {
   metrics: AttentionMetrics;
 }
 
+/**
+ * Grid component for displaying key response statistics (mean and variability)
+ * @param props - Component props containing attention metrics
+ */
 export function ResponseStatsGrid({ metrics }: ResponseStatsGridProps) {
   const { t } = useTranslation();
   

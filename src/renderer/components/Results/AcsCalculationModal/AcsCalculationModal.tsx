@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { AcsCalculationDetails } from '../../../types/trial';
+import { AcsCalculationDetails } from '@/renderer/types/trial';
 import { ModalHeader } from './ModalHeader';
 import { SubjectInfoSection } from './SubjectInfoSection';
 import { DPrimeSection } from './DPrimeSection';
@@ -36,6 +36,9 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
     if (!dialog) return;
     
     dialog.showModal();
+    /**
+     * Handles modal close button click
+     */
     const handleCancel = () => onClose();
     dialog.addEventListener('close', handleCancel);
     

@@ -1,4 +1,9 @@
-# Preload AGENTS
+---
+title: Preload AGENTS
+description: Preload script guidelines for safe IPC exposure in F.O.C.U.S. Electron application
+priority: high
+updated: 2026-05-01
+---
 
 - Bridge API: Only the functions listed in `src/preload/preload.ts` are exposed to the renderer via `contextBridge.exposeInMainWorld('electronAPI', …)`.
 - Type Safety: Every exposed method must have a matching TypeScript declaration in `src/renderer/types/electronAPI.ts`.

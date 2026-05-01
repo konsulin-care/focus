@@ -3,12 +3,12 @@
 ### Version {{VERSION}}
 
 This release includes pre-built binaries for:
-- Linux (AppImage)
-- macOS (DMG)
-- Windows (Portable EXE)
+- 🐧 [Linux (AppImage)](https://github.com/konsulin-care/focus/releases/download/v{{VERSION}}/focus-{{VERSION}}.AppImage)
+- 🍎 [macOS (DMG)](https://github.com/konsulin-care/focus/releases/download/v{{VERSION}}/focus-{{VERSION}}.dmg)
+- 🪟 [Windows (Portable EXE)](https://github.com/konsulin-care/focus/releases/download/v{{VERSION}}/focus-{{VERSION}}.exe)
 
 <details>
-<summary>📝 Release Notes</summary>
+<summary>📝 Release Notes and Instructions</summary>
 
 ### Checksums
 

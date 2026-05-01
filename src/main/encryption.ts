@@ -5,10 +5,11 @@
  * Keys are stored in userData directory with restricted permissions.
  */
 
-import * as path from 'path';
-import * as crypto from 'crypto';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
+import { existsSync, readFileSync, writeFileSync, openSync, readSync, closeSync, unlinkSync, renameSync } from 'node:fs';
 
 // ===========================================
 // Key Generation
@@ -36,13 +37,12 @@ export function generateEncryptionKey(): string {
  * @returns The encryption key as hex string
  */
 export function getOrCreateEncryptionKey(): string {
-  const fs = require('fs');
-  const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
+   const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
   
   // Check if key already exists
-  if (fs.existsSync(keyPath)) {
+  if (existsSync(keyPath)) {
     try {
-      const existingKey = fs.readFileSync(keyPath, 'utf8').trim();
+      const existingKey = readFileSync(keyPath, 'utf8').trim();
       // Validate key format (64 hex characters = 256 bits)
       if (existingKey.length === 64 && /^[a-fA-F0-9]+$/.test(existingKey)) {
         console.log('[ENC] Using existing encryption key');
@@ -59,7 +59,7 @@ export function getOrCreateEncryptionKey(): string {
   const newKey = generateEncryptionKey();
   
   try {
-    fs.writeFileSync(keyPath, newKey, { mode: 0o600 });
+    writeFileSync(keyPath, newKey, { mode: 0o600 });
     console.log('[ENC] New encryption key generated and stored');
   } catch (error) {
     console.error('[ENC] Failed to store encryption key:', error);
@@ -80,9 +80,9 @@ export function getOrCreateEncryptionKey(): string {
  * @returns true if the database appears to be encrypted
  */
 export function isDatabaseEncrypted(dbPath: string): boolean {
-  const fs = require('fs');
-  
-  if (!fs.existsSync(dbPath)) {
+    
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  if (!existsSync(dbPath)) {
     return false; // New database, not yet encrypted
   }
   
@@ -90,9 +90,10 @@ export function isDatabaseEncrypted(dbPath: string): boolean {
   try {
     // SQLCipher databases have a different header than standard SQLite
     const headerBuffer = Buffer.alloc(16);
-    const fd = fs.openSync(dbPath, 'r');
-    fs.readSync(fd, headerBuffer, 0, 16, 0);
-    fs.closeSync(fd);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const fd = openSync(dbPath, 'r');
+    readSync(fd, headerBuffer, 0, 16, 0);
+    closeSync(fd);
     
     // Standard SQLite starts with "SQLite format 3\000"
     const sqliteHeader = 'SQLite format 3';
@@ -137,11 +138,14 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
     db.close();
     
     // Rename current database to backup
-    const fs = require('fs');
-    if (fs.existsSync(tempDbPath)) {
-      fs.unlinkSync(tempDbPath);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (existsSync(tempDbPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      unlinkSync(tempDbPath);
     }
-    fs.renameSync(encryptedDbPath, tempDbPath);
+ 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    renameSync(encryptedDbPath, tempDbPath);
     
     // Open backup and re-export with encryption
     const backupDb = new Database(tempDbPath);
@@ -198,7 +202,7 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
     encryptedDb.close();
     
     // Remove backup
-    fs.unlinkSync(tempDbPath);
+    unlinkSync(tempDbPath);
     
     console.log('[ENC] Database migration completed successfully');
   } catch (error) {

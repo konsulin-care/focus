@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TestConfig } from '../types/electronAPI';
+import { TestConfig } from '@/renderer/types/electronAPI';
 
 export type TestPhase = 'countdown' | 'buffer' | 'running' | 'completed' | 'email-capture' | 'error';
 
@@ -11,6 +11,10 @@ interface UseTestPhaseReturn {
   startTestSequence: () => Promise<void>;
 }
 
+/**
+ * Hook for managing test phase state and sequence
+ * @returns Object containing current phase, phase setter, countdown, test config, and test sequence starter
+ */
 export function useTestPhase(): UseTestPhaseReturn {
   const [phase, setPhase] = useState<TestPhase>('countdown');
   const [countdown, setCountdown] = useState(3);

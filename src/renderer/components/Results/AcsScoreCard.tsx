@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AttentionMetrics, AcsCalculationDetails } from '../../types/trial';
-import { normalCDF } from '../../utils/statistics';
+import { AttentionMetrics, AcsCalculationDetails } from '@/renderer/types/trial';
+import { normalCDF } from '@/renderer/utils/statistics';
 import { AcsCalculationModal } from './AcsCalculationModal';
 
 interface AcsScoreCardProps {
@@ -10,6 +10,10 @@ interface AcsScoreCardProps {
   calculationDetails?: AcsCalculationDetails;
 }
 
+/**
+ * Component for displaying ACS score with optional detailed calculation modal
+ * @param props - Component props containing metrics and optional calculation details
+ */
 export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps) {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -9,15 +9,15 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { calculateAttentionMetrics } from './attention-metrics';
 import { calculateVariability } from './basic-stats';
 import { calculateDPrime as clinicalCalculateDPrime } from './clinical-metrics';
 import { getNormativeStats } from './normative-data';
 import { TRIAL_CONSTANTS } from './trial-constants';
-import { TestEvent } from '../types/electronAPI';
-import { SubjectInfo } from '../types/trial';
+import { TestEvent } from '@/renderer/types/electronAPI';
+import { SubjectInfo } from '@/renderer/types/trial';
 
 // ============================================================================
 // TOVA Manual Calculation Functions

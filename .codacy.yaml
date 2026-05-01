@@ -1,0 +1,10 @@
+engines:
+  html:
+    exclude_paths:
+      - "src/renderer/**/*.tsx"
+      - "src/renderer/**/*.jsx"
+  # Ensure ESLint is enabled to analyze TypeScript/JSX files
+  eslint:
+    # ESLint is enabled by default - we've added an ESLint config file
+    # that includes React/JSX support via @typescript-eslint and eslint-plugin-react
+    enabled: true

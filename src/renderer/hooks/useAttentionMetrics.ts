@@ -1,8 +1,13 @@
 import { useState, useCallback } from 'react';
-import { TestEvent } from '../types/electronAPI';
-import { SubjectInfo, AttentionMetrics } from '../types/trial';
-import { calculateAttentionMetrics } from '../utils/trial-metrics';
+import { TestEvent } from '@/renderer/types/electronAPI';
+import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
+import { calculateAttentionMetrics } from '@/renderer/utils/trial-metrics';
 
+/**
+ * Hook for calculating and managing attention metrics from test events
+ * @param testEvents - Array of test events to process
+ * @returns Object containing metrics, subject info, and calculation functions
+ */
 export function useAttentionMetrics(testEvents: TestEvent[]) {
   const [metrics, setMetrics] = useState<AttentionMetrics | null>(null);
   const [subjectInfo, setSubjectInfo] = useState<SubjectInfo | null>(null);

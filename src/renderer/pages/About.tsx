@@ -1,7 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '../store';
+import { useNavigation } from '@/renderer/store';
 import packageInfo from '@/../package.json';
 
+/**
+ * About page component displaying application information and version details
+ * @returns JSX element for the about page
+ */
 export default function About() {
   const { t } = useTranslation();
   const { setPage } = useNavigation();

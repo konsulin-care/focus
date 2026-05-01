@@ -1,10 +1,14 @@
 import React from 'react';
 import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTranslation } from '../../i18n';
-import { useNavigation, Page } from '../store';
+import { useTranslation } from '@/i18n';
+import { useNavigation, Page } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
 import logoUrl from '@/../public/images/logo.svg';
 
+/**
+ * Sidebar component for application navigation
+ * Provides collapsible navigation menu with page routing
+ */
 export default function Sidebar() {
   const { t } = useTranslation('common');
   const { currentPage, setPage, isSidebarCollapsed, toggleSidebar } = useNavigation();

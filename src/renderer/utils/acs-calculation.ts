@@ -5,12 +5,11 @@
  * Uses computeAcsValues from acs-shared.ts for core calculations.
  */
 
-import { TestEvent } from '../types/electronAPI';
-import { SubjectInfo, AcsCalculationDetails } from '../types/trial';
-import { inverseNormalCDF } from './distributions';
+import { TestEvent } from '@/renderer/types/electronAPI';
+import { SubjectInfo, AcsCalculationDetails } from '@/renderer/types/trial';
+import { inverseNormalCDF, clampProbability } from './distributions';
 import { computeAcsValues, AcsIntermediateResult } from './acs-shared';
 import { TRIAL_CONSTANTS } from './trial-constants';
-import { clampProbability } from './distributions';
 
 /**
  * Calculate z-score magnitude (absolute value of z-score).
@@ -111,7 +110,11 @@ export function generateAcsCalculationDetails(
   // Helper to get norm values or null when not available
   const getNormMean = (): number | null => 
     normativeAvailable && result.normativeStats ? result.normativeStats.responseTimeMean : null;
-  const getNormSD = (): number | null => 
+  /**
+   * Gets normative standard deviation value or null if not available
+   * @returns Normative standard deviation for response time or null
+   */
+  const getNormSD = (): number | null =>
     normativeAvailable && result.normativeStats ? result.normativeStats.responseTimeSD : null;
   
   // Build and return detailed breakdown

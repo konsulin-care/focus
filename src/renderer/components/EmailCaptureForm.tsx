@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { useTranslation } from '../../i18n';
-import { SubjectInfo } from '../types/trial';
+import { useTranslation } from '@/i18n';
+import { SubjectInfo } from '@/renderer/types/trial';
 
 export interface EmailCaptureFormProps {
   testData: string;  // JSON string of test events
@@ -9,6 +9,10 @@ export interface EmailCaptureFormProps {
   lng?: string;  // Language code for i18n
 }
 
+/**
+ * Form component for capturing user email and demographic information
+ * with consent validation before saving test results
+ */
 export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCaptureFormProps) {
   const { t, i18n } = useTranslation();
   const [age, setAge] = useState<number>(0);
@@ -26,7 +30,11 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
   }, [lng, i18n]);
 
   const subjectInfo: SubjectInfo = { age, gender: gender as 'Male' | 'Female' };
-
+  
+  /**
+   * Handles form submission with validation and saving of test results
+   * @param e - Form submit event
+   */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const newErrors: string[] = [];

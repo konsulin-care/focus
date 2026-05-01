@@ -1,4 +1,4 @@
-import { StimulusType } from '../../types/electronAPI';
+import { StimulusType } from '@/renderer/types/electronAPI';
 import { TargetStimulus } from './TargetStimulus';
 import { NonTargetStimulus } from './NonTargetStimulus';
 

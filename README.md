@@ -6,8 +6,9 @@
 
 <p align="center">
   <a href="https://deepwiki.com/konsulin-care/focus"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
-  <a href="https://deepscan.io/dashboard#view=project&tid=28882&pid=31014&bid=1002029"><img src="https://deepscan.io/api/teams/28882/projects/31014/branches/1002029/badge/grade.svg" alt="DeepScan grade"></a>
-  <a href="https://feedback.konsulin.care"><img src="https://img.shields.io/badge/discuss-here-0ABDC3?style=flat" alt="Static Badge"></a>
+  <a href="https://deepscan.io/dashboard#view=project&tid=28882&pid=31014&bid=1002029"><img src="https://deepscan.io/api/teams/28882/projects/31014/branches/1002029/badge/grade.svg" alt="DeepScan Grade"></a>
+  <a href="https://app.codacy.com/gh/konsulin-care/focus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/6f5f812b545c429eb623aadcf77e091f" alt="Code Quality"></a>
+  <a href="https://app.deepsource.com/gh/konsulin-care/focus/"><img alt="DeepSource" title="DeepSource" src="https://app.deepsource.com/gh/konsulin-care/focus.svg/?label=active+issues&show_trend=false"/></a>
 </p>
 
 # F.O.C.U.S. Assessment Application

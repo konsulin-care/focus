@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TestEvent, TestCompleteResult } from '../types/electronAPI';
+import { TestEvent, TestCompleteResult } from '@/renderer/types/electronAPI';
 
 interface UseTestEventsReturn {
   testEvents: TestEvent[];
@@ -9,6 +9,12 @@ interface UseTestEventsReturn {
   trialCount: number;
 }
 
+/**
+ * Hook for managing test events and test state
+ * @param onComplete - Callback when test completes
+ * @param resetResponse - Callback to reset response state
+ * @returns Object containing test events, last event, elapsed time, test data JSON, and trial count
+ */
 export function useTestEvents(
   onComplete: (data: TestCompleteResult) => void,
   resetResponse: () => void
