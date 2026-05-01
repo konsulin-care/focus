@@ -35,6 +35,7 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
     */
    const handleCopy = async () => {
      try {
+       setError(null);
        const jsonText = JSON.stringify(calculationDetails, null, 2);
        await navigator.clipboard.writeText(jsonText);
        setIsCopied(true);
@@ -50,6 +51,7 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
        }, 2000);
       } catch (err) {
         console.error('Failed to copy:', err);
+        setIsCopied(false);
         setError(t('results.copyError'));
       }
    };
