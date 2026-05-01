@@ -21,7 +21,7 @@
 - `data/` – test‑data.json used by metrics unit tests
 
 ## TypeScript Path Alias
-- `@/` resolves to `src/` (tsconfig + vite config). Use for imports to avoid deep relative paths.
+- `@/` resolves to `src/` (tsconfig + vite config). Use for imports to avoid deep relative paths. **For full details on import standards, see STANDARDS.md.**
 
 ## Vite Configuration
 - Base `./`, root `src/renderer`, outDir `../../dist/renderer` (see `vite.config.mjs`).
@@ -52,3 +52,6 @@
 - `src/renderer/AGENTS.md` – UI state, Zustand patterns, Tailwind usage.
 - `src/renderer/components/AGENTS.md` – component naming, export index conventions.
 - `src/renderer/hooks/AGENTS.md` – custom hook patterns and testing.
+
+## Coding Standards Reference
+For comprehensive coding standards including TypeScript Path Alias usage, Tailwind styling rules, component conventions, hooks patterns, and testing guidelines, refer to @STANDARDS.md.

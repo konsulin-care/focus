@@ -5,4 +5,5 @@
 - Tailwind-Only: All styling must be expressed with Tailwind utilities. No `className` strings that are not Tailwind-compatible.
 - Responsibility: Components are presentational only – any state/logic lives in a hook or the Zustand store.
 - Event Flow: Stimulus rendering components (`StimulusContainer`, `TargetStimulus`, `NonTargetStimulus`) receive timestamps via props from the renderer; they never call IPC directly.
+- For coding standards including import conventions, see ../STANDARDS.md.
 - Reference: Root AGENTS.md holds global commands and the TypeScript alias map.
