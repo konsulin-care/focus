@@ -50,7 +50,8 @@
       "cannotPause": "Penilaian tidak dapat dijeda setelah dimulai"
     }
   },
-   "results": {
+  "results": {
+
     "title": "Hasil Anda",
     "sendResults": "Kirim Hasil ke Email",
     "emailSent": "Hasil dikirim ke {{email}}",
