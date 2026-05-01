@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy } from 'lucide-react';
 import type { TestEvent } from '@/renderer/types/electronAPI';
@@ -28,21 +28,31 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
   const [calculationDetails, setCalculationDetails] = useState<AcsCalculationDetails | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /**
-   * Handles copying the ACS calculation details to clipboard
-   */
-  const handleCopy = async () => {
-    try {
-      const jsonText = JSON.stringify(calculationDetails, null, 2);
-      await navigator.clipboard.writeText(jsonText);
-      setIsCopied(true);
-      setTimeout(() => { setIsCopied(false); }, 2000);
-     } catch (err) {
-       console.error('Failed to copy:', err);
-       setError(t('results.copyError'));
-     }
-  };
+   /**
+    * Handles copying the ACS calculation details to clipboard
+    */
+   const handleCopy = async () => {
+     try {
+       const jsonText = JSON.stringify(calculationDetails, null, 2);
+       await navigator.clipboard.writeText(jsonText);
+       setIsCopied(true);
+       
+       // Clear existing timeout if any
+       if (timeoutRef.current) {
+         clearTimeout(timeoutRef.current);
+       }
+       
+       // Set new timeout and store its ID
+       timeoutRef.current = setTimeout(() => {
+         setIsCopied(false);
+       }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        setError(t('results.copyError'));
+      }
+   };
 
   /**
    * Wrapper for handleCopy to properly handle Promise in onClick handler
@@ -63,14 +73,23 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
      return undefined;
    }, [testEvents, subjectInfo]);
 
-   // Clear error message after 5 seconds
-   useEffect(() => {
-     if (error) {
-       const timer = setTimeout(() => { setError(null); }, 5000);
-       return () => { clearTimeout(timer); };
-     }
-     return undefined;
-   }, [error]);
+    // Clear error message after 5 seconds
+    useEffect(() => {
+      if (error) {
+        const timer = setTimeout(() => { setError(null); }, 5000);
+        return () => { clearTimeout(timer); };
+      }
+      return undefined;
+    }, [error]);
+
+    // Clear copied status timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, []);
 
   return (
     <div className="mt-6 font-mono text-lg text-white max-w-2xl w-full">
