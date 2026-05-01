@@ -38,10 +38,10 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
       await navigator.clipboard.writeText(jsonText);
       setIsCopied(true);
       setTimeout(() => { setIsCopied(false); }, 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-      setError('Unable to copy to clipboard. Please manually select and copy the text.');
-    }
+     } catch (err) {
+       console.error('Failed to copy:', err);
+       setError(t('results.copyError'));
+     }
   };
 
   /**
@@ -80,14 +80,14 @@ export function ResultsSummary({ metrics, elapsedTimeMs, testEvents, subjectInfo
           {t('results.title')}
         </div>
 
-          <button
-            type="button"
-            onClick={handleCopyClick}
-            disabled={!calculationDetails}
-            title={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
-            aria-label={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : 'ACS calculation details not available'}
-            className={`p-2 rounded transition-colors ${!calculationDetails ? 'bg-gray-400 opacity-50' : isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
-          >
+           <button
+             type="button"
+             onClick={handleCopyClick}
+             disabled={!calculationDetails}
+             title={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : t('results.acsDetailsUnavailable')}
+             aria-label={calculationDetails ? (t('results.copyAcsDetails') || 'Copy ACS details') : t('results.acsDetailsUnavailable')}
+             className={`p-2 rounded transition-colors ${!calculationDetails ? 'bg-gray-400 opacity-50' : isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+           >
             {isCopied ? (
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check">
                 <title>{t('results.copied')}</title>

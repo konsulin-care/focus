@@ -50,14 +50,16 @@
       "cannotPause": "Penilaian tidak dapat dijeda setelah dimulai"
     }
   },
-  "results": {
-
-    "title": "Hasil Anda",
-    "sendResults": "Kirim Hasil ke Email",
-    "emailSent": "Hasil dikirim ke {{email}}",
-    "previewResults": "Pratinjau Hasil",
-    "copyAcsDetails": "Salin detail ACS",
-    "copied": "Tersalin",
+   "results": {
+ 
+     "title": "Hasil Anda",
+     "sendResults": "Kirim Hasil ke Email",
+     "emailSent": "Hasil dikirim ke {{email}}",
+     "previewResults": "Pratinjau Hasil",
+     "copyAcsDetails": "Salin detail ACS",
+     "copied": "Tersalin",
+     "copyError": "Tidak dapat menyalin ke clipboard. Silakan pilih secara manual dan salin teks tersebut.",
+     "acsDetailsUnavailable": "Detail perhitungan ACS tidak tersedia",
     "acs": {
       "score": "Skor Perbandingan Perhatian",
       "clickForDetails": "Klik untuk detail",
