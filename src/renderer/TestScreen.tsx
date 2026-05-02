@@ -14,14 +14,14 @@ import { ResultsSummary } from './components/Results';
 
 function TestScreen() {
   const { endTest } = useNavigation();
-  
+
   // Custom hooks for test logic
   const { phase, setPhase, countdown, testConfig } = useTestPhase();
-  
+
   // Use ref to avoid circular dependency between useFullscreenManager and handleExitTest
   const exitFullscreenRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const endTestRef = useRef(() => endTest());
-  
+
   // Update refs when functions change
   const { exitFullscreen } = useFullscreenManager(
     phase,
@@ -31,90 +31,93 @@ function TestScreen() {
       });
     }, [])
   );
-  
+
   // Keep refs in sync with actual functions
   useEffect(() => {
     exitFullscreenRef.current = exitFullscreen;
     endTestRef.current = endTest;
   }, [exitFullscreen, endTest]);
-  
+
   // Call useTestInput to enable click/spacebar responses
   const { resetResponse } = useTestInput(phase);
 
-  const {
-    testEvents, 
-    lastEvent, 
-    elapsedTimeMs, 
-    testDataJson, 
-    trialCount 
-  } = useTestEvents(
+  const { testEvents, lastEvent, elapsedTimeMs, testDataJson, trialCount } = useTestEvents(
     useCallback(() => {
       setPhase('email-capture');
       setShowEmailCapture(true);
     }, [setPhase]),
-    resetResponse  // Pass resetResponse to reset on new trial
+    resetResponse // Pass resetResponse to reset on new trial
   );
-  
-   const { metrics, subjectInfo, calculateMetrics } = useAttentionMetrics(testEvents);
 
-   // Local state for stimulus management
-   const [currentStimulus, setCurrentStimulus] = useState<StimulusType | null>(null);
-   const [isStimulusVisible, setIsStimulusVisible] = useState(false);
-   const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const { metrics, subjectInfo, calculateMetrics } = useAttentionMetrics(testEvents);
 
-   // Subscribe to stimulus changes from main process (for local UI state)
-   useEffect(() => {
-     const unsubscribe = window.electronAPI.onStimulusChange((event) => {
-       if (event.eventType === 'buffer-start') {
-         setPhase('buffer');
-         setIsStimulusVisible(false);
-         setCurrentStimulus(null);
-       } else if (event.eventType === 'stimulus-onset') {
-         setCurrentStimulus(event.stimulusType);
-         setIsStimulusVisible(true);
-         setPhase('running');
-       } else if (event.eventType === 'stimulus-offset') {
-         setIsStimulusVisible(false);
-       }
-     });
-     return () => unsubscribe();
-   }, [setPhase]);
+  // Local state for stimulus management
+  const [currentStimulus, setCurrentStimulus] = useState<StimulusType | null>(null);
+  const [isStimulusVisible, setIsStimulusVisible] = useState(false);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
 
-   // Unified form submit handler: computes metrics and saves via IPC
-   const handleFormSubmit = useCallback(async (subjectInfo: SubjectInfo, email: string, consent: boolean) => {
-     // Compute metrics using the correct renderer calculation (also updates local state)
-     const metrics = calculateMetrics(subjectInfo);
-     if (!metrics) {
-       throw new Error('Failed to compute attention metrics');
-     }
-     
-     const consentTimestamp = new Date().toISOString();
-     
-     // Send to main process with pre-computed metrics
-     await window.electronAPI.saveTestResultWithConsent(
-       testDataJson,
-       email,
-       subjectInfo.age,
-       subjectInfo.gender,
-       consent,
-       consentTimestamp,
-       metrics
-     );
-     
-     // Transition UI
-     setShowEmailCapture(false);
-     setPhase('completed');
-     // Note: onSuccess callback not needed; parent flow ends here
-   }, [calculateMetrics, testDataJson, setShowEmailCapture, setPhase]);
+  // Subscribe to stimulus changes from main process (for local UI state)
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onStimulusChange((event) => {
+      if (event.eventType === 'buffer-start') {
+        setPhase('buffer');
+        setIsStimulusVisible(false);
+        setCurrentStimulus(null);
+      } else if (event.eventType === 'stimulus-onset') {
+        setCurrentStimulus(event.stimulusType);
+        setIsStimulusVisible(true);
+        setPhase('running');
+      } else if (event.eventType === 'stimulus-offset') {
+        setIsStimulusVisible(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [setPhase]);
 
-   const handleEmailCaptureSkip = useCallback((subjectInfo: SubjectInfo) => {
-     calculateMetrics(subjectInfo);
-     setShowEmailCapture(false);
-     setPhase('completed');
-   }, [calculateMetrics, setPhase, setShowEmailCapture]);
+  // Unified form submit handler: computes metrics and saves via IPC
+  const handleFormSubmit = useCallback(
+    async (subjectInfo: SubjectInfo, email: string, consent: boolean) => {
+      // Compute metrics using the correct renderer calculation (also updates local state)
+      const metrics = calculateMetrics(subjectInfo);
+      if (!metrics) {
+        throw new Error('Failed to compute attention metrics');
+      }
+
+      const consentTimestamp = new Date().toISOString();
+
+      // Send to main process with pre-computed metrics
+      await window.electronAPI.saveTestResultWithConsent(
+        testDataJson,
+        email,
+        subjectInfo.age,
+        subjectInfo.gender,
+        consent,
+        consentTimestamp,
+        metrics
+      );
+
+      // Transition UI
+      setShowEmailCapture(false);
+      setPhase('completed');
+      // Note: onSuccess callback not needed; parent flow ends here
+    },
+    [calculateMetrics, testDataJson, setShowEmailCapture, setPhase]
+  );
+
+  const handleEmailCaptureSkip = useCallback(
+    (subjectInfo: SubjectInfo) => {
+      calculateMetrics(subjectInfo);
+      setShowEmailCapture(false);
+      setPhase('completed');
+    },
+    [calculateMetrics, setPhase, setShowEmailCapture]
+  );
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center bg-black" style={{ cursor: phase === 'running' ? 'none' : 'default' }}>
+    <div
+      className="h-screen flex flex-col justify-center items-center bg-black"
+      style={{ cursor: phase === 'running' ? 'none' : 'default' }}
+    >
       <TestHeader phase={phase} onExitTest={endTest} />
 
       {/* Countdown display */}
@@ -137,15 +140,17 @@ function TestScreen() {
       {phase === 'running' && lastEvent && (
         <div className="mt-6 text-center font-mono text-sm text-gray-800">
           <div>Last Event: {lastEvent.eventType}</div>
-          <div>Trial: {lastEvent.trialIndex}, Type: {lastEvent.stimulusType}</div>
+          <div>
+            Trial: {lastEvent.trialIndex}, Type: {lastEvent.stimulusType}
+          </div>
           <div>Timestamp: {Number(lastEvent.timestampNs) / 1_000_000}ms</div>
         </div>
       )}
 
       {/* Results summary */}
       {phase === 'completed' && !showEmailCapture && metrics && subjectInfo && (
-        <ResultsSummary 
-          metrics={metrics} 
+        <ResultsSummary
+          metrics={metrics}
           elapsedTimeMs={elapsedTimeMs}
           testEvents={testEvents}
           subjectInfo={subjectInfo}
@@ -155,10 +160,7 @@ function TestScreen() {
       {/* Email capture form overlay */}
       {showEmailCapture && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-50">
-          <EmailCaptureForm
-            onSubmit={handleFormSubmit}
-            onSkip={handleEmailCaptureSkip}
-          />
+          <EmailCaptureForm onSubmit={handleFormSubmit} onSkip={handleEmailCaptureSkip} />
         </div>
       )}
     </div>

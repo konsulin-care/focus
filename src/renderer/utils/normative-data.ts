@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Normative Reference Data
- * 
+ *
  * Utility for loading and looking up normative reference data.
  */
 
@@ -95,8 +95,8 @@ function parseNormativeData(): NormativeStats[] {
   }
 
   const entries = normativeDataRaw as NormativeDataEntry[];
-  
-  const data: NormativeStats[] = entries.map(entry => ({
+
+  const data: NormativeStats[] = entries.map((entry) => ({
     ageRange: entry.ageRange,
     gender: entry.gender,
     n: entry.n,
@@ -118,14 +118,14 @@ function parseNormativeData(): NormativeStats[] {
 
 /**
  * Get normative statistics for a specific age and gender.
- * 
+ *
  * @param age - Subject age in years
  * @param gender - Subject gender ("Male" or "Female")
  * @returns NormativeStats if found, null otherwise
  */
 export function getNormativeStats(age: number, gender: string): NormativeStats | null {
   const data = parseNormativeData();
-  
+
   // Find matching record
   for (const stats of data) {
     if (stats.gender !== gender) continue;

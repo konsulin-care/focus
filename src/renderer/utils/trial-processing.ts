@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Trial Processing Utilities
- * 
+ *
  * Utility functions for processing raw test events into trial results
  * and determining trial outcomes.
  */
@@ -11,7 +11,7 @@ import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**
  * Calculate response time in milliseconds from onset to response.
- * 
+ *
  * @param onsetTimestampNs - Stimulus onset timestamp in nanoseconds
  * @param responseTimestampNs - Response timestamp in nanoseconds
  * @returns Response time in milliseconds
@@ -26,7 +26,7 @@ export function calculateResponseTime(
 
 /**
  * Check if response is anticipatory (within 150ms of stimulus onset).
- * 
+ *
  * @param responseTimeMs - Response time in milliseconds
  * @returns True if response is anticipatory
  */
@@ -36,7 +36,7 @@ export function isAnticipatory(responseTimeMs: number): boolean {
 
 /**
  * Determine trial outcome from stimulus type and response correctness.
- * 
+ *
  * @param stimulusType - Type of stimulus presented
  * @param responseCorrect - Whether the response was correct
  * @param hadResponse - Whether a response was recorded
@@ -63,7 +63,7 @@ export function determineTrialOutcome(
 
 /**
  * Process raw test events into an array of trial results.
- * 
+ *
  * @param events - Array of raw test events
  * @param config - Test configuration (partial, only totalTrials is required)
  * @returns Array of processed trial results
@@ -73,11 +73,11 @@ export function processTestEvents(
   config: Partial<TestConfig> & { totalTrials: number }
 ): TrialResult[] {
   const trialResults: TrialResult[] = [];
-  
+
   // Group events by trial and find onset/response pairs
   const trialOnsets: Map<number, TestEvent> = new Map();
   const trialResponses: Map<number, TestEvent[]> = new Map();
-  
+
   // First pass: collect onsets and responses per trial
   for (const event of events) {
     if (event.eventType === 'stimulus-onset') {
@@ -90,38 +90,34 @@ export function processTestEvents(
       }
     }
   }
-  
+
   // Process each trial
   for (let i = 0; i < config.totalTrials; i++) {
     const onset = trialOnsets.get(i);
     const responses = trialResponses.get(i) || [];
-    
+
     if (!onset) {
       // No onset event for this trial - should not happen
       continue;
     }
-    
+
     const firstResponse = responses[0];
     const responseCount = responses.length;
-    
+
     let responseTimeMs: number | null = null;
     let isAnticipatoryFlag = false;
     let responseCorrect = false;
     let hadResponse = false;
-    
+
     if (firstResponse) {
       hadResponse = true;
       responseCorrect = firstResponse.responseCorrect ?? false;
       responseTimeMs = firstResponse.responseTimeMs ?? null;
       isAnticipatoryFlag = firstResponse.isAnticipatory ?? false;
     }
-    
-    const outcome = determineTrialOutcome(
-      onset.stimulusType,
-      responseCorrect,
-      hadResponse
-    );
-    
+
+    const outcome = determineTrialOutcome(onset.stimulusType, responseCorrect, hadResponse);
+
     trialResults.push({
       trialIndex: i,
       stimulusType: onset.stimulusType,
@@ -132,7 +128,7 @@ export function processTestEvents(
       followsCommission: false, // Will be set in second pass
     });
   }
-  
+
   // Second pass: mark trials following commission errors
   for (let i = 1; i < trialResults.length; i++) {
     if (trialResults[i - 1].outcome === 'commission') {
@@ -143,6 +139,6 @@ export function processTestEvents(
       };
     }
   }
-  
+
   return trialResults;
 }

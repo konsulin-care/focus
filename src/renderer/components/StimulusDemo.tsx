@@ -7,7 +7,7 @@ interface StimulusBoxProps {
 
 const StimulusBox: React.FC<StimulusBoxProps> = ({ type }) => {
   const isTarget = type === 'target';
-  
+
   return (
     <div className="flex flex-col items-center gap-3">
       {/* Stimulus Square - 100x100px with 8px black border */}
@@ -23,7 +23,7 @@ const StimulusBox: React.FC<StimulusBoxProps> = ({ type }) => {
           }}
         />
       </div>
-      
+
       {/* Label */}
       <span className="text-sm text-gray-600 font-semibold">
         {isTarget ? 'TARGET' : 'NON-TARGET'}

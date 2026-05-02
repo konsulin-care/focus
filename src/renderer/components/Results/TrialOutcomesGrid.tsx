@@ -23,11 +23,15 @@ export function TrialOutcomesGrid({ metrics }: TrialOutcomesGridProps) {
         <div className="text-xl">{hitCount}</div>
       </div>
       <div>
-        <div className="text-gray-400 text-sm">{t('results.trialOutcomes.omission')} ({metrics.omissionPercent.toFixed(1)}%)</div>
+        <div className="text-gray-400 text-sm">
+          {t('results.trialOutcomes.omission')} ({metrics.omissionPercent.toFixed(1)}%)
+        </div>
         <div className="text-xl">{omissionCount}</div>
       </div>
       <div>
-        <div className="text-gray-400 text-sm">{t('results.trialOutcomes.commission')} ({metrics.commissionPercent.toFixed(1)}%)</div>
+        <div className="text-gray-400 text-sm">
+          {t('results.trialOutcomes.commission')} ({metrics.commissionPercent.toFixed(1)}%)
+        </div>
         <div className="text-xl">{commissionCount}</div>
       </div>
       <div>

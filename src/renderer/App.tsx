@@ -63,7 +63,6 @@ function App() {
     }
   };
 
-
   return (
     <I18nextProvider i18n={i18n}>
       <div className="flex h-screen">
@@ -73,11 +72,9 @@ function App() {
           <header className="flex justify-end items-center px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
             <LanguageSwitcher />
           </header>
-          
+
           {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            {renderPage()}
-          </main>
+          <main className="flex-1 overflow-auto">{renderPage()}</main>
         </div>
       </div>
     </I18nextProvider>

@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Statistics Index
- * 
+ *
  * This module re-exports all statistical functions for convenience.
  * Import from specific modules for better tree-shaking:
  * - ./basic-stats for fundamental statistics (mean, stdDev, zScore, variability)

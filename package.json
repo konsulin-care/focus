@@ -54,7 +54,8 @@
     "validate-timing": "ts-node src/validate-timing.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "build": {
     "appId": "com.konsulin.focus",
@@ -88,6 +89,7 @@
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
+      "prettier --write",
       "eslint --fix"
     ]
   },

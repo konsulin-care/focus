@@ -17,11 +17,11 @@ export interface TestEvent {
   timestampNs: string;
   eventType: 'stimulus-onset' | 'stimulus-offset' | 'response' | 'buffer-start';
   responseCorrect?: boolean;
-  
+
   // Response tracking (for response events)
-  responseTimeMs?: number;     // Time from stimulus onset to response in milliseconds
-  responseCount?: number;      // Number of responses this trial
-  isAnticipatory?: boolean;    // True if response within 150ms of onset
+  responseTimeMs?: number; // Time from stimulus onset to response in milliseconds
+  responseCount?: number; // Number of responses this trial
+  isAnticipatory?: boolean; // True if response within 150ms of onset
 }
 
 export interface TestCompleteResult {
@@ -34,38 +34,41 @@ export interface ElectronAPI {
   // Timing API
   getHighPrecisionTime: () => Promise<string>;
   getEventTimestamp: () => Promise<string>;
-  
+
   // Test Control API - timing in main process for clinical precision
   startTest: () => Promise<boolean>;
   stopTest: () => Promise<boolean>;
   recordResponse: (response: boolean) => Promise<void>;
   onStimulusChange: (callback: (event: TestEvent) => void) => () => void;
   onTestComplete: (callback: (result: TestCompleteResult) => void) => () => void;
-  
-   // Database API - safe query whitelist pattern
-   queryDatabase: (command: string, params?: unknown[]) => Promise<unknown>;
-   
-   // Test Result API - GDPR compliant email capture
-   saveTestResultWithConsent: (
-     testData: string,
-     email: string,
-     age: number,
-     gender: 'Male' | 'Female',
-     consentGiven: boolean,
-     consentTimestamp: string,
-     metrics: AttentionMetrics
-   ) => Promise<void>;
-  
+
+  // Database API - safe query whitelist pattern
+  queryDatabase: (command: string, params?: unknown[]) => Promise<unknown>;
+
+  // Test Result API - GDPR compliant email capture
+  saveTestResultWithConsent: (
+    testData: string,
+    email: string,
+    age: number,
+    gender: 'Male' | 'Female',
+    consentGiven: boolean,
+    consentTimestamp: string,
+    metrics: AttentionMetrics
+  ) => Promise<void>;
+
   // Test Config API
   getTestConfig: () => Promise<TestConfig>;
   saveTestConfig: (config: TestConfig) => Promise<void>;
   resetTestConfig: () => Promise<void>;
-  
+
   // Data Management
   getAllSessions: () => Promise<SessionWithUser[]>;
   getSessionWithUser: (sessionId: number) => Promise<SessionWithUser | undefined>;
   getSessionTrials: (sessionId: number) => Promise<TrialData[]>;
-  updateSessionStatus: (sessionId: number, status: 'pending' | 'uploaded' | 'failed') => Promise<void>;
+  updateSessionStatus: (
+    sessionId: number,
+    status: 'pending' | 'uploaded' | 'failed'
+  ) => Promise<void>;
   bulkDeleteSessions: (sessionIds: number[]) => Promise<{ deleted: number }>;
 }
 

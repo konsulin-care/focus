@@ -14,32 +14,32 @@ i18n
   .init({
     // Supported languages
     supportedLngs: ['en', 'id'],
-    
+
     // Fallback configuration
     fallbackLng: 'en',
     fallbackNS: 'common',
     defaultNS: 'translation',
-    
+
     // Debug in development
     debug: process.env.NODE_ENV === 'development',
-    
+
     // Interpolation - React handles escaping
     interpolation: {
       escapeValue: false,
     },
-    
+
     // Detection options
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
     },
-    
+
     // React options
     react: {
       useSuspense: true,
       bindI18n: 'languageChanged loaded',
     },
-    
+
     // Resources (embedded for Electron app)
     resources: {
       en: {

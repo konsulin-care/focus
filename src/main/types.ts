@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Type Definitions
- * 
+ *
  * Centralized type definitions for the Electron main process.
  * All type definitions should be imported from this module.
  */

@@ -37,13 +37,13 @@ export function useTestInput(phase: TestPhase): UseTestInputReturn {
       if (phase !== 'running') return;
       if (hasResponded) return;
       if (event.button !== 0) return;
-      
+
       const now = Date.now();
       if (now - lastClickTime.current < CLICK_COOLDOWN_MS) {
         return;
       }
       lastClickTime.current = now;
-      
+
       recordResponse(true);
     };
 

@@ -19,7 +19,7 @@ interface AcsResultSectionProps {
  */
 export function AcsResultSection({ acs }: AcsResultSectionProps) {
   const { t } = useTranslation();
-  
+
   const formatZScore = (value: number | null) => {
     if (value === null) return <span className="text-gray-500">—</span>;
     return value.toFixed(2);
@@ -29,9 +29,7 @@ export function AcsResultSection({ acs }: AcsResultSectionProps) {
   if (!acs) {
     return (
       <div className="bg-blue-900/50 p-4 rounded-lg mb-6">
-        <h3 className="text-blue-400 font-medium mb-2">
-          {t('results.acs.finalAcs')}
-        </h3>
+        <h3 className="text-blue-400 font-medium mb-2">{t('results.acs.finalAcs')}</h3>
         <p className="text-gray-400 text-sm">
           {t('results.acs.noNormativeData') || 'No normative data available for ACS calculation'}
         </p>
@@ -41,30 +39,28 @@ export function AcsResultSection({ acs }: AcsResultSectionProps) {
 
   return (
     <div className="bg-blue-900/50 p-4 rounded-lg mb-6">
-      <h3 className="text-blue-400 font-medium mb-2">
-        {t('results.acs.finalAcs')}
-      </h3>
+      <h3 className="text-blue-400 font-medium mb-2">{t('results.acs.finalAcs')}</h3>
       <div className="space-y-2 text-sm">
-        <GridRow 
-          label={t('results.acs.rtZFormula')} 
+        <GridRow
+          label={t('results.acs.rtZFormula')}
           value={formatZScore(acs.rtZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
-        <GridRow 
-          label={t('results.acs.dPrimeZFormula')} 
+        <GridRow
+          label={t('results.acs.dPrimeZFormula')}
           value={formatZScore(acs.dPrimeZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
-        <GridRow 
-          label={t('results.acs.variabilityZFormula')} 
+        <GridRow
+          label={t('results.acs.variabilityZFormula')}
           value={formatZScore(acs.variabilityZ)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"
         />
-        <GridRow 
-          label={t('results.acs.constantFormula')} 
+        <GridRow
+          label={t('results.acs.constantFormula')}
           value={acs.constant >= 0 ? `+${acs.constant.toFixed(2)}` : acs.constant.toFixed(2)}
           labelClassName="text-gray-300"
           valueClassName="text-white text-right"

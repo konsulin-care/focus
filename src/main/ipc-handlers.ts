@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - IPC Handlers
- * 
+ *
  * All IPC handler registrations for main-renderer communication.
  */
 
@@ -9,16 +9,8 @@ import { DatabaseQueryCommand, TestConfig, SessionWithUser, TrialData } from './
 import { queryWhitelist, db } from './database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from './test-config';
 import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from './gdpr';
-import { 
-  getHighPrecisionTimeString, 
-  TIMING_VALIDATION_PASSED 
-} from './timing';
-import {
-  startTest,
-  stopTest,
-  recordResponse,
-  setMainWindow
-} from './test-engine';
+import { getHighPrecisionTimeString, TIMING_VALIDATION_PASSED } from './timing';
+import { startTest, stopTest, recordResponse, setMainWindow } from './test-engine';
 import type { AttentionMetrics } from '@/renderer/types/trial';
 import { processTestEvents } from '@/shared/utils/trial-processing';
 
@@ -47,47 +39,52 @@ ipcMain.handle('get-event-timestamp', async () => {
 /**
  * Safe query handler - executes whitelisted database queries.
  */
-ipcMain.handle('query-database', async (
-  _event: Electron.IpcMainInvokeEvent, 
-  command: DatabaseQueryCommand, 
-  params?: unknown[]
-) => {
-  if (!db) {
-    throw new Error('Database not initialized');
-  }
-
-  // Validate command is in whitelist
-  if (!(command in queryWhitelist)) {
-    throw new Error(`Invalid database command: ${command}`);
-  }
-
-  const queryEntry = queryWhitelist[command];
-  
-  // Validate parameter count
-  const paramCount = params ? params.length : 0;
-  if (paramCount !== queryEntry.paramCount) {
-    throw new Error(`Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`);
-  }
-
-  try {
-    const stmt = db.prepare(queryEntry.sql);
-    
-    // Use appropriate execution method based on query type
-    switch (queryEntry.type) {
-      case 'select-one':
-        return stmt.get(...(params || []));
-      case 'select-many':
-        return stmt.all(...(params || []));
-      case 'write':
-        return stmt.run(...(params || []));
-      default:
-        throw new Error(`Unknown query type: ${queryEntry.type}`);
+ipcMain.handle(
+  'query-database',
+  async (
+    _event: Electron.IpcMainInvokeEvent,
+    command: DatabaseQueryCommand,
+    params?: unknown[]
+  ) => {
+    if (!db) {
+      throw new Error('Database not initialized');
     }
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
+
+    // Validate command is in whitelist
+    if (!(command in queryWhitelist)) {
+      throw new Error(`Invalid database command: ${command}`);
+    }
+
+    const queryEntry = queryWhitelist[command];
+
+    // Validate parameter count
+    const paramCount = params ? params.length : 0;
+    if (paramCount !== queryEntry.paramCount) {
+      throw new Error(
+        `Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`
+      );
+    }
+
+    try {
+      const stmt = db.prepare(queryEntry.sql);
+
+      // Use appropriate execution method based on query type
+      switch (queryEntry.type) {
+        case 'select-one':
+          return stmt.get(...(params || []));
+        case 'select-many':
+          return stmt.all(...(params || []));
+        case 'write':
+          return stmt.run(...(params || []));
+        default:
+          throw new Error(`Unknown query type: ${queryEntry.type}`);
+      }
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
   }
-});
+);
 
 // ===========================================
 // Test Config Handlers
@@ -97,14 +94,17 @@ ipcMain.handle('get-test-config', async () => {
   return getTestConfig();
 });
 
-ipcMain.handle('save-test-config', async (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
-  try {
-    saveTestConfig(config);
-  } catch (error) {
-    console.error('Failed to save test config:', error);
-    throw error;
+ipcMain.handle(
+  'save-test-config',
+  async (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
+    try {
+      saveTestConfig(config);
+    } catch (error) {
+      console.error('Failed to save test config:', error);
+      throw error;
+    }
   }
-});
+);
 
 ipcMain.handle('reset-test-config', async () => {
   try {
@@ -135,80 +135,100 @@ ipcMain.handle('get-expired-count', async () => {
  * Save test result with explicit consent (GDPR compliant).
  * Metrics are pre-computed in renderer; main process validates and stores.
  */
-ipcMain.handle('save-test-result-with-consent', async (
-  _event: Electron.IpcMainInvokeEvent,
-  testData: string,
-  email: string,
-  age: number,
-  gender: 'Male' | 'Female',
-  consentGiven: boolean,
-  consentTimestamp: string,
-  metrics: AttentionMetrics
-) => {
-  if (!db) {
-    throw new Error('Database not initialized');
-  }
-
-  // Validate consent is given (GDPR requirement)
-  if (!consentGiven) {
-    throw new Error('Consent is required to save test results');
-  }
-
-  // Validate email format
-  if (!email || !isValidEmail(email)) {
-    throw new Error('Invalid email format');
-  }
-
-  try {
-    // Parse testData only to extract events for trial data insertion
-    const data = JSON.parse(testData);
-    const events = Array.isArray(data) ? data : data.events;
-    if (!events || !Array.isArray(events)) {
-      throw new Error('Invalid test data format: expected events array');
+ipcMain.handle(
+  'save-test-result-with-consent',
+  async (
+    _event: Electron.IpcMainInvokeEvent,
+    testData: string,
+    email: string,
+    age: number,
+    gender: 'Male' | 'Female',
+    consentGiven: boolean,
+    consentTimestamp: string,
+    metrics: AttentionMetrics
+  ) => {
+    if (!db) {
+      throw new Error('Database not initialized');
     }
 
-    // Validate metrics structure (defense-in-depth)
-    if (!metrics || typeof metrics !== 'object') {
-      throw new Error('Invalid metrics provided');
+    // Validate consent is given (GDPR requirement)
+    if (!consentGiven) {
+      throw new Error('Consent is required to save test results');
     }
 
-    const expectedNumericFields = ['acs', 'dPrime', 'meanResponseTimeMs', 'variability', 'hits', 'commissions', 'omissions', 'trialCount'];
-    for (const field of expectedNumericFields) {
-      if (typeof (metrics as any)[field] !== 'number' || !Number.isFinite((metrics as any)[field])) {
-        throw new Error(`Invalid metrics: ${field} must be a finite number`);
+    // Validate email format
+    if (!email || !isValidEmail(email)) {
+      throw new Error('Invalid email format');
+    }
+
+    try {
+      // Parse testData only to extract events for trial data insertion
+      const data = JSON.parse(testData);
+      const events = Array.isArray(data) ? data : data.events;
+      if (!events || !Array.isArray(events)) {
+        throw new Error('Invalid test data format: expected events array');
       }
-    }
 
-    // Map AttentionMetrics to TestSession columns
-    const acsScore = metrics.acs;  // may be null - handle below
-    const acsInterpretation = metrics.acsInterpretation;  // string
-    const meanResponseTimeMs = metrics.meanResponseTimeMs;
-    const responseTimeVariability = metrics.variability;
-    const commissionErrors = Math.round(metrics.commissions);  // ensure integer
-    const omissionErrors = Math.round(metrics.omissions);      // ensure integer
-    const hits = Math.round(metrics.hits);
-    const dPrime = metrics.dPrime;
-    const totalTrials = Math.round(metrics.trialCount);
+      // Validate metrics structure (defense-in-depth)
+      if (!metrics || typeof metrics !== 'object') {
+        throw new Error('Invalid metrics provided');
+      }
 
-    // Map validity: metrics.validity.valid boolean → 'Valid'/'Invalid'
-    const validity = metrics.validity?.valid ? 'Valid' : 'Invalid';
-    const validityReason = metrics.validity?.valid ? undefined : (metrics.validity?.exclusionReason || 'Invalid test');
+      const expectedNumericFields = [
+        'acs',
+        'dPrime',
+        'meanResponseTimeMs',
+        'variability',
+        'hits',
+        'commissions',
+        'omissions',
+        'trialCount',
+      ];
+      for (const field of expectedNumericFields) {
+        if (
+          typeof (metrics as any)[field] !== 'number' ||
+          !Number.isFinite((metrics as any)[field])
+        ) {
+          throw new Error(`Invalid metrics: ${field} must be a finite number`);
+        }
+      }
 
-    // Validate acsScore (if null, store as null - DB accepts REAL nullable)
-    if (acsScore !== null && typeof acsScore !== 'number') {
-      throw new Error('Invalid ACS score');
-    }
+      // Map AttentionMetrics to TestSession columns
+      const acsScore = metrics.acs; // may be null - handle below
+      const acsInterpretation = metrics.acsInterpretation; // string
+      const meanResponseTimeMs = metrics.meanResponseTimeMs;
+      const responseTimeVariability = metrics.variability;
+      const commissionErrors = Math.round(metrics.commissions); // ensure integer
+      const omissionErrors = Math.round(metrics.omissions); // ensure integer
+      const hits = Math.round(metrics.hits);
+      const dPrime = metrics.dPrime;
+      const totalTrials = Math.round(metrics.trialCount);
 
-    // Use transaction for normalized save
-    const result = db.transaction(() => {
-      const currentDb = db!;
-      // 1. Insert or get user
-      const userStmt = currentDb.prepare('INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)');
-      userStmt.run(email, age, gender, 0); // is_generic=0 for user-provided demographics
-      const user = currentDb.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: number };
+      // Map validity: metrics.validity.valid boolean → 'Valid'/'Invalid'
+      const validity = metrics.validity?.valid ? 'Valid' : 'Invalid';
+      const validityReason = metrics.validity?.valid
+        ? undefined
+        : metrics.validity?.exclusionReason || 'Invalid test';
 
-      // 2. Insert test session
-      const sessionStmt = currentDb.prepare(`
+      // Validate acsScore (if null, store as null - DB accepts REAL nullable)
+      if (acsScore !== null && typeof acsScore !== 'number') {
+        throw new Error('Invalid ACS score');
+      }
+
+      // Use transaction for normalized save
+      const result = db.transaction(() => {
+        const currentDb = db!;
+        // 1. Insert or get user
+        const userStmt = currentDb.prepare(
+          'INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)'
+        );
+        userStmt.run(email, age, gender, 0); // is_generic=0 for user-provided demographics
+        const user = currentDb.prepare('SELECT id FROM users WHERE email = ?').get(email) as {
+          id: number;
+        };
+
+        // 2. Insert test session
+        const sessionStmt = currentDb.prepare(`
         INSERT INTO test_sessions (
           user_id, test_date, acs_score, acs_interpretation,
           mean_response_time_ms, response_time_variability,
@@ -217,31 +237,31 @@ ipcMain.handle('save-test-result-with-consent', async (
           upload_status, consent_given, consent_timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-       const sessionId = sessionStmt.run(
-         user.id,
-         new Date().toISOString(),
-         acsScore,                              // metrics.acs
-         acsInterpretation,                     // metrics.acsInterpretation
-         meanResponseTimeMs,                    // metrics.meanResponseTimeMs
-         responseTimeVariability,               // metrics.variability
-         commissionErrors,                      // metrics.commissions
-         omissionErrors,                        // metrics.omissions
-         hits,                                  // metrics.hits
-         dPrime,                                // metrics.dPrime
-         validity,                              // derived from metrics.validity.valid
-         validityReason || null,                // derived from metrics.validity.exclusionReason
-         totalTrials,                           // metrics.trialCount
-         JSON.stringify({}),                    // test_config placeholder (unchanged)
-         'pending',
-         consentGiven ? 1 : 0,
-         consentTimestamp
-       ).lastInsertRowid;
+        const sessionId = sessionStmt.run(
+          user.id,
+          new Date().toISOString(),
+          acsScore, // metrics.acs
+          acsInterpretation, // metrics.acsInterpretation
+          meanResponseTimeMs, // metrics.meanResponseTimeMs
+          responseTimeVariability, // metrics.variability
+          commissionErrors, // metrics.commissions
+          omissionErrors, // metrics.omissions
+          hits, // metrics.hits
+          dPrime, // metrics.dPrime
+          validity, // derived from metrics.validity.valid
+          validityReason || null, // derived from metrics.validity.exclusionReason
+          totalTrials, // metrics.trialCount
+          JSON.stringify({}), // test_config placeholder (unchanged)
+          'pending',
+          consentGiven ? 1 : 0,
+          consentTimestamp
+        ).lastInsertRowid;
 
-         // 3. Insert trial data
-         // Use shared trial processing to compute full TrialResult[] with derived fields
-         const trialResults = processTestEvents(events, { totalTrials });
+        // 3. Insert trial data
+        // Use shared trial processing to compute full TrialResult[] with derived fields
+        const trialResults = processTestEvents(events, { totalTrials });
 
-         const trialStmt = currentDb.prepare(`
+        const trialStmt = currentDb.prepare(`
            INSERT INTO trial_data (
              test_session_id, trial_index, stimulus_type,
              outcome,
@@ -250,35 +270,36 @@ ipcMain.handle('save-test-result-with-consent', async (
            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          `);
 
-         for (const trial of trialResults) {
-           // Derive response_correct: hit=1, commission=0, omission/correct-rejection=NULL
-           let responseCorrect: number | null = null;
-           if (trial.outcome === 'hit') responseCorrect = 1;
-           else if (trial.outcome === 'commission') responseCorrect = 0;
+        for (const trial of trialResults) {
+          // Derive response_correct: hit=1, commission=0, omission/correct-rejection=NULL
+          let responseCorrect: number | null = null;
+          if (trial.outcome === 'hit') responseCorrect = 1;
+          else if (trial.outcome === 'commission') responseCorrect = 0;
 
-           trialStmt.run(
-             sessionId,
-             trial.trialIndex,
-             trial.stimulusType,
-             trial.outcome,
-             responseCorrect,
-             trial.responseTimeMs,
-             trial.isAnticipatory ? 1 : 0,
-             trial.isMultipleResponse ? 1 : 0,
-             trial.followsCommission ? 1 : 0
-           );
-         }
+          trialStmt.run(
+            sessionId,
+            trial.trialIndex,
+            trial.stimulusType,
+            trial.outcome,
+            responseCorrect,
+            trial.responseTimeMs,
+            trial.isAnticipatory ? 1 : 0,
+            trial.isMultipleResponse ? 1 : 0,
+            trial.followsCommission ? 1 : 0
+          );
+        }
 
-      return sessionId;
-    })();
+        return sessionId;
+      })();
 
-    console.log(`Test result saved with consent. ID: ${result}, Email: ${email}`);
-    return result;
-  } catch (error) {
-    console.error('Failed to save test result with consent:', error);
-    throw error;
+      console.log(`Test result saved with consent. ID: ${result}, Email: ${email}`);
+      return result;
+    } catch (error) {
+      console.error('Failed to save test result with consent:', error);
+      throw error;
+    }
   }
-});
+);
 
 // ===========================================
 // Data Management Handlers
@@ -287,7 +308,9 @@ ipcMain.handle('save-test-result-with-consent', async (
 ipcMain.handle('get-all-sessions', async () => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
-  return currentDb.prepare(`
+  return currentDb
+    .prepare(
+      `
     SELECT 
       ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
       ts.mean_response_time_ms, ts.response_time_variability,
@@ -298,13 +321,17 @@ ipcMain.handle('get-all-sessions', async () => {
     FROM test_sessions ts
     JOIN users u ON ts.user_id = u.id
     ORDER BY ts.test_date DESC
-  `).all() as SessionWithUser[];
+  `
+    )
+    .all() as SessionWithUser[];
 });
 
 ipcMain.handle('get-session-with-user', async (_event, sessionId: number) => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
-  return currentDb.prepare(`
+  return currentDb
+    .prepare(
+      `
     SELECT 
       ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
       ts.mean_response_time_ms, ts.response_time_variability,
@@ -315,32 +342,45 @@ ipcMain.handle('get-session-with-user', async (_event, sessionId: number) => {
     FROM test_sessions ts
     JOIN users u ON ts.user_id = u.id
     WHERE ts.id = ?
-  `).get(sessionId) as SessionWithUser | undefined;
+  `
+    )
+    .get(sessionId) as SessionWithUser | undefined;
 });
 
 ipcMain.handle('get-session-trials', async (_event, sessionId: number) => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
-  return currentDb.prepare(`
+  return currentDb
+    .prepare(
+      `
     SELECT id, test_session_id, trial_index, stimulus_type,
            response_correct, response_time_ms, is_anticipatory,
            is_multiple_response, follows_commission
     FROM trial_data
     WHERE test_session_id = ?
     ORDER BY trial_index ASC
-  `).all(sessionId) as TrialData[];
+  `
+    )
+    .all(sessionId) as TrialData[];
 });
 
-ipcMain.handle('update-session-status', async (_event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
-  if (!db) throw new Error('Database not initialized');
-  const currentDb = db;
-  const uploadedAt = status === 'uploaded' ? new Date().toISOString() : null;
-  currentDb.prepare(`
+ipcMain.handle(
+  'update-session-status',
+  async (_event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
+    if (!db) throw new Error('Database not initialized');
+    const currentDb = db;
+    const uploadedAt = status === 'uploaded' ? new Date().toISOString() : null;
+    currentDb
+      .prepare(
+        `
     UPDATE test_sessions 
     SET upload_status = ?, uploaded_at = ?
     WHERE id = ?
-  `).run(status, uploadedAt, sessionId);
-});
+  `
+      )
+      .run(status, uploadedAt, sessionId);
+  }
+);
 
 ipcMain.handle('bulk-delete-sessions', async (_event, sessionIds: number[]) => {
   if (!db) throw new Error('Database not initialized');
@@ -370,9 +410,12 @@ ipcMain.handle('stop-test', async () => {
   return stopTest();
 });
 
-ipcMain.handle('record-response', async (_event: Electron.IpcMainInvokeEvent, responded: boolean) => {
-  recordResponse(responded);
-});
+ipcMain.handle(
+  'record-response',
+  async (_event: Electron.IpcMainInvokeEvent, responded: boolean) => {
+    recordResponse(responded);
+  }
+);
 
 // ===========================================
 // Initialization Helpers
@@ -381,13 +424,13 @@ ipcMain.handle('record-response', async (_event: Electron.IpcMainInvokeEvent, re
 /**
  * Register all IPC handlers.
  * Call this after window is created and database is initialized.
- * 
+ *
  * @param mainWindow - The main BrowserWindow instance
  */
 export function registerAllIpcHandlers(mainWindow: Electron.BrowserWindow): void {
   // Set the window reference for test engine events
   setMainWindow(mainWindow);
-  
+
   // Log registration status
   console.log('IPC handlers registered successfully');
   console.log(`  - Timing validation passed: ${TIMING_VALIDATION_PASSED}`);

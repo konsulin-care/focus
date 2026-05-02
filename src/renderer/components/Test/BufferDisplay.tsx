@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 export function BufferDisplay({ countdown }: { countdown?: number }) {
   const { t } = useTranslation('translation');
-  
+
   return (
     <div className="text-gray-800 text-xl mb-4 font-mono">
       {countdown !== undefined ? (

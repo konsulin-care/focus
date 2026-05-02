@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Database Module
- * 
+ *
  * Database initialization with SQLCipher encryption and query whitelist.
  * Uses better-sqlite3 for local data persistence.
  */
@@ -9,14 +9,8 @@ import * as path from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
-import {
-  DatabaseQueryCommand,
-  QueryWhitelistEntry
-} from './types';
-import {
-  getOrCreateEncryptionKey,
-  migrateToEncrypted
-} from './encryption';
+import { DatabaseQueryCommand, QueryWhitelistEntry } from './types';
+import { getOrCreateEncryptionKey, migrateToEncrypted } from './encryption';
 import { processTestEvents } from '@/shared/utils/trial-processing';
 
 interface LegacyRow {
@@ -93,13 +87,13 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
     paramCount: 0,
     type: 'write',
   },
-   'get-expired-count': {
-     sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
-     paramCount: 0,
-     type: 'select-one',
-   },
-   'get-all-sessions': {
-     sql: `
+  'get-expired-count': {
+    sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
+    paramCount: 0,
+    type: 'select-one',
+  },
+  'get-all-sessions': {
+    sql: `
        SELECT 
          ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
          ts.mean_response_time_ms, ts.response_time_variability,
@@ -111,11 +105,11 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
        JOIN users u ON ts.user_id = u.id
        ORDER BY ts.test_date DESC
      `,
-     paramCount: 0,
-     type: 'select-many',
-   },
-   'get-session-with-user': {
-     sql: `
+    paramCount: 0,
+    type: 'select-many',
+  },
+  'get-session-with-user': {
+    sql: `
        SELECT 
          ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
          ts.mean_response_time_ms, ts.response_time_variability,
@@ -127,11 +121,11 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
        JOIN users u ON ts.user_id = u.id
        WHERE ts.id = ?
      `,
-     paramCount: 1,
-     type: 'select-one',
-   },
-    'get-session-trials': {
-      sql: `
+    paramCount: 1,
+    type: 'select-one',
+  },
+  'get-session-trials': {
+    sql: `
         SELECT id, test_session_id, trial_index, stimulus_type, outcome,
                response_correct, response_time_ms, is_anticipatory,
                is_multiple_response, follows_commission
@@ -139,9 +133,9 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
         WHERE test_session_id = ?
         ORDER BY trial_index ASC
       `,
-      paramCount: 1,
-      type: 'select-many',
-    },
+    paramCount: 1,
+    type: 'select-many',
+  },
   'update-session-status': {
     sql: `UPDATE test_sessions SET upload_status = ?, uploaded_at = ? WHERE id = ?`,
     paramCount: 3,
@@ -152,7 +146,7 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
     paramCount: 1,
     type: 'write',
   },
- };
+};
 
 // ===========================================
 // Database Initialization
@@ -163,58 +157,58 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
  * Handles migration from unencrypted to encrypted format.
  */
 export function initDatabase(): void {
-   const dbPath = path.join(app.getPath('userData'), 'focus.db');
-   
-   // Get or create encryption key
-   const encryptionKey = getOrCreateEncryptionKey();
-   
-   const dbExists = existsSync(dbPath);
-   
-   // Check if we need to migrate from unencrypted to encrypted
-   // Only migrate if: DB exists AND we can open it without key (meaning it's unencrypted)
-   let needsMigration = false;
-   if (dbExists) {
-     try {
-       // Try to open database WITHOUT key to see if it's unencrypted
-       const testDb = new Database(dbPath);
-       testDb.close();
-       
-       // Successful open/read means DB is unencrypted - trigger migration
-       needsMigration = true;
-       console.log('[DB] Migrating unencrypted database to encrypted format');
-     } catch {
-       // Could not read without key - it's already encrypted
-     }
-   }
-   
-   try {
-     if (needsMigration) {
-       // Migrate unencrypted database to encrypted format
-       const tempDb = new Database(dbPath);
-       migrateToEncrypted(tempDb, encryptionKey);
-       db = new Database(dbPath);
-     } else {
-       // Open database (new or already encrypted)
-       db = new Database(dbPath);
-     }
-     
-     // Apply encryption key (required for both new and existing encrypted databases)
-     db.exec(`PRAGMA key = "x'${encryptionKey}'"`);
-     db.exec('PRAGMA cipher_use_hmac = 1');
-     
-     // Verify encryption is working by attempting a simple query
-     try {
-       db.prepare('SELECT 1').get();
-     } catch (verifyError) {
-       console.error('[DB] Encryption verification failed:', verifyError);
-       throw new Error('Database encryption verification failed - wrong key or corrupted database');
-     }
-     
-     if (!db) throw new Error('Database not initialized');
-     const currentDb = db;
-     
-     // Create normalized schema
-     currentDb.exec(`
+  const dbPath = path.join(app.getPath('userData'), 'focus.db');
+
+  // Get or create encryption key
+  const encryptionKey = getOrCreateEncryptionKey();
+
+  const dbExists = existsSync(dbPath);
+
+  // Check if we need to migrate from unencrypted to encrypted
+  // Only migrate if: DB exists AND we can open it without key (meaning it's unencrypted)
+  let needsMigration = false;
+  if (dbExists) {
+    try {
+      // Try to open database WITHOUT key to see if it's unencrypted
+      const testDb = new Database(dbPath);
+      testDb.close();
+
+      // Successful open/read means DB is unencrypted - trigger migration
+      needsMigration = true;
+      console.log('[DB] Migrating unencrypted database to encrypted format');
+    } catch {
+      // Could not read without key - it's already encrypted
+    }
+  }
+
+  try {
+    if (needsMigration) {
+      // Migrate unencrypted database to encrypted format
+      const tempDb = new Database(dbPath);
+      migrateToEncrypted(tempDb, encryptionKey);
+      db = new Database(dbPath);
+    } else {
+      // Open database (new or already encrypted)
+      db = new Database(dbPath);
+    }
+
+    // Apply encryption key (required for both new and existing encrypted databases)
+    db.exec(`PRAGMA key = "x'${encryptionKey}'"`);
+    db.exec('PRAGMA cipher_use_hmac = 1');
+
+    // Verify encryption is working by attempting a simple query
+    try {
+      db.prepare('SELECT 1').get();
+    } catch (verifyError) {
+      console.error('[DB] Encryption verification failed:', verifyError);
+      throw new Error('Database encryption verification failed - wrong key or corrupted database');
+    }
+
+    if (!db) throw new Error('Database not initialized');
+    const currentDb = db;
+
+    // Create normalized schema
+    currentDb.exec(`
        CREATE TABLE IF NOT EXISTS users (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
          email TEXT UNIQUE NOT NULL,
@@ -265,19 +259,23 @@ export function initDatabase(): void {
           FOREIGN KEY (test_session_id) REFERENCES test_sessions(id) ON DELETE CASCADE
         );
       `);
-      
-      // Migration 1: Add outcome column if missing (for databases created before outcome was added)
-      const outcomeColumnExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='trial_data' AND sql LIKE '%outcome%'").get();
-      if (!outcomeColumnExists) {
-        console.log('[DB] Migrating trial_data: adding outcome column...');
-        try {
-          currentDb.exec('ALTER TABLE trial_data ADD COLUMN outcome TEXT');
-          console.log('[DB] Added outcome column to trial_data');
-          
-          // Backfill outcome values from existing data (stimulus_type + response_correct)
-          // Outcome derivation: target+correct=hit, target+no-response=omission,
-          // non-target+response=commission, non-target+no-response=correct-rejection
-          currentDb.exec(`
+
+    // Migration 1: Add outcome column if missing (for databases created before outcome was added)
+    const outcomeColumnExists = currentDb
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='trial_data' AND sql LIKE '%outcome%'"
+      )
+      .get();
+    if (!outcomeColumnExists) {
+      console.log('[DB] Migrating trial_data: adding outcome column...');
+      try {
+        currentDb.exec('ALTER TABLE trial_data ADD COLUMN outcome TEXT');
+        console.log('[DB] Added outcome column to trial_data');
+
+        // Backfill outcome values from existing data (stimulus_type + response_correct)
+        // Outcome derivation: target+correct=hit, target+no-response=omission,
+        // non-target+response=commission, non-target+no-response=correct-rejection
+        currentDb.exec(`
             UPDATE trial_data
             SET outcome = CASE
               WHEN stimulus_type = 'target' AND response_correct = 1 THEN 'hit'
@@ -287,43 +285,49 @@ export function initDatabase(): void {
               ELSE NULL
             END
           `);
-          console.log('[DB] Backfilled outcome values for existing trial_data');
-        } catch (e) {
-          console.error('[DB] Failed to add outcome column:', e);
-        }
+        console.log('[DB] Backfilled outcome values for existing trial_data');
+      } catch (e) {
+        console.error('[DB] Failed to add outcome column:', e);
       }
-      
-      // Migration from legacy test_results
-      const legacyTableExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'").get();
-     if (legacyTableExists) {
-       console.log('[DB] Migrating legacy test_results to normalized schema...');
-       const legacyResults = currentDb.prepare('SELECT * FROM test_results').all() as LegacyRow[];
-       
-       currentDb.transaction(() => {
-         for (const row of legacyResults) {
-           const testData = JSON.parse(row.test_data as string);
-           
-           // 1. User
-            const userStmt = currentDb.prepare('INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)');
-            userStmt.run(row.email, 25, 'Male', 1);
-            const user = currentDb.prepare('SELECT id FROM users WHERE email = ?').get(row.email) as { id: number };
-           
-           // 2. Metrics (Simplified computation for migration)
-           const metrics = {
-             acs_score: 0.45,
-             acs_interpretation: 'Average',
-             mean_response_time_ms: 400,
-             response_time_variability: 50,
-             commission_errors: 5,
-             omission_errors: 5,
-             hits: 600,
-             d_prime: 2.0,
-             validity: 'Valid',
-             total_trials: 648
-           };
-           
-           // 3. Session
-           const sessionStmt = currentDb.prepare(`
+    }
+
+    // Migration from legacy test_results
+    const legacyTableExists = currentDb
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'")
+      .get();
+    if (legacyTableExists) {
+      console.log('[DB] Migrating legacy test_results to normalized schema...');
+      const legacyResults = currentDb.prepare('SELECT * FROM test_results').all() as LegacyRow[];
+
+      currentDb.transaction(() => {
+        for (const row of legacyResults) {
+          const testData = JSON.parse(row.test_data as string);
+
+          // 1. User
+          const userStmt = currentDb.prepare(
+            'INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)'
+          );
+          userStmt.run(row.email, 25, 'Male', 1);
+          const user = currentDb.prepare('SELECT id FROM users WHERE email = ?').get(row.email) as {
+            id: number;
+          };
+
+          // 2. Metrics (Simplified computation for migration)
+          const metrics = {
+            acs_score: 0.45,
+            acs_interpretation: 'Average',
+            mean_response_time_ms: 400,
+            response_time_variability: 50,
+            commission_errors: 5,
+            omission_errors: 5,
+            hits: 600,
+            d_prime: 2.0,
+            validity: 'Valid',
+            total_trials: 648,
+          };
+
+          // 3. Session
+          const sessionStmt = currentDb.prepare(`
              INSERT INTO test_sessions (
                user_id, test_date, acs_score, acs_interpretation, mean_response_time_ms, 
                response_time_variability, commission_errors, omission_errors, hits, 
@@ -331,19 +335,30 @@ export function initDatabase(): void {
                consent_given, consent_timestamp
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            `);
-            const sessionId = sessionStmt.run(
-              user.id, row.created_at, metrics.acs_score, metrics.acs_interpretation, 
-              metrics.mean_response_time_ms, metrics.response_time_variability, 
-              metrics.commission_errors, metrics.omission_errors, metrics.hits, 
-              metrics.d_prime, metrics.validity, metrics.total_trials, 
-              JSON.stringify({}), row.upload_status, row.consent_given ? 1 : 0, row.consent_timestamp
-            ).lastInsertRowid;
-           
-            // 4. Trials
-            // Use shared processing to compute derived fields (outcome, followsCommission, isMultipleResponse)
-            const trialResults = processTestEvents(testData.events, { totalTrials: 648 });
+          const sessionId = sessionStmt.run(
+            user.id,
+            row.created_at,
+            metrics.acs_score,
+            metrics.acs_interpretation,
+            metrics.mean_response_time_ms,
+            metrics.response_time_variability,
+            metrics.commission_errors,
+            metrics.omission_errors,
+            metrics.hits,
+            metrics.d_prime,
+            metrics.validity,
+            metrics.total_trials,
+            JSON.stringify({}),
+            row.upload_status,
+            row.consent_given ? 1 : 0,
+            row.consent_timestamp
+          ).lastInsertRowid;
 
-            const trialStmt = currentDb.prepare(`
+          // 4. Trials
+          // Use shared processing to compute derived fields (outcome, followsCommission, isMultipleResponse)
+          const trialResults = processTestEvents(testData.events, { totalTrials: 648 });
+
+          const trialStmt = currentDb.prepare(`
               INSERT INTO trial_data (
                 test_session_id, trial_index, stimulus_type, outcome,
                 response_correct, response_time_ms, is_anticipatory,
@@ -351,47 +366,47 @@ export function initDatabase(): void {
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
 
-            for (const trial of trialResults) {
-              let responseCorrect: number | null = null;
-              if (trial.outcome === 'hit') responseCorrect = 1;
-              else if (trial.outcome === 'commission') responseCorrect = 0;
+          for (const trial of trialResults) {
+            let responseCorrect: number | null = null;
+            if (trial.outcome === 'hit') responseCorrect = 1;
+            else if (trial.outcome === 'commission') responseCorrect = 0;
 
-              trialStmt.run(
-                sessionId,
-                trial.trialIndex,
-                trial.stimulusType,
-                trial.outcome,
-                responseCorrect,
-                trial.responseTimeMs,
-                trial.isAnticipatory ? 1 : 0,
-                trial.isMultipleResponse ? 1 : 0,
-                trial.followsCommission ? 1 : 0
-              );
-            }
-         }
-         currentDb.exec('DROP TABLE test_results');
-       })();
-       console.log('[DB] Legacy migration completed successfully');
-     }
-     
-     // Create test_config table
-     currentDb.exec(`
+            trialStmt.run(
+              sessionId,
+              trial.trialIndex,
+              trial.stimulusType,
+              trial.outcome,
+              responseCorrect,
+              trial.responseTimeMs,
+              trial.isAnticipatory ? 1 : 0,
+              trial.isMultipleResponse ? 1 : 0,
+              trial.followsCommission ? 1 : 0
+            );
+          }
+        }
+        currentDb.exec('DROP TABLE test_results');
+      })();
+      console.log('[DB] Legacy migration completed successfully');
+    }
+
+    // Create test_config table
+    currentDb.exec(`
        CREATE TABLE IF NOT EXISTS test_config (
          key TEXT PRIMARY KEY,
          value TEXT NOT NULL
        )
      `);
-     
-     // Seed default configuration (only if not already seeded)
-     currentDb.exec(`
+
+    // Seed default configuration (only if not already seeded)
+    currentDb.exec(`
        INSERT OR IGNORE INTO test_config (key, value) VALUES
          ('stimulusDurationMs', '100'),
          ('interstimulusIntervalMs', '2000'),
          ('totalTrials', '648'),
          ('bufferMs', '500')
      `);
-     
-     console.log('[DB] Database initialized with SQLCipher encryption');
+
+    console.log('[DB] Database initialized with SQLCipher encryption');
   } catch (error) {
     console.error('[DB] Failed to initialize database:', error);
   }
@@ -411,14 +426,14 @@ interface WriteResult {
 
 /**
  * Execute a whitelisted database query.
- * 
+ *
  * @param command - The query command from the whitelist
  * @param params - Optional parameters for the query
  * @returns Query result based on query type
  * @throws Error if command is invalid or parameters don't match
  */
 export function executeWhitelistedQuery(
-  command: DatabaseQueryCommand, 
+  command: DatabaseQueryCommand,
   params?: unknown[]
 ): unknown {
   if (!db) {
@@ -432,16 +447,18 @@ export function executeWhitelistedQuery(
   }
 
   const queryEntry = queryWhitelist[command];
-  
+
   // Validate parameter count
   const paramCount = params ? params.length : 0;
   if (paramCount !== queryEntry.paramCount) {
-    throw new Error(`Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`);
+    throw new Error(
+      `Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`
+    );
   }
 
   try {
     const stmt = currentDb.prepare(queryEntry.sql);
-    
+
     switch (queryEntry.type) {
       case 'select-one':
         return stmt.get(...(params || []));
@@ -460,21 +477,18 @@ export function executeWhitelistedQuery(
 
 /**
  * Get the number of test results with a specific upload status.
- * 
+ *
  * @param status - The upload status to count
  * @returns Number of matching records
  */
 export function getUploadCount(status: string): number {
-  const result = executeWhitelistedQuery(
-    'get-upload-count',
-    [status]
-  ) as { count: number };
+  const result = executeWhitelistedQuery('get-upload-count', [status]) as { count: number };
   return result.count;
 }
 
 /**
  * Get all pending test results waiting for upload.
- * 
+ *
  * @returns Array of pending test results
  */
 export function getPendingUploads(): unknown[] {
@@ -483,7 +497,7 @@ export function getPendingUploads(): unknown[] {
 
 /**
  * Get a specific test result by ID.
- * 
+ *
  * @param id - The test result ID
  * @returns The test result or undefined if not found
  */
@@ -493,21 +507,18 @@ export function getTestResult(id: number): unknown {
 
 /**
  * Delete a test result by ID.
- * 
+ *
  * @param id - The test result ID
  * @returns true if deleted, false if not found
  */
 export function deleteTestResult(id: number): boolean {
-  const result = executeWhitelistedQuery(
-    'delete-test-result',
-    [id]
-  ) as { changes: number };
+  const result = executeWhitelistedQuery('delete-test-result', [id]) as { changes: number };
   return result.changes > 0;
 }
 
 /**
  * Get all test results.
- * 
+ *
  * @returns Array of all test results
  */
 export function getAllTestResults(): unknown[] {
@@ -516,7 +527,7 @@ export function getAllTestResults(): unknown[] {
 
 /**
  * Insert a new test result with consent.
- * 
+ *
  * @param testData - JSON string of test events
  * @param email - Patient email
  * @param consentGiven - Whether consent was given
@@ -530,24 +541,24 @@ export function insertTestResultWithConsent(
   consentTimestamp: string,
   uploadStatus: string = 'pending'
 ): number {
-  const result = executeWhitelistedQuery(
-    'insert-test-result-with-consent',
-    [testData, email, uploadStatus, consentGiven ? 1 : 0, consentTimestamp]
-  ) as { lastInsertRowid: number };
+  const result = executeWhitelistedQuery('insert-test-result-with-consent', [
+    testData,
+    email,
+    uploadStatus,
+    consentGiven ? 1 : 0,
+    consentTimestamp,
+  ]) as { lastInsertRowid: number };
   return result.lastInsertRowid;
 }
 
 /**
  * Update the upload status of a test result.
- * 
+ *
  * @param id - The test result ID
  * @param status - The new upload status
  * @returns true if updated, false if not found
  */
 export function updateTestResultStatus(id: number, status: string): boolean {
-  const result = executeWhitelistedQuery(
-    'update-test-result',
-    [status, id]
-  ) as { changes: number };
+  const result = executeWhitelistedQuery('update-test-result', [status, id]) as { changes: number };
   return result.changes > 0;
 }

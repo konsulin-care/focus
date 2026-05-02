@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Window Management
- * 
+ *
  * Browser window creation and management.
  */
 
@@ -9,7 +9,7 @@ import * as path from 'node:path';
 
 /**
  * Create and configure the main application window.
- * 
+ *
  * @returns The created BrowserWindow instance
  */
 export function createWindow(): BrowserWindow {

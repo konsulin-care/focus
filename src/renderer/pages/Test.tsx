@@ -37,14 +37,10 @@ export default function Test() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">
-        {t('title')}
-      </h1>
-      
+      <h1 className="text-3xl font-bold mb-6 text-gray-900">{t('title')}</h1>
+
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-        <p className="text-yellow-800 text-lg mb-4">
-          {t('description')}
-        </p>
+        <p className="text-yellow-800 text-lg mb-4">{t('description')}</p>
         <ul className="list-disc list-inside mt-4 text-yellow-800 space-y-2">
           <li>{t('duration', { duration: testDuration.toString() })}</li>
           <li>{t('respondTarget')}</li>

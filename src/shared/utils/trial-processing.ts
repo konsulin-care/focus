@@ -142,11 +142,7 @@ export function processTestEvents(
       isAnticipatoryFlag = firstResponse.isAnticipatory ?? false;
     }
 
-    const outcome = determineTrialOutcome(
-      onset.stimulusType,
-      responseCorrect,
-      hadResponse
-    );
+    const outcome = determineTrialOutcome(onset.stimulusType, responseCorrect, hadResponse);
 
     trialResults.push({
       trialIndex: i,

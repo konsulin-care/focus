@@ -9,12 +9,9 @@ interface ModalHeaderProps {
  */
 export function ModalHeader({ title }: ModalHeaderProps) {
   const { t } = useTranslation();
-  
+
   return (
-    <h2 
-      id="acs-modal-title" 
-      className="text-2xl font-bold text-white mb-4"
-    >
+    <h2 id="acs-modal-title" className="text-2xl font-bold text-white mb-4">
       {t(title)}
     </h2>
   );

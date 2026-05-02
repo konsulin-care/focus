@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Encryption Key Management
- * 
+ *
  * Database encryption using SQLCipher with secure key management.
  * Keys are stored in userData directory with restricted permissions.
  */
@@ -9,7 +9,16 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
-import { existsSync, readFileSync, writeFileSync, openSync, readSync, closeSync, unlinkSync, renameSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  openSync,
+  readSync,
+  closeSync,
+  unlinkSync,
+  renameSync,
+} from 'node:fs';
 
 // ===========================================
 // Key Generation
@@ -18,7 +27,7 @@ import { existsSync, readFileSync, writeFileSync, openSync, readSync, closeSync,
 /**
  * Generate a random 256-bit (32 byte) encryption key as hex string.
  * This key is used to encrypt the SQLite database with SQLCipher.
- * 
+ *
  * @returns The encryption key as 64-character hex string
  */
 export function generateEncryptionKey(): string {
@@ -33,12 +42,12 @@ export function generateEncryptionKey(): string {
 /**
  * Get or create encryption key for database encryption.
  * Key is stored in userData directory with restricted permissions (chmod 600).
- * 
+ *
  * @returns The encryption key as hex string
  */
 export function getOrCreateEncryptionKey(): string {
-   const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
-  
+  const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
+
   // Check if key already exists
   if (existsSync(keyPath)) {
     try {
@@ -54,17 +63,17 @@ export function getOrCreateEncryptionKey(): string {
       console.error('[ENC] Failed to read existing encryption key:', error);
     }
   }
-  
+
   // Generate new key
   const newKey = generateEncryptionKey();
-  
+
   try {
     writeFileSync(keyPath, newKey, { mode: 0o600 });
     console.log('[ENC] New encryption key generated and stored');
   } catch (error) {
     console.error('[ENC] Failed to store encryption key:', error);
   }
-  
+
   return newKey;
 }
 
@@ -75,35 +84,34 @@ export function getOrCreateEncryptionKey(): string {
 /**
  * Check if the database is already encrypted by attempting to read it.
  * An encrypted database will return an error when accessed without the key.
- * 
+ *
  * @param dbPath - Path to the database file
  * @returns true if the database appears to be encrypted
  */
 export function isDatabaseEncrypted(dbPath: string): boolean {
-    
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+   
   if (!existsSync(dbPath)) {
     return false; // New database, not yet encrypted
   }
-  
+
   // Try to open without key and check if it's a valid SQLite database
   try {
     // SQLCipher databases have a different header than standard SQLite
     const headerBuffer = Buffer.alloc(16);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     const fd = openSync(dbPath, 'r');
     readSync(fd, headerBuffer, 0, 16, 0);
     closeSync(fd);
-    
+
     // Standard SQLite starts with "SQLite format 3\000"
     const sqliteHeader = 'SQLite format 3';
     const headerStr = headerBuffer.toString('utf8', 0, 16);
-    
+
     // If header doesn't match standard SQLite, it's likely encrypted or corrupted
     if (!headerStr.includes(sqliteHeader)) {
       return true;
     }
-    
+
     return false;
   } catch {
     return false;
@@ -117,93 +125,102 @@ export function isDatabaseEncrypted(dbPath: string): boolean {
 /**
  * Migrate an unencrypted database to encrypted format.
  * Uses the export/re-import pattern to re-encrypt the database.
- * 
+ *
  * @param db - The database connection (will be closed)
  * @param newKey - The new encryption key
  */
 export function migrateToEncrypted(db: Database.Database, newKey: string): void {
   console.log('[ENC] Migrating database to encrypted format...');
-  
+
   try {
     // Create a temporary encrypted database by exporting and re-importing
     const tempDbPath = path.join(app.getPath('userData'), 'focus_backup.db');
     const encryptedDbPath = path.join(app.getPath('userData'), 'focus.db');
-    
+
     // Helper function to safely quote SQL identifiers (prevents SQL injection)
     function quoteIdentifier(identifier: string): string {
       return `"${identifier.replace(/"/g, '""')}"`;
     }
-    
+
     // Close current connection
     db.close();
-    
+
     // Rename current database to backup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     if (existsSync(tempDbPath)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       unlinkSync(tempDbPath);
     }
- 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
+     
     renameSync(encryptedDbPath, tempDbPath);
-    
+
     // Open backup and re-export with encryption
     const backupDb = new Database(tempDbPath);
     const encryptedDb = new Database(encryptedDbPath);
-    
+
     // Apply encryption key to new database
     encryptedDb.exec(`PRAGMA key = "x'${newKey}'"`);
     encryptedDb.exec('PRAGMA cipher_use_hmac = 1');
-    
+
     // Export all data and re-import
-    const tables = backupDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
-    
+    const tables = backupDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+      name: string;
+    }[];
+
     for (const table of tables) {
       if (table.name === 'sqlite_sequence') continue;
-      
+
       // Get table schema
-      const schema = backupDb.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`).get(table.name) as { sql: string };
-      
+      const schema = backupDb
+        .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
+        .get(table.name) as { sql: string };
+
       // Create table in encrypted database
       encryptedDb.exec(schema.sql);
-      
+
       // Get column info to identify generated/virtual columns
       // PRAGMA table_xinfo returns hidden column: 0=normal, 1=generated, 2=hidden
-      const columnInfo = backupDb
-        .prepare(`PRAGMA table_xinfo(${table.name})`)
-        .all() as Array<{name: string, hidden: number}>;
+      const columnInfo = backupDb.prepare(`PRAGMA table_xinfo(${table.name})`).all() as Array<{
+        name: string;
+        hidden: number;
+      }>;
       const writableColumns = columnInfo
-        .filter(col => col.hidden === 0)  // Only include non-hidden columns (excludes generated/virtual columns)
-        .map(col => col.name);
-      
+        .filter((col) => col.hidden === 0) // Only include non-hidden columns (excludes generated/virtual columns)
+        .map((col) => col.name);
+
       if (writableColumns.length === 0) {
         console.log(`[ENC] Skipping table ${table.name} - no writable columns`);
         continue;
       }
-      
+
       // Copy data using only writable columns
       const quotedTableName = quoteIdentifier(table.name);
       const quotedColumns = writableColumns.map(quoteIdentifier);
-      
-      const data = backupDb.prepare(`SELECT ${quotedColumns.join(', ')} FROM ${quotedTableName}`).all() as Record<string, unknown>[];
+
+      const data = backupDb
+        .prepare(`SELECT ${quotedColumns.join(', ')} FROM ${quotedTableName}`)
+        .all() as Record<string, unknown>[];
       if (data.length > 0) {
         const columns = quotedColumns.join(', ');
         const placeholders = writableColumns.map(() => '?').join(', ');
-        const insertStmt = encryptedDb.prepare(`INSERT INTO ${quotedTableName} (${columns}) VALUES (${placeholders})`);
-        
+        const insertStmt = encryptedDb.prepare(
+          `INSERT INTO ${quotedTableName} (${columns}) VALUES (${placeholders})`
+        );
+
         for (const row of data) {
-          const values = writableColumns.map(col => row[col]);
+          const values = writableColumns.map((col) => row[col]);
           insertStmt.run(...values);
         }
       }
     }
-    
+
     backupDb.close();
     encryptedDb.close();
-    
+
     // Remove backup
     unlinkSync(tempDbPath);
-    
+
     console.log('[ENC] Database migration completed successfully');
   } catch (error) {
     console.error('[ENC] Failed to migrate database:', error);
