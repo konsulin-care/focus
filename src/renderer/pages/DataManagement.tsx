@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n';
 import { Download, Trash2, Search, ChevronDown, ChevronRight, ChevronLeft, ChevronUp } from 'lucide-react';
+import { TrialData } from '@/renderer/types/electronAPI';
 
 interface Session {
   id: number;
@@ -32,6 +33,7 @@ export default function DataManagement() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
+  const [sessionTrials, setSessionTrials] = useState<Record<number, TrialData[]>>({});
 
   useEffect(() => {
     fetchData();
@@ -81,37 +83,73 @@ export default function DataManagement() {
     }
   };
 
-  const handleExport = async (format: 'csv' | 'json') => {
-    const selected = sessions.filter(s => selectedIds.size === 0 ? true : selectedIds.has(s.id));
-    if (selected.length === 0) return;
+   const handleExport = async (format: 'csv' | 'json') => {
+     const selected = sessions.filter(s => selectedIds.size === 0 ? true : selectedIds.has(s.id));
+     if (selected.length === 0) return;
 
-    if (format === 'csv') {
-      const csv = [
-        'Email,Age,Gender,ACS Score,Interpretation,Date,Status',
-        ...selected.map(s => `${s.email},${s.age},${s.gender},${s.acs_score.toFixed(2)},${s.acs_interpretation},${s.test_date},${s.upload_status}`)
-      ].join('\n');
-      downloadFile(csv, `export_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
-    } else {
-      const data = await Promise.all(selected.map(async s => ({
-        ...s,
-        trials: await window.electronAPI.getSessionTrials(s.id)
-      })));
-      downloadFile(JSON.stringify(data, null, 2), `export_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+     if (format === 'csv') {
+       const csv = [
+         'Email,Age,Gender,ACS Score,Interpretation,Date,Status',
+         ...selected.map(s => `${s.email},${s.age},${s.gender},${s.acs_score.toFixed(2)},${s.acs_interpretation},${s.test_date},${s.upload_status}`)
+       ].join('\n');
+       downloadFile(csv, `export_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
+     } else {
+       const data = await Promise.all(selected.map(async s => ({
+         ...s,
+         trials: await window.electronAPI.getSessionTrials(s.id)
+       })));
+       downloadFile(JSON.stringify(data, null, 2), `export_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+     }
+   };
+
+   const fetchTrials = async (sessionId: number) => {
+     try {
+       const trials = await window.electronAPI.getSessionTrials(sessionId);
+       setSessionTrials(prev => ({ ...prev, [sessionId]: trials }));
+     } catch (error) {
+       console.error('Failed to fetch trials:', error);
+       setSessionTrials(prev => ({ ...prev, [sessionId]: [] }));
+     }
+   };
+
+   const downloadFile = (content: string, filename: string, type: string) => {
+     const blob = new Blob([content], { type });
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a');
+     a.href = url;
+     a.download = filename;
+     a.click();
+     URL.revokeObjectURL(url);
+   };
+
+   const handleExtractTrials = (sessionId: number) => {
+     const trials = sessionTrials[sessionId];
+     if (!trials || trials.length === 0) {
+       console.warn('No trials available for export');
+       return;
+     }
+     const headers = [
+       t('dataManagement.trials.trial'),
+       t('dataManagement.trials.type'),
+       t('dataManagement.trials.correct'),
+       t('dataManagement.trials.rt')
+     ];
+     const rows = trials.map(t => [
+       t.trial_index,
+       t.stimulus_type,
+       t.response_correct ?? '',
+       t.response_time_ms ?? ''
+     ]);
+     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+     downloadFile(csvContent, `trials_session_${sessionId}.csv`, 'text/csv');
+   };
+
+   const toggleRow = (id: number) => {
+    const expanding = !expandedRows[id];
+    setExpandedRows(prev => ({ ...prev, [id]: expanding }));
+    if (expanding && sessionTrials[id] === undefined) {
+      fetchTrials(id);
     }
-  };
-
-  const downloadFile = (content: string, filename: string, type: string) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const toggleRow = (id: number) => {
-    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   // Filtering
@@ -322,9 +360,41 @@ export default function DataManagement() {
                                 </tr>
                               </thead>
                               <tbody>
-                                <tr><td colSpan={4} className="px-3 py-4 text-center text-gray-400">{t('dataManagement.trials.loading')}</td></tr>
+                                {sessionTrials[session.id] === undefined ? (
+                                  <tr>
+                                    <td colSpan={4} className="px-3 py-4 text-center text-gray-400">
+                                      {t('dataManagement.trials.loading')}
+                                    </td>
+                                  </tr>
+                                ) : (sessionTrials[session.id]?.length ?? 0) === 0 ? (
+                                  <tr>
+                                    <td colSpan={4} className="px-3 py-4 text-center text-gray-400">
+                                      {t('dataManagement.trials.empty')}
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  sessionTrials[session.id].slice(0, 10).map((trial, idx) => (
+                                    <tr key={idx} className="border-b hover:bg-gray-50">
+                                      <td className="px-3 py-2">{trial.trial_index}</td>
+                                      <td className="px-3 py-2">{trial.stimulus_type}</td>
+                                      <td className="px-3 py-2">
+                                        {trial.response_correct === null ? '-' : trial.response_correct ? '✓' : '✗'}
+                                      </td>
+                                      <td className="px-3 py-2">{trial.response_time_ms ?? '-'}</td>
+                                    </tr>
+                                  ))
+                                )}
                               </tbody>
                             </table>
+                          </div>
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              onClick={() => handleExtractTrials(session.id)}
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 text-sm font-medium"
+                            >
+                              <Download size={14} />
+                              {t('dataManagement.trials.extractAll')}
+                            </button>
                           </div>
                         </td>
                       </tr>
