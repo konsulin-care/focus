@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { TestCompleteResult } from '@/renderer/types/electronAPI';
+import type { AttentionMetrics } from '@/renderer/types/trial';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand = 
@@ -80,15 +81,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveTestConfig: (config: TestConfig) => ipcRenderer.invoke('save-test-config', config),
   resetTestConfig: () => ipcRenderer.invoke('reset-test-config'),
   
-  // GDPR Compliant Test Result API
-  saveTestResultWithConsent: (
-    testData: string,
-    email: string,
-    age: number,
-    gender: 'Male' | 'Female',
-    consentGiven: boolean,
-    consentTimestamp: string
-  ) => ipcRenderer.invoke('save-test-result-with-consent', testData, email, age, gender, consentGiven, consentTimestamp),
+   // GDPR Compliant Test Result API
+   saveTestResultWithConsent: (
+     testData: string,
+     email: string,
+     age: number,
+     gender: 'Male' | 'Female',
+     consentGiven: boolean,
+     consentTimestamp: string,
+     metrics: AttentionMetrics
+   ) => ipcRenderer.invoke('save-test-result-with-consent', testData, email, age, gender, consentGiven, consentTimestamp, metrics),
 
   // Session management API
   getAllSessions: () => ipcRenderer.invoke('get-all-sessions'),

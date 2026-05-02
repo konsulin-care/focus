@@ -3,8 +3,7 @@ import { useTranslation } from '@/i18n';
 import { SubjectInfo } from '@/renderer/types/trial';
 
 export interface EmailCaptureFormProps {
-  testData: string;  // JSON string of test events
-  onSuccess: (subjectInfo: SubjectInfo) => void;
+  onSubmit: (subjectInfo: SubjectInfo, email: string, consent: boolean) => Promise<void>;
   onSkip?: (subjectInfo: SubjectInfo) => void;  // Called when user clicks Preview
   lng?: string;  // Language code for i18n
 }
@@ -13,7 +12,7 @@ export interface EmailCaptureFormProps {
  * Form component for capturing user email and demographic information
  * with consent validation before saving test results
  */
-export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCaptureFormProps) {
+export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProps) {
   const { t, i18n } = useTranslation();
   const [age, setAge] = useState<number>(0);
   const [gender, setGender] = useState<'Male' | 'Female' | ''>('');
@@ -32,8 +31,8 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
   const subjectInfo: SubjectInfo = { age, gender: gender as 'Male' | 'Female' };
   
   /**
-   * Handles form submission with validation and saving of test results
-   * @param e - Form submit event
+   * Handles form submission with validation
+   * Calls parent onSubmit which computes metrics and saves via IPC
    */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -68,17 +67,9 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
     setIsSubmitting(true);
     setErrors([]);
     
-     try {
-       const consentTimestamp = new Date().toISOString();
-       await window.electronAPI.saveTestResultWithConsent(
-         testData,
-         email,
-         age,
-         gender as 'Male' | 'Female',
-         consent,
-         consentTimestamp
-       );
-       onSuccess(subjectInfo);
+    try {
+      // Delegate to parent handler which computes metrics and saves
+      await onSubmit(subjectInfo, email, consent);
     } catch (error) {
       console.error('Failed to save test result:', error);
       setErrors([t('error.saveFailed')]);

@@ -19,7 +19,7 @@ import {
   recordResponse, 
   setMainWindow 
 } from './test-engine';
-import { computeSummaryMetrics } from './acs-computation';
+import type { AttentionMetrics } from '@/renderer/types/trial';
 
 // ===========================================
 // Timing Handlers
@@ -132,7 +132,7 @@ ipcMain.handle('get-expired-count', async () => {
 
 /**
  * Save test result with explicit consent (GDPR compliant).
- * Computes ACS metrics and stores in normalized schema.
+ * Metrics are pre-computed in renderer; main process validates and stores.
  */
 ipcMain.handle('save-test-result-with-consent', async (
   _event: Electron.IpcMainInvokeEvent,
@@ -141,7 +141,8 @@ ipcMain.handle('save-test-result-with-consent', async (
   age: number,
   gender: 'Male' | 'Female',
   consentGiven: boolean,
-  consentTimestamp: string
+  consentTimestamp: string,
+  metrics: AttentionMetrics
 ) => {
   if (!db) {
     throw new Error('Database not initialized');
@@ -158,12 +159,44 @@ ipcMain.handle('save-test-result-with-consent', async (
   }
 
   try {
+    // Parse testData only to extract events for trial data insertion
     const data = JSON.parse(testData);
     const events = Array.isArray(data) ? data : data.events;
     if (!events || !Array.isArray(events)) {
       throw new Error('Invalid test data format: expected events array');
     }
-    const metrics = computeSummaryMetrics(events, age, gender);
+
+    // Validate metrics structure (defense-in-depth)
+    if (!metrics || typeof metrics !== 'object') {
+      throw new Error('Invalid metrics provided');
+    }
+
+    const expectedNumericFields = ['acs', 'dPrime', 'meanResponseTimeMs', 'variability', 'hits', 'commissions', 'omissions', 'trialCount'];
+    for (const field of expectedNumericFields) {
+      if (typeof (metrics as any)[field] !== 'number' || !Number.isFinite((metrics as any)[field])) {
+        throw new Error(`Invalid metrics: ${field} must be a finite number`);
+      }
+    }
+
+    // Map AttentionMetrics to TestSession columns
+    const acsScore = metrics.acs;  // may be null - handle below
+    const acsInterpretation = metrics.acsInterpretation;  // string
+    const meanResponseTimeMs = metrics.meanResponseTimeMs;
+    const responseTimeVariability = metrics.variability;
+    const commissionErrors = Math.round(metrics.commissions);  // ensure integer
+    const omissionErrors = Math.round(metrics.omissions);      // ensure integer
+    const hits = Math.round(metrics.hits);
+    const dPrime = metrics.dPrime;
+    const totalTrials = Math.round(metrics.trialCount);
+
+    // Map validity: metrics.validity.valid boolean → 'Valid'/'Invalid'
+    const validity = metrics.validity?.valid ? 'Valid' : 'Invalid';
+    const validityReason = metrics.validity?.valid ? undefined : (metrics.validity?.exclusionReason || 'Invalid test');
+
+    // Validate acsScore (if null, store as null - DB accepts REAL nullable)
+    if (acsScore !== null && typeof acsScore !== 'number') {
+      throw new Error('Invalid ACS score');
+    }
 
     // Use transaction for normalized save
     const result = db.transaction(() => {
@@ -183,25 +216,25 @@ ipcMain.handle('save-test-result-with-consent', async (
           upload_status, consent_given, consent_timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      const sessionId = sessionStmt.run(
-        user.id,
-        new Date().toISOString(),
-        metrics.acsScore,
-        metrics.acsInterpretation,
-        metrics.meanResponseTimeMs,
-        metrics.responseTimeVariability,
-        metrics.commissionErrors,
-        metrics.omissionErrors,
-        metrics.hits,
-        metrics.dPrime,
-        metrics.validity,
-        metrics.validityReason || null,
-        metrics.totalTrials,
-        JSON.stringify({}), // test_config placeholder
-        'pending',
-        consentGiven ? 1 : 0,
-        consentTimestamp
-      ).lastInsertRowid;
+       const sessionId = sessionStmt.run(
+         user.id,
+         new Date().toISOString(),
+         acsScore,                              // metrics.acs
+         acsInterpretation,                     // metrics.acsInterpretation
+         meanResponseTimeMs,                    // metrics.meanResponseTimeMs
+         responseTimeVariability,               // metrics.variability
+         commissionErrors,                      // metrics.commissions
+         omissionErrors,                        // metrics.omissions
+         hits,                                  // metrics.hits
+         dPrime,                                // metrics.dPrime
+         validity,                              // derived from metrics.validity.valid
+         validityReason || null,                // derived from metrics.validity.exclusionReason
+         totalTrials,                           // metrics.trialCount
+         JSON.stringify({}),                    // test_config placeholder (unchanged)
+         'pending',
+         consentGiven ? 1 : 0,
+         consentTimestamp
+       ).lastInsertRowid;
 
        // 3. Insert trial data
        const trialStmt = currentDb.prepare(`

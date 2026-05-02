@@ -2,6 +2,7 @@
 // This file ensures consistent typing across all renderer components
 
 export type StimulusType = 'target' | 'non-target';
+import { AttentionMetrics } from './trial';
 
 export interface TestConfig {
   stimulusDurationMs: number;
@@ -44,15 +45,16 @@ export interface ElectronAPI {
    // Database API - safe query whitelist pattern
    queryDatabase: (command: string, params?: unknown[]) => Promise<unknown>;
    
-  // Test Result API - GDPR compliant email capture
-  saveTestResultWithConsent: (
-    testData: string,
-    email: string,
-    age: number,
-    gender: 'Male' | 'Female',
-    consentGiven: boolean,
-    consentTimestamp: string
-  ) => Promise<void>;
+   // Test Result API - GDPR compliant email capture
+   saveTestResultWithConsent: (
+     testData: string,
+     email: string,
+     age: number,
+     gender: 'Male' | 'Female',
+     consentGiven: boolean,
+     consentTimestamp: string,
+     metrics: AttentionMetrics
+   ) => Promise<void>;
   
   // Test Config API
   getTestConfig: () => Promise<TestConfig>;
