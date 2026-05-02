@@ -6,6 +6,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import About from './pages/About';
+import DataManagement from './pages/DataManagement';
 import TestScreen from './TestScreen';
 import { useNavigation } from './store';
 
@@ -55,10 +56,13 @@ function App() {
         return <Settings />;
       case 'about':
         return <About />;
+      case 'data-management':
+        return <DataManagement />;
       default:
         return <Home />;
     }
   };
+
 
   return (
     <I18nextProvider i18n={i18n}>

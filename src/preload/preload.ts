@@ -84,7 +84,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveTestResultWithConsent: (
     testData: string,
     email: string,
+    age: number,
+    gender: 'Male' | 'Female',
     consentGiven: boolean,
     consentTimestamp: string
-  ) => ipcRenderer.invoke('save-test-result-with-consent', testData, email, consentGiven, consentTimestamp),
+  ) => ipcRenderer.invoke('save-test-result-with-consent', testData, email, age, gender, consentGiven, consentTimestamp),
+
+  // Session management API
+  getAllSessions: () => ipcRenderer.invoke('get-all-sessions'),
+  getSessionWithUser: (sessionId: number) => ipcRenderer.invoke('get-session-with-user', sessionId),
+  getSessionTrials: (sessionId: number) => ipcRenderer.invoke('get-session-trials', sessionId),
+  updateSessionStatus: (sessionId: number, status: 'pending' | 'uploaded' | 'failed') => ipcRenderer.invoke('update-session-status', sessionId, status),
+  bulkDeleteSessions: (sessionIds: number[]) => ipcRenderer.invoke('bulk-delete-sessions', sessionIds),
 });

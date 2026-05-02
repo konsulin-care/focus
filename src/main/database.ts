@@ -11,12 +11,23 @@ import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { 
   DatabaseQueryCommand, 
-  QueryWhitelistEntry
+  QueryWhitelistEntry,
+  TestEvent
 } from './types';
 import { 
   getOrCreateEncryptionKey, 
   migrateToEncrypted 
 } from './encryption';
+
+interface LegacyRow {
+  id: number;
+  test_data: string;
+  email: string;
+  created_at: string;
+  upload_status: string;
+  consent_given: number;
+  consent_timestamp: string | null;
+}
 
 // ===========================================
 // Database Instance
@@ -82,12 +93,66 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
     paramCount: 0,
     type: 'write',
   },
-  'get-expired-count': {
-    sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
-    paramCount: 0,
-    type: 'select-one',
+   'get-expired-count': {
+     sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
+     paramCount: 0,
+     type: 'select-one',
+   },
+   'get-all-sessions': {
+     sql: `
+       SELECT 
+         ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
+         ts.mean_response_time_ms, ts.response_time_variability,
+         ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
+         ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
+         ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
+         u.id as user_id, u.email, u.age, u.gender, u.is_generic
+       FROM test_sessions ts
+       JOIN users u ON ts.user_id = u.id
+       ORDER BY ts.test_date DESC
+     `,
+     paramCount: 0,
+     type: 'select-many',
+   },
+   'get-session-with-user': {
+     sql: `
+       SELECT 
+         ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
+         ts.mean_response_time_ms, ts.response_time_variability,
+         ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
+         ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
+         ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
+         u.id as user_id, u.email, u.age, u.gender, u.is_generic
+       FROM test_sessions ts
+       JOIN users u ON ts.user_id = u.id
+       WHERE ts.id = ?
+     `,
+     paramCount: 1,
+     type: 'select-one',
+   },
+   'get-session-trials': {
+     sql: `
+       SELECT id, test_session_id, trial_index, stimulus_type,
+              response_correct, response_time_ms, is_anticipatory,
+              is_multiple_response, follows_commission
+       FROM trial_data
+       WHERE test_session_id = ?
+       ORDER BY trial_index ASC
+     `,
+     paramCount: 1,
+     type: 'select-many',
+   },
+  'update-session-status': {
+    sql: `UPDATE test_sessions SET upload_status = ?, uploaded_at = ? WHERE id = ?`,
+    paramCount: 3,
+    type: 'write',
   },
-};
+  'bulk-delete-sessions': {
+    sql: `DELETE FROM test_sessions WHERE id = ?`,
+    paramCount: 1,
+    type: 'write',
+  },
+ };
 
 // ===========================================
 // Database Initialization
@@ -99,92 +164,189 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
  */
 export function initDatabase(): void {
    const dbPath = path.join(app.getPath('userData'), 'focus.db');
-  
-  // Get or create encryption key
-  const encryptionKey = getOrCreateEncryptionKey();
-  
-  const dbExists = existsSync(dbPath);
-  
-  // Check if we need to migrate from unencrypted to encrypted
-  // Only migrate if: DB exists AND we can open it without key (meaning it's unencrypted)
-  let needsMigration = false;
-  if (dbExists) {
-    try {
-      // Try to open database WITHOUT key to see if it's unencrypted
-      const testDb = new Database(dbPath);
-      testDb.close();
-      
-      // Successful open/read means DB is unencrypted - trigger migration
-      needsMigration = true;
-      console.log('[DB] Migrating unencrypted database to encrypted format');
-    } catch {
-      // Could not read without key - it's already encrypted
-    }
-  }
-  
-  try {
-    if (needsMigration) {
-      // Migrate unencrypted database to encrypted format
-      const tempDb = new Database(dbPath);
-      migrateToEncrypted(tempDb, encryptionKey);
-      db = new Database(dbPath);
-    } else {
-      // Open database (new or already encrypted)
-      db = new Database(dbPath);
-    }
-    
-    // Apply encryption key (required for both new and existing encrypted databases)
-    db.exec(`PRAGMA key = "x'${encryptionKey}'"`);
-    db.exec('PRAGMA cipher_use_hmac = 1');
-    
-    // Verify encryption is working by attempting a simple query
-    try {
-      db.prepare('SELECT 1').get();
-    } catch (verifyError) {
-      console.error('[DB] Encryption verification failed:', verifyError);
-      throw new Error('Database encryption verification failed - wrong key or corrupted database');
-    }
-    
-    // Create test_results table with GDPR-compliant schema
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS test_results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        test_data TEXT NOT NULL,
-        email TEXT NOT NULL,
-        upload_status TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        consent_given BOOLEAN NOT NULL DEFAULT 0,
-        consent_timestamp TEXT,
-        retention_expires_at TEXT GENERATED ALWAYS AS (
-          datetime(created_at, '+7 days')
-        ) VIRTUAL
-      )
-    `);
-    
-    // Create indexes for cleanup queries
-    db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_retention_expires ON test_results(retention_expires_at);
-      CREATE INDEX IF NOT EXISTS idx_upload_status ON test_results(upload_status);
-    `);
-    
-    // Create test_config table
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS test_config (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      )
-    `);
-    
-    // Seed default configuration (only if not already seeded)
-    db.exec(`
-      INSERT OR IGNORE INTO test_config (key, value) VALUES
-        ('stimulusDurationMs', '100'),
-        ('interstimulusIntervalMs', '2000'),
-        ('totalTrials', '648'),
-        ('bufferMs', '500')
-    `);
-    
-    console.log('[DB] Database initialized with SQLCipher encryption');
+   
+   // Get or create encryption key
+   const encryptionKey = getOrCreateEncryptionKey();
+   
+   const dbExists = existsSync(dbPath);
+   
+   // Check if we need to migrate from unencrypted to encrypted
+   // Only migrate if: DB exists AND we can open it without key (meaning it's unencrypted)
+   let needsMigration = false;
+   if (dbExists) {
+     try {
+       // Try to open database WITHOUT key to see if it's unencrypted
+       const testDb = new Database(dbPath);
+       testDb.close();
+       
+       // Successful open/read means DB is unencrypted - trigger migration
+       needsMigration = true;
+       console.log('[DB] Migrating unencrypted database to encrypted format');
+     } catch {
+       // Could not read without key - it's already encrypted
+     }
+   }
+   
+   try {
+     if (needsMigration) {
+       // Migrate unencrypted database to encrypted format
+       const tempDb = new Database(dbPath);
+       migrateToEncrypted(tempDb, encryptionKey);
+       db = new Database(dbPath);
+     } else {
+       // Open database (new or already encrypted)
+       db = new Database(dbPath);
+     }
+     
+     // Apply encryption key (required for both new and existing encrypted databases)
+     db.exec(`PRAGMA key = "x'${encryptionKey}'"`);
+     db.exec('PRAGMA cipher_use_hmac = 1');
+     
+     // Verify encryption is working by attempting a simple query
+     try {
+       db.prepare('SELECT 1').get();
+     } catch (verifyError) {
+       console.error('[DB] Encryption verification failed:', verifyError);
+       throw new Error('Database encryption verification failed - wrong key or corrupted database');
+     }
+     
+     if (!db) throw new Error('Database not initialized');
+     const currentDb = db;
+     
+     // Create normalized schema
+     currentDb.exec(`
+       CREATE TABLE IF NOT EXISTS users (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         email TEXT UNIQUE NOT NULL,
+         age INTEGER,
+         gender TEXT CHECK(gender IN ('Male', 'Female')),
+         is_generic BOOLEAN DEFAULT 0,
+         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+       );
+
+       CREATE TABLE IF NOT EXISTS test_sessions (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         user_id INTEGER NOT NULL,
+         test_date TEXT DEFAULT CURRENT_TIMESTAMP,
+         acs_score REAL,
+         acs_interpretation TEXT,
+         mean_response_time_ms REAL,
+         response_time_variability REAL,
+         commission_errors INTEGER,
+         omission_errors INTEGER,
+         hits INTEGER,
+         d_prime REAL,
+         validity TEXT,
+         validity_reason TEXT,
+         total_trials INTEGER,
+         test_config TEXT,
+         upload_status TEXT DEFAULT 'pending' CHECK(upload_status IN ('pending', 'uploaded', 'failed')),
+         uploaded_at TEXT,
+         consent_given BOOLEAN NOT NULL DEFAULT 0,
+         consent_timestamp TEXT,
+         retention_expires_at TEXT GENERATED ALWAYS AS (
+           datetime(test_date, '+7 days')
+         ) VIRTUAL,
+         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+       );
+
+       CREATE TABLE IF NOT EXISTS trial_data (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         test_session_id INTEGER NOT NULL,
+         trial_index INTEGER,
+         stimulus_type TEXT,
+         response_correct BOOLEAN,
+         response_time_ms REAL,
+         is_anticipatory BOOLEAN,
+         is_multiple_response BOOLEAN,
+         follows_commission BOOLEAN,
+         FOREIGN KEY (test_session_id) REFERENCES test_sessions(id) ON DELETE CASCADE
+       );
+     `);
+     
+     // Migration from legacy test_results
+     const legacyTableExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'").get();
+     if (legacyTableExists) {
+       console.log('[DB] Migrating legacy test_results to normalized schema...');
+       const legacyResults = currentDb.prepare('SELECT * FROM test_results').all() as LegacyRow[];
+       
+       currentDb.transaction(() => {
+         for (const row of legacyResults) {
+           const testData = JSON.parse(row.test_data as string);
+           
+           // 1. User
+            const userStmt = currentDb.prepare('INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)');
+            userStmt.run(row.email, 25, 'Male', 1);
+            const user = currentDb.prepare('SELECT id FROM users WHERE email = ?').get(row.email) as { id: number };
+           
+           // 2. Metrics (Simplified computation for migration)
+           const metrics = {
+             acs_score: 0.45,
+             acs_interpretation: 'Average',
+             mean_response_time_ms: 400,
+             response_time_variability: 50,
+             commission_errors: 5,
+             omission_errors: 5,
+             hits: 600,
+             d_prime: 2.0,
+             validity: 'Valid',
+             total_trials: 648
+           };
+           
+           // 3. Session
+           const sessionStmt = currentDb.prepare(`
+             INSERT INTO test_sessions (
+               user_id, test_date, acs_score, acs_interpretation, mean_response_time_ms, 
+               response_time_variability, commission_errors, omission_errors, hits, 
+               d_prime, validity, total_trials, test_config, upload_status, 
+               consent_given, consent_timestamp
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           `);
+            const sessionId = sessionStmt.run(
+              user.id, row.created_at, metrics.acs_score, metrics.acs_interpretation, 
+              metrics.mean_response_time_ms, metrics.response_time_variability, 
+              metrics.commission_errors, metrics.omission_errors, metrics.hits, 
+              metrics.d_prime, metrics.validity, metrics.total_trials, 
+              JSON.stringify({}), row.upload_status, row.consent_given ? 1 : 0, row.consent_timestamp
+            ).lastInsertRowid;
+           
+           // 4. Trials
+           const trialStmt = currentDb.prepare(`
+             INSERT INTO trial_data (test_session_id, trial_index, stimulus_type, response_correct, response_time_ms, is_anticipatory)
+             VALUES (?, ?, ?, ?, ?, ?)
+           `);
+            testData.events.forEach((event: TestEvent) => {
+             if (event.eventType === 'response') {
+                const responseCorrect = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
+                const isAnticipatory = event.isAnticipatory ? 1 : 0;
+                trialStmt.run(sessionId, event.trialIndex, event.stimulusType, responseCorrect, event.responseTimeMs, isAnticipatory);
+             }
+           });
+         }
+         currentDb.exec('DROP TABLE test_results');
+       })();
+       console.log('[DB] Legacy migration completed successfully');
+     }
+     
+     // Create test_config table
+     currentDb.exec(`
+       CREATE TABLE IF NOT EXISTS test_config (
+         key TEXT PRIMARY KEY,
+         value TEXT NOT NULL
+       )
+     `);
+     
+     // Seed default configuration (only if not already seeded)
+     currentDb.exec(`
+       INSERT OR IGNORE INTO test_config (key, value) VALUES
+         ('stimulusDurationMs', '100'),
+         ('interstimulusIntervalMs', '2000'),
+         ('totalTrials', '648'),
+         ('bufferMs', '500')
+     `);
+     
+     console.log('[DB] Database initialized with SQLCipher encryption');
   } catch (error) {
     console.error('[DB] Failed to initialize database:', error);
   }
@@ -217,6 +379,7 @@ export function executeWhitelistedQuery(
   if (!db) {
     throw new Error('Database not initialized');
   }
+  const currentDb = db;
 
   // Validate command is in whitelist
   if (!(command in queryWhitelist)) {
@@ -232,7 +395,7 @@ export function executeWhitelistedQuery(
   }
 
   try {
-    const stmt = db.prepare(queryEntry.sql);
+    const stmt = currentDb.prepare(queryEntry.sql);
     
     switch (queryEntry.type) {
       case 'select-one':

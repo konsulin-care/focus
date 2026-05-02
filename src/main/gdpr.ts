@@ -20,9 +20,9 @@ export function cleanupExpiredRecords(): number {
   }
 
   try {
-    // Delete records where retention_expires_at is in the past
+    // Delete sessions where retention_expires_at is in the past
     const result = db.prepare(`
-      DELETE FROM test_results
+      DELETE FROM test_sessions
       WHERE retention_expires_at < datetime('now')
     `).run();
 
@@ -46,7 +46,7 @@ export function getExpiredRecordCount(): number {
   try {
     const result = db.prepare(`
       SELECT COUNT(*) as count
-      FROM test_results
+      FROM test_sessions
       WHERE retention_expires_at < datetime('now')
     `).get() as { count: number };
     return result.count;

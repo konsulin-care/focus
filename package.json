@@ -1,15 +1,20 @@
 {
   "name": "focus",
   "version": "0.0.0-dev",
-  "main": "dist/main/main.js",
+  "main": "dist/main/bootstrap.js",
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@tanstack/react-table": "^8.0.0-alpha.5",
     "axios": "^1.6.0",
     "better-sqlite3": "^12.6.2",
     "i18next": "^26.0.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "keytar": "^7.9.0",
     "lucide-react": "^1.8.0",
+    "module-alias": "^2.3.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-i18next": "^17.0.2",
@@ -38,19 +43,19 @@
     "vite": "^8.0.4",
     "vitest": "^4.0.18"
   },
-   "scripts": {
-     "dev": "electron .",
-     "build": "tsc && vite build",
-     "build:main": "tsc",
-     "build:renderer": "vite build",
-     "electron-rebuild": "electron-rebuild",
-     "package": "npm run build && electron-builder",
-     "prepare": "husky",
-     "validate-timing": "ts-node src/validate-timing.ts",
-     "test": "vitest run",
-     "test:watch": "vitest",
-     "test:coverage": "vitest run --coverage"
-   },
+  "scripts": {
+    "dev": "electron .",
+    "build": "tsc && vite build",
+    "build:main": "tsc",
+    "build:renderer": "vite build",
+    "electron-rebuild": "electron-rebuild",
+    "package": "npm run build && electron-builder",
+    "prepare": "husky",
+    "validate-timing": "ts-node src/validate-timing.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
   "build": {
     "appId": "com.konsulin.focus",
     "productName": "F.O.C.U.S. Assessment",
@@ -81,13 +86,15 @@
       "artifactName": "focus-${version}.AppImage"
     }
   },
-   "lint-staged": {
-     "**/*.{ts,tsx}": ["eslint --fix"]
-   },
-   "repository": {
-     "type": "git",
-     "url": "git+https://github.com/konsulin-care/focus.git"
-   },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/konsulin-care/focus.git"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

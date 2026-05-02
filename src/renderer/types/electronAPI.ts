@@ -43,11 +43,13 @@ export interface ElectronAPI {
   
    // Database API - safe query whitelist pattern
    queryDatabase: (command: string, params?: unknown[]) => Promise<unknown>;
-  
+   
   // Test Result API - GDPR compliant email capture
   saveTestResultWithConsent: (
     testData: string,
     email: string,
+    age: number,
+    gender: 'Male' | 'Female',
     consentGiven: boolean,
     consentTimestamp: string
   ) => Promise<void>;
@@ -56,6 +58,13 @@ export interface ElectronAPI {
   getTestConfig: () => Promise<TestConfig>;
   saveTestConfig: (config: TestConfig) => Promise<void>;
   resetTestConfig: () => Promise<void>;
+  
+  // Data Management
+  getAllSessions: () => Promise<SessionWithUser[]>;
+  getSessionWithUser: (sessionId: number) => Promise<SessionWithUser | undefined>;
+  getSessionTrials: (sessionId: number) => Promise<TrialData[]>;
+  updateSessionStatus: (sessionId: number, status: 'pending' | 'uploaded' | 'failed') => Promise<void>;
+  bulkDeleteSessions: (sessionIds: number[]) => Promise<{ deleted: number }>;
 }
 
 // Augment the Window interface to include electronAPI
@@ -63,4 +72,41 @@ declare global {
   interface Window {
     electronAPI: ElectronAPI;
   }
+}
+
+export interface SessionWithUser {
+  id: number;
+  test_date: string;
+  acs_score: number;
+  acs_interpretation: string;
+  mean_response_time_ms: number;
+  response_time_variability: number;
+  commission_errors: number;
+  omission_errors: number;
+  hits: number;
+  d_prime: number;
+  validity: string;
+  validity_reason?: string;
+  total_trials: number;
+  test_config: string;
+  upload_status: string;
+  uploaded_at?: string | null;
+  consent_given: boolean;
+  consent_timestamp?: string | null;
+  email: string;
+  age: number;
+  gender: 'Male' | 'Female';
+  is_generic: number;
+}
+
+export interface TrialData {
+  id: number;
+  test_session_id: number;
+  trial_index: number;
+  stimulus_type: 'target' | 'non-target';
+  response_correct: boolean | null;
+  response_time_ms: number | null;
+  is_anticipatory: boolean;
+  is_multiple_response: boolean;
+  follows_commission: boolean;
 }

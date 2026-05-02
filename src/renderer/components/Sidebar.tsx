@@ -13,12 +13,14 @@ export default function Sidebar() {
   const { t } = useTranslation('common');
   const { currentPage, setPage, isSidebarCollapsed, toggleSidebar } = useNavigation();
 
-  const navItems: { page: Page; icon: React.ReactNode; labelKey: string }[] = [
-    { page: 'home', icon: <Home size={20} strokeWidth={2} />, labelKey: 'nav.home' },
-    { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, labelKey: 'nav.test' },
-    { page: 'settings', icon: <Cog size={20} strokeWidth={2} />, labelKey: 'nav.settings' },
-    { page: 'about', icon: <Info size={20} strokeWidth={2} />, labelKey: 'nav.about' },
-  ];
+   const navItems: { page: Page; icon: React.ReactNode; labelKey: string }[] = [
+     { page: 'home', icon: <Home size={20} strokeWidth={2} />, labelKey: 'nav.home' },
+     { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, labelKey: 'nav.test' },
+     { page: 'data-management', icon: <div className="w-5 h-5 bg-gray-400 rounded-sm" />, labelKey: 'nav.dataManagement' },
+     { page: 'settings', icon: <Cog size={20} strokeWidth={2} />, labelKey: 'nav.settings' },
+     { page: 'about', icon: <Info size={20} strokeWidth={2} />, labelKey: 'nav.about' },
+   ];
+
 
   // Store logo element to avoid repetition
   const logoElement = (

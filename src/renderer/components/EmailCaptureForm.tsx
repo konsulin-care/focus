@@ -68,15 +68,17 @@ export function EmailCaptureForm({ testData, onSuccess, onSkip, lng }: EmailCapt
     setIsSubmitting(true);
     setErrors([]);
     
-    try {
-      const consentTimestamp = new Date().toISOString();
-      await window.electronAPI.saveTestResultWithConsent(
-        testData,
-        email,
-        consent,
-        consentTimestamp
-      );
-      onSuccess(subjectInfo);
+     try {
+       const consentTimestamp = new Date().toISOString();
+       await window.electronAPI.saveTestResultWithConsent(
+         testData,
+         email,
+         age,
+         gender as 'Male' | 'Female',
+         consent,
+         consentTimestamp
+       );
+       onSuccess(subjectInfo);
     } catch (error) {
       console.error('Failed to save test result:', error);
       setErrors([t('error.saveFailed')]);
