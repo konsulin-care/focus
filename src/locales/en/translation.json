@@ -254,8 +254,12 @@
     "trials": {
       "trial": "Trial",
       "type": "Type",
+      "outcome": "Outcome",
       "correct": "Correct",
       "rt": "RT (ms)",
+      "anticipatory": "Anticipatory",
+      "multiple": "Multiple Resp.",
+      "followsCommission": "Post-Commission",
       "loading": "Loading trials...",
       "empty": "No trials",
       "extractAll": "Extract All Trials"

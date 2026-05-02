@@ -13,13 +13,14 @@ import {
   getHighPrecisionTimeString, 
   TIMING_VALIDATION_PASSED 
 } from './timing';
-import { 
-  startTest, 
-  stopTest, 
-  recordResponse, 
-  setMainWindow 
+import {
+  startTest,
+  stopTest,
+  recordResponse,
+  setMainWindow
 } from './test-engine';
 import type { AttentionMetrics } from '@/renderer/types/trial';
+import { processTestEvents } from '@/shared/utils/trial-processing';
 
 // ===========================================
 // Timing Handlers
@@ -236,49 +237,37 @@ ipcMain.handle('save-test-result-with-consent', async (
          consentTimestamp
        ).lastInsertRowid;
 
-        // 3. Insert trial data
-        const trialStmt = currentDb.prepare(`
-          INSERT INTO trial_data (
-            test_session_id, trial_index, stimulus_type,
-            response_correct, response_time_ms, is_anticipatory
-          ) VALUES (?, ?, ?, ?, ?, ?)
-        `);
+         // 3. Insert trial data
+         // Use shared trial processing to compute full TrialResult[] with derived fields
+         const trialResults = processTestEvents(events, { totalTrials });
 
-        const trialsMap = new Map<number, { 
-          stimulus_type: string, 
-          response_correct: number | null, 
-          response_time_ms: number | null, 
-          is_anticipatory: number 
-        }>();
+         const trialStmt = currentDb.prepare(`
+           INSERT INTO trial_data (
+             test_session_id, trial_index, stimulus_type,
+             outcome,
+             response_correct, response_time_ms, is_anticipatory,
+             is_multiple_response, follows_commission
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         `);
 
-        for (const event of events) {
-          const idx = event.trialIndex;
-          if (!trialsMap.has(idx)) {
-            trialsMap.set(idx, {
-              stimulus_type: event.stimulusType,
-              response_correct: null,
-              response_time_ms: null,
-              is_anticipatory: 0
-            });
-          }
-          if (event.eventType === 'response') {
-            const t = trialsMap.get(idx)!;
-            t.response_correct = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
-            t.response_time_ms = event.responseTimeMs ?? null;
-            t.is_anticipatory = event.isAnticipatory ? 1 : 0;
-          }
-        }
+         for (const trial of trialResults) {
+           // Derive response_correct: hit=1, commission=0, omission/correct-rejection=NULL
+           let responseCorrect: number | null = null;
+           if (trial.outcome === 'hit') responseCorrect = 1;
+           else if (trial.outcome === 'commission') responseCorrect = 0;
 
-        for (const [idx, data] of trialsMap) {
-          trialStmt.run(
-            sessionId,
-            idx,
-            data.stimulus_type,
-            data.response_correct,
-            data.response_time_ms,
-            data.is_anticipatory
-          );
-        }
+           trialStmt.run(
+             sessionId,
+             trial.trialIndex,
+             trial.stimulusType,
+             trial.outcome,
+             responseCorrect,
+             trial.responseTimeMs,
+             trial.isAnticipatory ? 1 : 0,
+             trial.isMultipleResponse ? 1 : 0,
+             trial.followsCommission ? 1 : 0
+           );
+         }
 
       return sessionId;
     })();

@@ -7,7 +7,7 @@
 import { TestEvent } from '@/renderer/types/electronAPI';
 import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
 import { computeAcsValues } from './acs-shared';
-import { TRIAL_CONSTANTS } from './trial-constants';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**
  * Calculate comprehensive attention metrics with ACS scoring.

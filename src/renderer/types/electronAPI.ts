@@ -106,6 +106,7 @@ export interface TrialData {
   test_session_id: number;
   trial_index: number;
   stimulus_type: 'target' | 'non-target';
+  outcome: 'hit' | 'omission' | 'commission' | 'correct-rejection' | null;
   response_correct: boolean | null;
   response_time_ms: number | null;
   is_anticipatory: boolean;

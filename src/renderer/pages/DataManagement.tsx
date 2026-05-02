@@ -126,26 +126,31 @@ export default function DataManagement() {
           trials: await window.electronAPI.getSessionTrials(s.id)
         })));
         downloadFile(JSON.stringify(data, null, 2), `${filename}.json`, 'application/json');
-      } else if (mode === 'full-csv') {
-        const rows: string[] = [];
-        const headers = ['Email','Age','Gender','ACS Score','Interpretation','Date','Status','Trial','Type','Correct','RT'];
-        for (const s of selected) {
-          const trials = await window.electronAPI.getSessionTrials(s.id);
-          if (trials.length === 0) {
-            rows.push([s.email, s.age.toString(), s.gender, s.acs_score.toFixed(2), s.acs_interpretation, s.test_date, s.upload_status, '', '', '', ''].join(','));
-          } else {
-            for (const t of trials) {
-              rows.push([
-                s.email, s.age.toString(), s.gender, s.acs_score.toFixed(2), s.acs_interpretation, s.test_date, s.upload_status,
-                t.trial_index.toString(), t.stimulus_type,
-                t.response_correct === null ? 'null' : t.response_correct ? 'true' : 'false',
-                (t.response_time_ms ?? '').toString()
-              ].join(','));
-            }
-          }
-        }
-        downloadFile([headers, ...rows].join('\n'), `${filename}.csv`, 'text/csv');
-      }
+       } else if (mode === 'full-csv') {
+         const rows: string[] = [];
+         const headers = ['Email','Age','Gender','ACS Score','Interpretation','Date','Status','Trial','Type','Outcome','Correct','RT','Anticipatory','Multiple','FollowsCommission'];
+         for (const s of selected) {
+           const trials = await window.electronAPI.getSessionTrials(s.id);
+           if (trials.length === 0) {
+             rows.push([s.email, s.age.toString(), s.gender, s.acs_score.toFixed(2), s.acs_interpretation, s.test_date, s.upload_status, '', '', '', '', '', '', '', ''].join(','));
+           } else {
+             for (const t of trials) {
+               rows.push([
+                 s.email, s.age.toString(), s.gender, s.acs_score.toFixed(2), s.acs_interpretation, s.test_date, s.upload_status,
+                 t.trial_index.toString(),
+                 t.stimulus_type,
+                 t.outcome ?? '',
+                 t.response_correct === null ? 'null' : t.response_correct ? 'true' : 'false',
+                 (t.response_time_ms ?? '').toString(),
+                 t.is_anticipatory ? 'true' : 'false',
+                 t.is_multiple_response ? 'true' : 'false',
+                 t.follows_commission ? 'true' : 'false'
+               ].join(','));
+             }
+           }
+         }
+         downloadFile([headers, ...rows].join('\n'), `${filename}.csv`, 'text/csv');
+       }
     };
 
    const fetchTrials = async (sessionId: number) => {
@@ -168,27 +173,35 @@ export default function DataManagement() {
      URL.revokeObjectURL(url);
    };
 
-   const handleExtractTrials = (sessionId: number) => {
-     const trials = sessionTrials[sessionId];
-     if (!trials || trials.length === 0) {
-       console.warn('No trials available for export');
-       return;
-     }
-     const headers = [
-       t('dataManagement.trials.trial'),
-       t('dataManagement.trials.type'),
-       t('dataManagement.trials.correct'),
-       t('dataManagement.trials.rt')
-     ];
-     const rows = trials.map(t => [
-       t.trial_index,
-       t.stimulus_type,
-       t.response_correct ?? '',
-       t.response_time_ms ?? ''
-     ]);
-     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
-     downloadFile(csvContent, `trials_session_${sessionId}.csv`, 'text/csv');
-   };
+    const handleExtractTrials = (sessionId: number) => {
+      const trials = sessionTrials[sessionId];
+      if (!trials || trials.length === 0) {
+        console.warn('No trials available for export');
+        return;
+      }
+      const headers = [
+        t('dataManagement.trials.trial'),
+        t('dataManagement.trials.type'),
+        t('dataManagement.trials.outcome'),
+        t('dataManagement.trials.correct'),
+        t('dataManagement.trials.rt'),
+        t('dataManagement.trials.anticipatory'),
+        t('dataManagement.trials.multiple'),
+        t('dataManagement.trials.followsCommission')
+      ];
+      const rows = trials.map(t => [
+        t.trial_index,
+        t.stimulus_type,
+        t.outcome ?? '',
+        t.response_correct ?? '',
+        t.response_time_ms ?? '',
+        t.is_anticipatory ? 'true' : 'false',
+        t.is_multiple_response ? 'true' : 'false',
+        t.follows_commission ? 'true' : 'false'
+      ]);
+      const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+      downloadFile(csvContent, `trials_session_${sessionId}.csv`, 'text/csv');
+    };
 
    const toggleRow = (id: number) => {
      const expanding = !expandedRows[id];
@@ -479,44 +492,52 @@ export default function DataManagement() {
                               <div className="text-lg font-bold">{(session.d_prime || 0).toFixed(2)}</div>
                             </div>
                           </div>
-                          <div className="bg-white border rounded-lg overflow-hidden">
-                            <table className="w-full text-left text-xs">
-                              <thead className="bg-gray-100 border-b">
-                                <tr>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.trial')}</th>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.type')}</th>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.correct')}</th>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.rt')}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sessionTrials[session.id] === undefined ? (
-                                  <tr>
-                                    <td colSpan={4} className="px-3 py-4 text-center text-gray-400">
-                                      {t('dataManagement.trials.loading')}
-                                    </td>
-                                  </tr>
-                                ) : (sessionTrials[session.id]?.length ?? 0) === 0 ? (
-                                  <tr>
-                                    <td colSpan={4} className="px-3 py-4 text-center text-gray-400">
-                                      {t('dataManagement.trials.empty')}
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  sessionTrials[session.id].slice(0, 10).map((trial, idx) => (
-                                    <tr key={idx} className="border-b hover:bg-gray-50">
-                                      <td className="px-3 py-2">{trial.trial_index}</td>
-                                      <td className="px-3 py-2">{trial.stimulus_type}</td>
-                                      <td className="px-3 py-2">
-                                        {trial.response_correct === null ? '-' : trial.response_correct ? '✓' : '✗'}
-                                      </td>
-                                      <td className="px-3 py-2">{trial.response_time_ms ?? '-'}</td>
-                                    </tr>
-                                  ))
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                           <div className="bg-white border rounded-lg overflow-hidden">
+                             <table className="w-full text-left text-xs">
+                               <thead className="bg-gray-100 border-b">
+                                 <tr>
+                                   <th className="px-3 py-2">{t('dataManagement.trials.trial')}</th>
+                                   <th className="px-3 py-2">{t('dataManagement.trials.type')}</th>
+                                   <th className="px-3 py-2">{t('dataManagement.trials.outcome')}</th>
+                                   <th className="px-3 py-2">{t('dataManagement.trials.correct')}</th>
+                                   <th className="px-3 py-2">{t('dataManagement.trials.rt')}</th>
+                                   <th className="px-3 py-2" title={t('dataManagement.trials.anticipatory')}>{t('dataManagement.trials.anticipatory')}</th>
+                                   <th className="px-3 py-2" title={t('dataManagement.trials.multiple')}>{t('dataManagement.trials.multiple')}</th>
+                                   <th className="px-3 py-2" title={t('dataManagement.trials.followsCommission')}>{t('dataManagement.trials.followsCommission')}</th>
+                                 </tr>
+                               </thead>
+                               <tbody>
+                                 {sessionTrials[session.id] === undefined ? (
+                                   <tr>
+                                     <td colSpan={8} className="px-3 py-4 text-center text-gray-400">
+                                       {t('dataManagement.trials.loading')}
+                                     </td>
+                                   </tr>
+                                 ) : (sessionTrials[session.id]?.length ?? 0) === 0 ? (
+                                   <tr>
+                                     <td colSpan={8} className="px-3 py-4 text-center text-gray-400">
+                                       {t('dataManagement.trials.empty')}
+                                     </td>
+                                   </tr>
+                                 ) : (
+                                   sessionTrials[session.id].slice(0, 10).map((trial, idx) => (
+                                     <tr key={idx} className="border-b hover:bg-gray-50">
+                                       <td className="px-3 py-2">{trial.trial_index}</td>
+                                       <td className="px-3 py-2">{trial.stimulus_type}</td>
+                                       <td className="px-3 py-2">{trial.outcome ?? '-'}</td>
+                                       <td className="px-3 py-2">
+                                         {trial.response_correct === null ? '-' : trial.response_correct ? '✓' : '✗'}
+                                       </td>
+                                       <td className="px-3 py-2">{trial.response_time_ms ?? '-'}</td>
+                                       <td className="px-3 py-2 text-center">{trial.is_anticipatory ? '✓' : ''}</td>
+                                       <td className="px-3 py-2 text-center">{trial.is_multiple_response ? '✓' : ''}</td>
+                                       <td className="px-3 py-2 text-center">{trial.follows_commission ? '✓' : ''}</td>
+                                     </tr>
+                                   ))
+                                 )}
+                               </tbody>
+                             </table>
+                           </div>
                           <div className="mt-3 flex justify-end">
                             <button
                               onClick={() => handleExtractTrials(session.id)}

@@ -12,7 +12,7 @@ import { getNormativeStats, NormativeStats } from './normative-data';
 import { calculateDPrime } from './clinical-metrics';
 import { processTestEvents } from './trial-processing';
 import { calculateMean, calculateStdDevWithMean } from './basic-stats';
-import { TRIAL_CONSTANTS } from './trial-constants';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**
  * Intermediate calculation results shared between both consumers.

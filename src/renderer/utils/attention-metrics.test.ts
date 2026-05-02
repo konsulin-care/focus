@@ -15,7 +15,7 @@ import { calculateAttentionMetrics } from './attention-metrics';
 import { calculateVariability } from './basic-stats';
 import { calculateDPrime as clinicalCalculateDPrime } from './clinical-metrics';
 import { getNormativeStats } from './normative-data';
-import { TRIAL_CONSTANTS } from './trial-constants';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 import { TestEvent } from '@/renderer/types/electronAPI';
 import { SubjectInfo } from '@/renderer/types/trial';
 

@@ -9,15 +9,15 @@ import * as path from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
-import { 
-  DatabaseQueryCommand, 
-  QueryWhitelistEntry,
-  TestEvent
+import {
+  DatabaseQueryCommand,
+  QueryWhitelistEntry
 } from './types';
-import { 
-  getOrCreateEncryptionKey, 
-  migrateToEncrypted 
+import {
+  getOrCreateEncryptionKey,
+  migrateToEncrypted
 } from './encryption';
+import { processTestEvents } from '@/shared/utils/trial-processing';
 
 interface LegacyRow {
   id: number;
@@ -130,18 +130,18 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
      paramCount: 1,
      type: 'select-one',
    },
-   'get-session-trials': {
-     sql: `
-       SELECT id, test_session_id, trial_index, stimulus_type,
-              response_correct, response_time_ms, is_anticipatory,
-              is_multiple_response, follows_commission
-       FROM trial_data
-       WHERE test_session_id = ?
-       ORDER BY trial_index ASC
-     `,
-     paramCount: 1,
-     type: 'select-many',
-   },
+    'get-session-trials': {
+      sql: `
+        SELECT id, test_session_id, trial_index, stimulus_type, outcome,
+               response_correct, response_time_ms, is_anticipatory,
+               is_multiple_response, follows_commission
+        FROM trial_data
+        WHERE test_session_id = ?
+        ORDER BY trial_index ASC
+      `,
+      paramCount: 1,
+      type: 'select-many',
+    },
   'update-session-status': {
     sql: `UPDATE test_sessions SET upload_status = ?, uploaded_at = ? WHERE id = ?`,
     paramCount: 3,
@@ -251,22 +251,50 @@ export function initDatabase(): void {
          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
        );
 
-       CREATE TABLE IF NOT EXISTS trial_data (
-         id INTEGER PRIMARY KEY AUTOINCREMENT,
-         test_session_id INTEGER NOT NULL,
-         trial_index INTEGER,
-         stimulus_type TEXT,
-         response_correct BOOLEAN,
-         response_time_ms REAL,
-         is_anticipatory BOOLEAN,
-         is_multiple_response BOOLEAN,
-         follows_commission BOOLEAN,
-         FOREIGN KEY (test_session_id) REFERENCES test_sessions(id) ON DELETE CASCADE
-       );
-     `);
-     
-     // Migration from legacy test_results
-     const legacyTableExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'").get();
+        CREATE TABLE IF NOT EXISTS trial_data (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          test_session_id INTEGER NOT NULL,
+          trial_index INTEGER,
+          stimulus_type TEXT,
+          outcome TEXT,
+          response_correct BOOLEAN,
+          response_time_ms REAL,
+          is_anticipatory BOOLEAN,
+          is_multiple_response BOOLEAN,
+          follows_commission BOOLEAN,
+          FOREIGN KEY (test_session_id) REFERENCES test_sessions(id) ON DELETE CASCADE
+        );
+      `);
+      
+      // Migration 1: Add outcome column if missing (for databases created before outcome was added)
+      const outcomeColumnExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='trial_data' AND sql LIKE '%outcome%'").get();
+      if (!outcomeColumnExists) {
+        console.log('[DB] Migrating trial_data: adding outcome column...');
+        try {
+          currentDb.exec('ALTER TABLE trial_data ADD COLUMN outcome TEXT');
+          console.log('[DB] Added outcome column to trial_data');
+          
+          // Backfill outcome values from existing data (stimulus_type + response_correct)
+          // Outcome derivation: target+correct=hit, target+no-response=omission,
+          // non-target+response=commission, non-target+no-response=correct-rejection
+          currentDb.exec(`
+            UPDATE trial_data
+            SET outcome = CASE
+              WHEN stimulus_type = 'target' AND response_correct = 1 THEN 'hit'
+              WHEN stimulus_type = 'target' AND response_correct IS NULL THEN 'omission'
+              WHEN stimulus_type = 'non-target' AND response_correct = 0 THEN 'commission'
+              WHEN stimulus_type = 'non-target' AND response_correct IS NULL THEN 'correct-rejection'
+              ELSE NULL
+            END
+          `);
+          console.log('[DB] Backfilled outcome values for existing trial_data');
+        } catch (e) {
+          console.error('[DB] Failed to add outcome column:', e);
+        }
+      }
+      
+      // Migration from legacy test_results
+      const legacyTableExists = currentDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'").get();
      if (legacyTableExists) {
        console.log('[DB] Migrating legacy test_results to normalized schema...');
        const legacyResults = currentDb.prepare('SELECT * FROM test_results').all() as LegacyRow[];
@@ -312,38 +340,33 @@ export function initDatabase(): void {
             ).lastInsertRowid;
            
             // 4. Trials
+            // Use shared processing to compute derived fields (outcome, followsCommission, isMultipleResponse)
+            const trialResults = processTestEvents(testData.events, { totalTrials: 648 });
+
             const trialStmt = currentDb.prepare(`
-              INSERT INTO trial_data (test_session_id, trial_index, stimulus_type, response_correct, response_time_ms, is_anticipatory)
-              VALUES (?, ?, ?, ?, ?, ?)
+              INSERT INTO trial_data (
+                test_session_id, trial_index, stimulus_type, outcome,
+                response_correct, response_time_ms, is_anticipatory,
+                is_multiple_response, follows_commission
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
-            
-            const trialsMap = new Map<number, { 
-              type: string, 
-              correct: number | null, 
-              rt: number | null, 
-              anticipatory: number 
-            }>();
 
-            testData.events.forEach((event: TestEvent) => {
-              const idx = event.trialIndex;
-              if (!trialsMap.has(idx)) {
-                trialsMap.set(idx, {
-                  type: event.stimulusType,
-                  correct: null,
-                  rt: null,
-                  anticipatory: 0
-                });
-              }
-              if (event.eventType === 'response') {
-                const t = trialsMap.get(idx)!;
-                t.correct = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
-                t.rt = event.responseTimeMs ?? null;
-                t.anticipatory = event.isAnticipatory ? 1 : 0;
-              }
-            });
+            for (const trial of trialResults) {
+              let responseCorrect: number | null = null;
+              if (trial.outcome === 'hit') responseCorrect = 1;
+              else if (trial.outcome === 'commission') responseCorrect = 0;
 
-            for (const [idx, data] of trialsMap) {
-              trialStmt.run(sessionId, idx, data.type, data.correct, data.rt, data.anticipatory);
+              trialStmt.run(
+                sessionId,
+                trial.trialIndex,
+                trial.stimulusType,
+                trial.outcome,
+                responseCorrect,
+                trial.responseTimeMs,
+                trial.isAnticipatory ? 1 : 0,
+                trial.isMultipleResponse ? 1 : 0,
+                trial.followsCommission ? 1 : 0
+              );
             }
          }
          currentDb.exec('DROP TABLE test_results');

@@ -9,7 +9,7 @@ import { TestEvent } from '@/renderer/types/electronAPI';
 import { SubjectInfo, AcsCalculationDetails } from '@/renderer/types/trial';
 import { inverseNormalCDF, clampProbability } from './distributions';
 import { computeAcsValues, AcsIntermediateResult } from './acs-shared';
-import { TRIAL_CONSTANTS } from './trial-constants';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**
  * Calculate z-score magnitude (absolute value of z-score).

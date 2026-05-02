@@ -254,8 +254,12 @@
     "trials": {
       "trial": "Percobaan",
       "type": "Jenis",
+      "outcome": "Hasil",
       "correct": "Benar",
       "rt": "RT (md)",
+      "anticipatory": "Antisipasi",
+      "multiple": "Resp. Ganda",
+      "followsCommission": "Pasca-Komisi",
       "loading": "Memuat percobaan...",
       "empty": "Tidak ada percobaan",
       "extractAll": "Ekstrak Semua Percobaan"
