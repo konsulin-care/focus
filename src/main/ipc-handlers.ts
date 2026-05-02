@@ -236,28 +236,49 @@ ipcMain.handle('save-test-result-with-consent', async (
          consentTimestamp
        ).lastInsertRowid;
 
-       // 3. Insert trial data
-       const trialStmt = currentDb.prepare(`
-         INSERT INTO trial_data (
-           test_session_id, trial_index, stimulus_type,
-           response_correct, response_time_ms, is_anticipatory
-         ) VALUES (?, ?, ?, ?, ?, ?)
-       `);
-       for (const event of events) {
-         if (event.eventType === 'response') {
-           // Convert booleans to numbers for SQLite (booleans not directly bindable)
-           const responseCorrect = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
-           const isAnticipatory = event.isAnticipatory ? 1 : 0;
-           trialStmt.run(
-             sessionId,
-             event.trialIndex,
-             event.stimulusType,
-             responseCorrect,
-             event.responseTimeMs ?? null,
-             isAnticipatory
-           );
-         }
-       }
+        // 3. Insert trial data
+        const trialStmt = currentDb.prepare(`
+          INSERT INTO trial_data (
+            test_session_id, trial_index, stimulus_type,
+            response_correct, response_time_ms, is_anticipatory
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `);
+
+        const trialsMap = new Map<number, { 
+          stimulus_type: string, 
+          response_correct: number | null, 
+          response_time_ms: number | null, 
+          is_anticipatory: number 
+        }>();
+
+        for (const event of events) {
+          const idx = event.trialIndex;
+          if (!trialsMap.has(idx)) {
+            trialsMap.set(idx, {
+              stimulus_type: event.stimulusType,
+              response_correct: null,
+              response_time_ms: null,
+              is_anticipatory: 0
+            });
+          }
+          if (event.eventType === 'response') {
+            const t = trialsMap.get(idx)!;
+            t.response_correct = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
+            t.response_time_ms = event.responseTimeMs ?? null;
+            t.is_anticipatory = event.isAnticipatory ? 1 : 0;
+          }
+        }
+
+        for (const [idx, data] of trialsMap) {
+          trialStmt.run(
+            sessionId,
+            idx,
+            data.stimulus_type,
+            data.response_correct,
+            data.response_time_ms,
+            data.is_anticipatory
+          );
+        }
 
       return sessionId;
     })();

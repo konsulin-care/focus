@@ -311,18 +311,40 @@ export function initDatabase(): void {
               JSON.stringify({}), row.upload_status, row.consent_given ? 1 : 0, row.consent_timestamp
             ).lastInsertRowid;
            
-           // 4. Trials
-           const trialStmt = currentDb.prepare(`
-             INSERT INTO trial_data (test_session_id, trial_index, stimulus_type, response_correct, response_time_ms, is_anticipatory)
-             VALUES (?, ?, ?, ?, ?, ?)
-           `);
+            // 4. Trials
+            const trialStmt = currentDb.prepare(`
+              INSERT INTO trial_data (test_session_id, trial_index, stimulus_type, response_correct, response_time_ms, is_anticipatory)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `);
+            
+            const trialsMap = new Map<number, { 
+              type: string, 
+              correct: number | null, 
+              rt: number | null, 
+              anticipatory: number 
+            }>();
+
             testData.events.forEach((event: TestEvent) => {
-             if (event.eventType === 'response') {
-                const responseCorrect = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
-                const isAnticipatory = event.isAnticipatory ? 1 : 0;
-                trialStmt.run(sessionId, event.trialIndex, event.stimulusType, responseCorrect, event.responseTimeMs, isAnticipatory);
-             }
-           });
+              const idx = event.trialIndex;
+              if (!trialsMap.has(idx)) {
+                trialsMap.set(idx, {
+                  type: event.stimulusType,
+                  correct: null,
+                  rt: null,
+                  anticipatory: 0
+                });
+              }
+              if (event.eventType === 'response') {
+                const t = trialsMap.get(idx)!;
+                t.correct = event.responseCorrect === true ? 1 : event.responseCorrect === false ? 0 : null;
+                t.rt = event.responseTimeMs ?? null;
+                t.anticipatory = event.isAnticipatory ? 1 : 0;
+              }
+            });
+
+            for (const [idx, data] of trialsMap) {
+              trialStmt.run(sessionId, idx, data.type, data.correct, data.rt, data.anticipatory);
+            }
          }
          currentDb.exec('DROP TABLE test_results');
        })();
