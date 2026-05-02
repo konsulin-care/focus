@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight, Database } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { useNavigation, Page } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
@@ -18,7 +18,7 @@ export default function Sidebar() {
     { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, labelKey: 'nav.test' },
     {
       page: 'data-management',
-      icon: <div className="w-5 h-5 bg-gray-400 rounded-sm" />,
+      icon: <Database size={20} strokeWidth={2} />,
       labelKey: 'nav.dataManagement',
     },
     { page: 'settings', icon: <Cog size={20} strokeWidth={2} />, labelKey: 'nav.settings' },

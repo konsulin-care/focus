@@ -236,22 +236,6 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Data Management */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            {t('settings.dataManagement.title')}
-          </h2>
-          <p className="text-gray-600 mb-4">{t('settings.dataManagement.description')}</p>
-          <div className="space-y-3">
-            <button className="w-full text-left px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-              {t('settings.dataManagement.pendingUploads', { count: 0 })}
-            </button>
-            <button className="w-full text-left px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-              {t('settings.dataManagement.clearCache')}
-            </button>
-          </div>
-        </div>
-
         {/* Back Button */}
         <button
           onClick={() => setPage('home')}

@@ -399,7 +399,8 @@ export default function DataManagement() {
           <div className="relative" ref={extractRef}>
             <button
               onClick={() => setIsExtractOpen(!isExtractOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-[#ECEFF4] rounded-md hover:bg-gray-50 text-sm font-medium"
+              disabled={selectedIds.size === 0}
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-[#ECEFF4] rounded-md hover:bg-gray-50 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download size={16} />
               Extract
