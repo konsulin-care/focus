@@ -358,7 +358,11 @@ export function initDatabase(): void {
             const varZ = (variability - normStats.variabilityMean) / normStats.variabilitySD;
             const dpZ = (dPrime - normStats.dPrimeMean) / normStats.dPrimeSD;
 
-            acsScore = (rtZ ?? 0) + (varZ ?? 0) + (dpZ ?? 0) + TRIAL_CONSTANTS.ACS_CONSTANT;
+            acsScore =
+              (isFinite(rtZ) ? rtZ : 0) +
+              (isFinite(varZ) ? varZ : 0) +
+              (isFinite(dpZ) ? dpZ : 0) +
+              TRIAL_CONSTANTS.ACS_CONSTANT;
 
             if (acsScore >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {
               acsInterpretation = 'Normal';

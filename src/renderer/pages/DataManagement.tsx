@@ -655,7 +655,7 @@ export default function DataManagement() {
         </div>
       </div>
 
-      {sessions.length === 0 && !loading ? (
+      {sessions.length === 0 ? (
         <EmptyState t={t} />
       ) : (
         <>

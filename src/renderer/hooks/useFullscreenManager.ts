@@ -25,15 +25,9 @@ export function useFullscreenManager(
       if (element.requestFullscreen) {
         await element.requestFullscreen();
       } else if (element.webkitRequestFullscreen) {
-        const webkitRequest = element.webkitRequestFullscreen;
-        if (webkitRequest) {
-          await webkitRequest.call(element);
-        }
+        await element.webkitRequestFullscreen.call(element);
       } else if (element.msRequestFullscreen) {
-        const msRequest = element.msRequestFullscreen;
-        if (msRequest) {
-          await msRequest.call(element);
-        }
+        await element.msRequestFullscreen.call(element);
       }
     } catch (error) {
       console.error('[useFullscreenManager] Failed to request fullscreen:', error);
@@ -46,15 +40,9 @@ export function useFullscreenManager(
       if (document.exitFullscreen) {
         await document.exitFullscreen();
       } else if (document.webkitExitFullscreen) {
-        const webkitExit = document.webkitExitFullscreen;
-        if (webkitExit) {
-          await webkitExit.call(document);
-        }
+        await document.webkitExitFullscreen.call(document);
       } else if (document.msExitFullscreen) {
-        const msExit = document.msExitFullscreen;
-        if (msExit) {
-          await msExit.call(document);
-        }
+        await document.msExitFullscreen.call(document);
       }
     } catch (error) {
       console.error('[useFullscreenManager] Failed to exit fullscreen:', error);
