@@ -3,7 +3,7 @@ import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight, Database } from
 import { useTranslation } from '@/i18n';
 import { useNavigation, Page } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
-import logoUrl from '@/../public/images/logo.svg';
+import { Logo } from '.';
 
 /**
  * Sidebar component for application navigation
@@ -28,7 +28,7 @@ export default function Sidebar() {
   // Store logo element to avoid repetition
   const logoElement = (
     <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0">
-      <img src={logoUrl} alt="F.O.C.U.S. Logo" className="w-full h-full" />
+      <Logo className="w-full h-full" aria-label="F.O.C.U.S. Logo" />
     </div>
   );
 

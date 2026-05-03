@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n';
 import {
   Download,
@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Filter,
 } from 'lucide-react';
-import { TrialData } from '@/renderer/types/electronAPI';
+import type { TrialData } from '@/renderer/types/electronAPI';
 
 interface Session {
   id: number;
@@ -130,7 +130,10 @@ const SessionDetails: React.FC<SessionDetailsProps> = ({ session, trials, onExtr
 
         <div className="mt-3 flex justify-end">
           <button
-            onClick={() => onExtract(session.id)}
+            type="button"
+            onClick={() => {
+              onExtract(session.id);
+            }}
             className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 text-sm font-medium"
           >
             <Download size={14} />
@@ -166,7 +169,7 @@ export default function DataManagement() {
   const extractRef = useRef<HTMLDivElement>(null);
 
   /** Fetch all sessions from main process. */
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const results = (await window.electronAPI.getAllSessions()) as Session[];
@@ -176,7 +179,7 @@ export default function DataManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   /** Fetch trials for a specific session. */
   const fetchTrials = async (sessionId: number) => {
@@ -368,6 +371,23 @@ export default function DataManagement() {
     setPage(0);
   };
 
+  /** Handle session status change from table select. */
+  const handleStatusChange = useCallback(
+    async (sessionId: number, e: React.ChangeEvent<HTMLSelectElement>) => {
+      e.stopPropagation();
+      const status = e.target.value as 'pending' | 'uploaded' | 'failed';
+      try {
+        await window.electronAPI.updateSessionStatus(sessionId, status);
+        setSessions((prev) =>
+          prev.map((s) => (s.id === sessionId ? { ...s, upload_status: status } : s))
+        );
+      } catch (error) {
+        console.error('Failed to update session status:', error);
+      }
+    },
+    []
+  );
+
   /** Return color class based on gender and generic flag. */
   const getGenderColor = (gender: string, isGeneric: number) => {
     const color = gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500';
@@ -412,9 +432,25 @@ export default function DataManagement() {
     }
   };
 
+  /** Clear expired/uploaded records from the database. */
+  const handleClearCache = useCallback(async () => {
+    const ok = await window.electronAPI.showMessageBox({
+      type: 'question',
+      title: t('confirm.title'),
+      message: t('dataManagement.confirm.clearCache'),
+      buttons: [t('button.cancel'), t('button.ok')],
+      defaultId: 1,
+      cancelId: 0,
+    });
+    if (ok) {
+      void window.electronAPI.queryDatabase('cleanup-expired-records');
+      fetchData();
+    }
+  }, [t, fetchData]);
+
   useEffect(() => {
-    fetchData();
-  }, []);
+    void fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -426,7 +462,9 @@ export default function DataManagement() {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Filtering
@@ -487,7 +525,10 @@ export default function DataManagement() {
           {/* Filter dropdown */}
           <div className="relative" ref={filterRef}>
             <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              type="button"
+              onClick={() => {
+                setIsFilterOpen(!isFilterOpen);
+              }}
               className="p-2 bg-white border border-[#ECEFF4] rounded-md hover:bg-gray-50"
               title="Filter"
             >
@@ -501,7 +542,9 @@ export default function DataManagement() {
                     <input
                       type="checkbox"
                       checked={statusFilter.has('pending')}
-                      onChange={() => toggleStatusFilter('pending')}
+                      onChange={() => {
+                        toggleStatusFilter('pending');
+                      }}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{t('dataManagement.filterPending')}</span>
@@ -510,7 +553,9 @@ export default function DataManagement() {
                     <input
                       type="checkbox"
                       checked={statusFilter.has('uploaded')}
-                      onChange={() => toggleStatusFilter('uploaded')}
+                      onChange={() => {
+                        toggleStatusFilter('uploaded');
+                      }}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{t('dataManagement.filterUploaded')}</span>
@@ -519,7 +564,9 @@ export default function DataManagement() {
                     <input
                       type="checkbox"
                       checked={statusFilter.has('failed')}
-                      onChange={() => toggleStatusFilter('failed')}
+                      onChange={() => {
+                        toggleStatusFilter('failed');
+                      }}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{t('dataManagement.filterFailed')}</span>
@@ -532,7 +579,10 @@ export default function DataManagement() {
           {/* Extract dropdown */}
           <div className="relative" ref={extractRef}>
             <button
-              onClick={() => setIsExtractOpen(!isExtractOpen)}
+              type="button"
+              onClick={() => {
+                setIsExtractOpen(!isExtractOpen);
+              }}
               disabled={selectedIds.size === 0}
               className="flex items-center gap-2 px-3 py-2 bg-white border border-[#ECEFF4] rounded-md hover:bg-gray-50 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -549,7 +599,7 @@ export default function DataManagement() {
                 <div className="py-1">
                   <button
                     onClick={() => {
-                      handleExport('summary-csv');
+                      void handleExport('summary-csv');
                       setIsExtractOpen(false);
                     }}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -558,7 +608,7 @@ export default function DataManagement() {
                   </button>
                   <button
                     onClick={() => {
-                      handleExport('summary-json');
+                      void handleExport('summary-json');
                       setIsExtractOpen(false);
                     }}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -567,7 +617,7 @@ export default function DataManagement() {
                   </button>
                   <button
                     onClick={() => {
-                      handleExport('full-csv');
+                      void handleExport('full-csv');
                       setIsExtractOpen(false);
                     }}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -576,7 +626,7 @@ export default function DataManagement() {
                   </button>
                   <button
                     onClick={() => {
-                      handleExport('full-json');
+                      void handleExport('full-json');
                       setIsExtractOpen(false);
                     }}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -590,7 +640,8 @@ export default function DataManagement() {
 
           {/* Bulk delete - rightmost */}
           <button
-            onClick={handleBulkDelete}
+            type="button"
+            onClick={() => void handleBulkDelete()}
             disabled={selectedIds.size === 0}
             className="p-2 bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50"
             title={t('dataManagement.bulkDelete')}
@@ -630,7 +681,9 @@ export default function DataManagement() {
                     <th
                       key={col.key}
                       className="px-4 py-3 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort(col.key as keyof Session)}
+                      onClick={() => {
+                        handleSort(col.key as keyof Session);
+                      }}
                     >
                       <div className="flex items-center gap-2">
                         {col.label}
@@ -646,12 +699,15 @@ export default function DataManagement() {
                   <React.Fragment key={session.id}>
                     <tr
                       className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => toggleRow(session.id)}
+                      onClick={() => {
+                        toggleRow(session.id);
+                      }}
                     >
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(session.id)}
+                          onClick={(e) => e.stopPropagation()}
                           onChange={(e) => {
                             e.stopPropagation();
                             const next = new Set(selectedIds);
@@ -688,18 +744,16 @@ export default function DataManagement() {
                       <td className="px-4 py-3">
                         {new Date(session.test_date).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
                         <select
                           value={session.upload_status}
-                          onChange={async (e) => {
-                            e.stopPropagation();
-                            const status = e.target.value as 'pending' | 'uploaded' | 'failed';
-                            await window.electronAPI.updateSessionStatus(session.id, status);
-                            setSessions((prev) =>
-                              prev.map((s) =>
-                                s.id === session.id ? { ...s, upload_status: status } : s
-                              )
-                            );
+                          onChange={(e) => {
+                            void handleStatusChange(session.id, e);
                           }}
                           className={`px-2 py-1 rounded text-xs border ${
                             session.upload_status === 'uploaded'
@@ -739,19 +793,9 @@ export default function DataManagement() {
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={async () => {
-                  const ok = await window.electronAPI.showMessageBox({
-                    type: 'question',
-                    title: t('confirm.title'),
-                    message: t('dataManagement.confirm.clearCache'),
-                    buttons: [t('button.cancel'), t('button.ok')],
-                    defaultId: 1,
-                    cancelId: 0,
-                  });
-                  if (ok) {
-                    window.electronAPI.queryDatabase('cleanup-expired-records');
-                    fetchData();
-                  }
+                type="button"
+                onClick={() => {
+                  void handleClearCache();
                 }}
                 className="px-3 py-2 border border-[#ECEFF4] rounded-md text-sm font-medium hover:bg-gray-50"
               >
@@ -771,7 +815,10 @@ export default function DataManagement() {
                   <option value={100}>100</option>
                 </select>
                 <button
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  type="button"
+                  onClick={() => {
+                    setPage((p) => Math.max(0, p - 1));
+                  }}
                   disabled={page === 0}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -781,7 +828,10 @@ export default function DataManagement() {
                   Page {page + 1} of {totalPages}
                 </span>
                 <button
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  type="button"
+                  onClick={() => {
+                    setPage((p) => Math.min(totalPages - 1, p + 1));
+                  }}
                   disabled={page >= totalPages - 1}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"
                 >

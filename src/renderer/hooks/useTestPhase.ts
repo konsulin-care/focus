@@ -56,7 +56,9 @@ export function useTestPhase(): UseTestPhaseReturn {
     if (phase !== 'countdown') return;
 
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      const timer = setTimeout(() => {
+        setCountdown((c) => c - 1);
+      }, 1000);
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
       // Only start when countdown transitions from 1 to 0

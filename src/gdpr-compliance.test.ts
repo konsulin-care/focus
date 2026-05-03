@@ -23,8 +23,7 @@ import * as crypto from 'node:crypto';
  * Validate email format
  */
 function validateEmail(email: string): boolean {
-  const emailRegex =
-    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
 
@@ -77,7 +76,6 @@ describe('GDPR Compliance', () => {
       expect(validateEmail('user.name@domain.org')).toBe(true);
       expect(validateEmail('user+tag@example.co.uk')).toBe(true);
       expect(validateEmail('user@subdomain.example.com')).toBe(true);
-      expect(validateEmail('test@123.456.789.10')).toBe(true);
       expect(validateEmail('test@museum.example')).toBe(true);
     });
 
@@ -89,6 +87,10 @@ describe('GDPR Compliance', () => {
       expect(validateEmail('test example.com')).toBe(false);
       expect(validateEmail('')).toBe(false);
       expect(validateEmail('test@.com')).toBe(false);
+      // IP address as domain: no letter TLD
+      expect(validateEmail('test@123.456.789.10')).toBe(false);
+      // Single-character TLD is invalid
+      expect(validateEmail('test@example.c')).toBe(false);
       // Note: .test@example.com is technically valid per RFC (local part can start with dot)
       // Hyphens in domain are valid: test@ex-ample.com
     });

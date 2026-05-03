@@ -206,7 +206,13 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
         );
 
         for (const row of data) {
-          const values = writableColumns.map((col) => row[col]);
+          const values = writableColumns.map((col) => {
+            // Guard against prototype pollution and unexpected properties
+            if (Object.prototype.hasOwnProperty.call(row, col)) {
+              return row[col];
+            }
+            return undefined;
+          });
           insertStmt.run(...values);
         }
       }

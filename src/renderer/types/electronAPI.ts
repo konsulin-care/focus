@@ -4,7 +4,7 @@
 import type { MessageBoxOptions } from 'electron';
 
 export type StimulusType = 'target' | 'non-target';
-import { AttentionMetrics } from './trial';
+import type { AttentionMetrics } from './trial';
 
 export interface TestConfig {
   stimulusDurationMs: number;

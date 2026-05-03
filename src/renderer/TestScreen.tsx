@@ -102,7 +102,7 @@ function TestScreen() {
       setPhase('completed');
       // Note: onSuccess callback not needed; parent flow ends here
     },
-    [calculateMetrics, testDataJson, setShowEmailCapture, setPhase]
+    [calculateMetrics, testDataJson, setPhase]
   );
 
   const handleEmailCaptureSkip = useCallback(
@@ -111,7 +111,7 @@ function TestScreen() {
       setShowEmailCapture(false);
       setPhase('completed');
     },
-    [calculateMetrics, setPhase, setShowEmailCapture]
+    [calculateMetrics, setPhase]
   );
 
   return (

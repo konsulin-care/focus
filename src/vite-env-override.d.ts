@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
 
 declare module '*.svg' {
-  const content: string;
-  export default content;
+  import * as React from 'react';
+  export const ReactComponent: React.FC<React.SVGProps<SVGSVGElement> & { title?: string }>;
+  const src: string;
+  export default src;
 }
 
 interface PackageJson {

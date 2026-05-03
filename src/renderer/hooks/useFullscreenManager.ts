@@ -24,21 +24,13 @@ export function useFullscreenManager(
     try {
       if (element.requestFullscreen) {
         await element.requestFullscreen();
-      } else if (
-        (element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> })
-          .webkitRequestFullscreen
-      ) {
-        const webkitRequest = (
-          element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }
-        ).webkitRequestFullscreen;
+      } else if (element.webkitRequestFullscreen) {
+        const webkitRequest = element.webkitRequestFullscreen;
         if (webkitRequest) {
           await webkitRequest.call(element);
         }
-      } else if (
-        (element as HTMLElement & { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen
-      ) {
-        const msRequest = (element as HTMLElement & { msRequestFullscreen?: () => Promise<void> })
-          .msRequestFullscreen;
+      } else if (element.msRequestFullscreen) {
+        const msRequest = element.msRequestFullscreen;
         if (msRequest) {
           await msRequest.call(element);
         }
@@ -53,19 +45,13 @@ export function useFullscreenManager(
     try {
       if (document.exitFullscreen) {
         await document.exitFullscreen();
-      } else if (
-        (document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen
-      ) {
-        const webkitExit = (document as Document & { webkitExitFullscreen?: () => Promise<void> })
-          .webkitExitFullscreen;
+      } else if (document.webkitExitFullscreen) {
+        const webkitExit = document.webkitExitFullscreen;
         if (webkitExit) {
           await webkitExit.call(document);
         }
-      } else if (
-        (document as Document & { msExitFullscreen?: () => Promise<void> }).msExitFullscreen
-      ) {
-        const msExit = (document as Document & { msExitFullscreen?: () => Promise<void> })
-          .msExitFullscreen;
+      } else if (document.msExitFullscreen) {
+        const msExit = document.msExitFullscreen;
         if (msExit) {
           await msExit.call(document);
         }
@@ -92,8 +78,8 @@ export function useFullscreenManager(
     const handleFullscreenChange = () => {
       const fullscreenElement =
         document.fullscreenElement ||
-        (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement ||
-        (document as Document & { msFullscreenElement?: Element }).msFullscreenElement;
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement;
       setIsFullscreen(!!fullscreenElement);
     };
 

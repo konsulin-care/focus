@@ -37,7 +37,9 @@ const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
         min="0"
         max="120"
         value={age || ''}
-        onChange={(e) => onAgeChange(parseInt(e.target.value, 10) || 0)}
+        onChange={(e) => {
+          onAgeChange(parseInt(e.target.value, 10) || 0);
+        }}
         className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
         placeholder={t('emailForm.fields.age')}
         disabled={isSubmitting}
@@ -51,7 +53,9 @@ const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
       <select
         id="gender"
         value={gender}
-        onChange={(e) => onGenderChange(e.target.value as 'Male' | 'Female')}
+        onChange={(e) => {
+          onGenderChange(e.target.value as 'Male' | 'Female');
+        }}
         className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
         disabled={isSubmitting}
         required
@@ -85,7 +89,9 @@ const ConsentBlock: React.FC<ConsentBlockProps> = ({
       id="consent"
       type="checkbox"
       checked={consent}
-      onChange={(e) => onConsentChange(e.target.checked)}
+      onChange={(e) => {
+        onConsentChange(e.target.checked);
+      }}
       className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
       disabled={isSubmitting}
       required
@@ -136,9 +142,8 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
       newErrors.push(t('error.invalidGender'));
     }
 
-    // Email validation - RFC 5322 compliant regex
-    const emailRegex =
-      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    // Email validation - consistent with backend (gdpr.ts)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!email || !emailRegex.test(email)) {
       newErrors.push(t('error.invalidEmail'));
     }
@@ -210,7 +215,7 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
       {errors.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded p-3">
           {errors.map((err, i) => (
-            <div key={i} className="text-red-600 text-sm">
+            <div key={`${err}-${i}`} className="text-red-600 text-sm">
               {err}
             </div>
           ))}

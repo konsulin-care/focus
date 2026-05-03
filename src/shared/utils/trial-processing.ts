@@ -9,7 +9,7 @@
  * src/main/types.ts and does not import any renderer-specific code.
  */
 
-import { TestEvent, TestConfig, StimulusType } from '@/main/types';
+import type { TestEvent, TestConfig, StimulusType } from '@/main/types';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**

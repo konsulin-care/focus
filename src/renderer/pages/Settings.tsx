@@ -87,7 +87,7 @@ export default function Settings() {
   const handleChange = (field: keyof TestConfig, value: number) => {
     if (field === 'totalTrials') {
       // Store raw value while typing, normalize on blur
-      setConfig((prev) => ({ ...prev, [field]: Math.max(2, parseInt(String(value)) || 2) }));
+      setConfig((prev) => ({ ...prev, [field]: Math.max(2, parseInt(String(value), 10) || 2) }));
     } else {
       setConfig((prev) => ({ ...prev, [field]: value }));
     }
@@ -100,7 +100,7 @@ export default function Settings() {
    */
   const handleTotalTrialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingValue(e.target.value);
-    const num = parseInt(e.target.value) || 2;
+    const num = parseInt(e.target.value, 10) || 2;
     setConfig((prev) => ({ ...prev, totalTrials: Math.max(2, num) }));
   };
 
@@ -145,7 +145,9 @@ export default function Settings() {
               <input
                 type="number"
                 value={config.stimulusDurationMs}
-                onChange={(e) => handleChange('stimulusDurationMs', parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="10"
                 max="1000"
@@ -159,9 +161,9 @@ export default function Settings() {
               <input
                 type="number"
                 value={config.interstimulusIntervalMs}
-                onChange={(e) =>
-                  handleChange('interstimulusIntervalMs', parseInt(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="100"
                 max="5000"
@@ -204,7 +206,9 @@ export default function Settings() {
               <input
                 type="number"
                 value={config.bufferMs}
-                onChange={(e) => handleChange('bufferMs', parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  handleChange('bufferMs', parseInt(e.target.value, 10) || 0);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 min="0"
                 max="2000"
@@ -214,12 +218,14 @@ export default function Settings() {
 
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={handleSave}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
             >
               {t('button.saveSettings')}
             </button>
             <button
+              type="button"
               onClick={handleReset}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
             >
@@ -238,6 +244,7 @@ export default function Settings() {
 
         {/* Back Button */}
         <button
+          type="button"
           onClick={() => setPage('home')}
           className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
         >
