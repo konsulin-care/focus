@@ -17,7 +17,7 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
     xmlns="http://www.w3.org/2000/svg"
   >
-    <title>Company Logo</title>
+    <title>Konsulin FOCUS</title>
     <defs id="defs2">
       <style type="text/css" id="style1">
         {`

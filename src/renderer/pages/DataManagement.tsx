@@ -203,6 +203,15 @@ export default function DataManagement() {
     URL.revokeObjectURL(url);
   };
 
+  /** Escape a value for CSV output (handles commas, quotes, newlines). */
+  const escapeCsv = (value: unknown): string => {
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   /** Handle export button click with mode selector. */
   const handleExport = async (mode: 'summary-csv' | 'summary-json' | 'full-csv' | 'full-json') => {
     const selected = sessions.filter((s) =>
@@ -217,7 +226,7 @@ export default function DataManagement() {
         'Email,Age,Gender,ACS Score,Interpretation,Date,Status',
         ...selected.map(
           (s) =>
-            `${s.email},${s.age},${s.gender},${s.acs_score.toFixed(2)},${s.acs_interpretation},${s.test_date},${s.upload_status}`
+            `${escapeCsv(s.email)},${escapeCsv(s.age)},${escapeCsv(s.gender)},${escapeCsv(s.acs_score.toFixed(2))},${escapeCsv(s.acs_interpretation)},${escapeCsv(s.test_date)},${escapeCsv(s.upload_status)}`
         ),
       ].join('\n');
       downloadFile(csv, `${filename}.csv`, 'text/csv');

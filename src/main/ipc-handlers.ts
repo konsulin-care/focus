@@ -422,12 +422,11 @@ ipcMain.handle('record-response', (_event: Electron.IpcMainInvokeEvent, responde
 
 /**
  * Show native modal dialog with specified options.
- * Returns true if user clicked first button (OK/Yes), false otherwise.
+ * Returns true if user clicked the default/OK button, false otherwise.
  */
 ipcMain.handle('show-message-box', async (_event, options: MessageBoxOptions) => {
   const result = await dialog.showMessageBox(options);
-  // response === 0 means first button (typically OK/Yes)
-  return result.response === 0;
+  return result.response === (options.defaultId ?? 0);
 });
 
 // ===========================================

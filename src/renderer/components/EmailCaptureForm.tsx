@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, FC } from 'react';
 import { useTranslation } from '@/i18n';
 import { SubjectInfo } from '@/renderer/types/trial';
 
@@ -18,7 +18,7 @@ interface PersonalInfoFieldsProps {
 }
 
 /** Age and gender input fields. */
-const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
+const PersonalInfoFields: FC<PersonalInfoFieldsProps> = ({
   age,
   gender,
   isSubmitting,
@@ -78,12 +78,7 @@ interface ConsentBlockProps {
 }
 
 /** Consent checkbox with GDPR text. */
-const ConsentBlock: React.FC<ConsentBlockProps> = ({
-  consent,
-  isSubmitting,
-  onConsentChange,
-  t,
-}) => (
+const ConsentBlock: FC<ConsentBlockProps> = ({ consent, isSubmitting, onConsentChange, t }) => (
   <div className="flex items-start">
     <input
       id="consent"

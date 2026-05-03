@@ -27,6 +27,10 @@ interface LegacyRow {
   consent_timestamp: string | null;
 }
 
+interface TestDataParsed {
+  events: TestEvent[];
+}
+
 // ===========================================
 // Database Instance
 // ===========================================
@@ -310,7 +314,7 @@ export function initDatabase(): void {
 
       currentDb.transaction(() => {
         for (const row of legacyResults) {
-          const testDataParsed = JSON.parse(row.test_data as string);
+          const testDataParsed = JSON.parse(row.test_data as string) as TestDataParsed;
 
           // 1. User
           const userStmt = currentDb.prepare(

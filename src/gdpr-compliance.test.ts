@@ -15,6 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { randomBytes } from 'node:crypto';
 import { isValidEmail } from './main/gdpr';
+import { queryWhitelist } from '@/main/database';
 
 // ===========================================
 // Test Utilities
@@ -393,9 +394,12 @@ describe('GDPR Compliance', () => {
       ];
       const optionalFields = ['upload_status', 'retention_expires_at'];
 
-      // Verify all required fields are present
+      // Verify all required fields are present in the database schema
+      const allWhitelistSQL = Object.values(queryWhitelist)
+        .map((entry) => entry.sql)
+        .join(' ');
       requiredFields.forEach((field) => {
-        expect(requiredFields).toContain(field);
+        expect(allWhitelistSQL).toContain(field);
       });
 
       // Verify no unnecessary personal data fields

@@ -138,7 +138,7 @@ export default function Settings() {
     setIsTotalTrialsFocused(false);
 
     let value = totalTrialsRaw;
-    if (!Number.isInteger(value) || value << 2) {
+    if (!Number.isInteger(value) || value < 2) {
       value = 2;
     } else if (value % 2 !== 0) {
       value = value + 1;
