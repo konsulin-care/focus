@@ -71,6 +71,78 @@ describe('calculateAttentionMetrics', () => {
 
 Adhering to these standards ensures a clean, maintainable, and consistent codebase. When in doubt, refer to this document or examine existing code that follows the guidelines. For agent-specific guidance (commands, project structure, etc.), see `AGENTS.md`.
 
+## ES Module Import Standards
+
+**Rule:** Use **named imports** for Node.js built-in modules and external dependencies. Avoid namespace/wildcard imports (`import * as`).
+
+**Why:** Named imports enable tree-shaking, make dependencies explicit, and improve static analysis.
+
+### Node.js Built-in Modules
+
+**Correct:**
+```typescript
+import { randomBytes } from 'node:crypto';
+import { join, basename } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+```
+
+**Avoid:**
+```typescript
+import * as crypto from 'node:crypto';  // ❌ Namespace
+import * as path from 'node:path';      // ❌ Namespace
+```
+
+### External Dependencies
+
+**Correct:**
+```typescript
+import { z } from 'zod';
+import { create } from 'zustand';
+import axios from 'axios';  // default import when library exports default
+```
+
+**Avoid:**
+```typescript
+import * as z from 'zod';         // ❌
+import * as zustand from 'zustand'; // ❌
+```
+
+### Type-Only Imports
+
+**Correct:**
+```typescript
+import type { ElectronAPI } from '@/renderer/types/electronAPI';
+import type { FC } from 'react';
+```
+
+**When to use `import type`:**
+- For TypeScript type declarations that have no runtime presence
+- Prevents accidental runtime imports of types-only constructs
+
+### Default vs Named Imports
+
+Use **named imports** whenever possible. Only use default imports when:
+- The library explicitly exports a default (e.g., `export default …`)
+- The library's entire API is a single namespace object (e.g., `axios`, `moment`)
+
+### Import Ordering
+
+Group imports in this order:
+1. **Node.js built-ins** (`node:` protocol)
+2. **External packages** (from `node_modules`)
+3. **Internal modules** (using `@/` alias)
+
+**Example:**
+```typescript
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { create } from 'zustand';
+import type { AttentionMetrics } from '@/renderer/types';
+import { useStore } from '@/renderer/store';
+```
+
+---
+
 ## Development Environment Standards
 
 **Rule:** This project requires mise for Node.js version management to ensure reproducible builds.

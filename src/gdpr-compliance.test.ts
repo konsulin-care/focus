@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import * as crypto from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { isValidEmail } from './main/gdpr';
 
 // ===========================================
@@ -177,22 +177,22 @@ describe('GDPR Compliance', () => {
 
   describe('Encryption Key Generation', () => {
     it('should generate 256-bit (32 byte) key', () => {
-      const key = crypto.randomBytes(32);
+      const key = randomBytes(32);
       expect(key.length).toBe(32);
     });
 
     it('should generate 192-bit (24 byte) key', () => {
-      const key = crypto.randomBytes(24);
+      const key = randomBytes(24);
       expect(key.length).toBe(24);
     });
 
     it('should generate 128-bit (16 byte) key', () => {
-      const key = crypto.randomBytes(16);
+      const key = randomBytes(16);
       expect(key.length).toBe(16);
     });
 
     it('should generate hex string of 64 characters for 256-bit', () => {
-      const key = crypto.randomBytes(32);
+      const key = randomBytes(32);
       const hexKey = key.toString('hex');
       expect(hexKey.length).toBe(64);
       expect(/^[a-fA-F0-9]+$/.test(hexKey)).toBe(true);
@@ -201,15 +201,15 @@ describe('GDPR Compliance', () => {
     it('should generate unique keys', () => {
       const keys = new Set<string>();
       for (let i = 0; i < 100; i++) {
-        keys.add(crypto.randomBytes(32).toString('hex'));
+        keys.add(randomBytes(32).toString('hex'));
       }
       expect(keys.size).toBe(100); // All keys should be unique
     });
 
     it('should generate keys with sufficient entropy', () => {
       // Verify keys don't have obvious patterns
-      const key1 = crypto.randomBytes(32).toString('hex');
-      const key2 = crypto.randomBytes(32).toString('hex');
+      const key1 = randomBytes(32).toString('hex');
+      const key2 = randomBytes(32).toString('hex');
 
       // Keys should be completely different (not just shifted)
       expect(key1).not.toBe(key2);

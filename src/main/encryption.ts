@@ -5,8 +5,8 @@
  * Keys are stored in userData directory with restricted permissions.
  */
 
-import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import {
@@ -31,7 +31,7 @@ import {
  * @returns The encryption key as 64-character hex string
  */
 export function generateEncryptionKey(): string {
-  const key = crypto.randomBytes(32);
+  const key = randomBytes(32);
   return key.toString('hex');
 }
 
@@ -46,7 +46,7 @@ export function generateEncryptionKey(): string {
  * @returns The encryption key as hex string
  */
 export function getOrCreateEncryptionKey(): string {
-  const keyPath = path.join(app.getPath('userData'), '.focus_db_key');
+  const keyPath = join(app.getPath('userData'), '.focus_db_key');
 
   // Check if key already exists
   if (existsSync(keyPath)) {
@@ -133,8 +133,8 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
 
   try {
     // Create a temporary encrypted database by exporting and re-importing
-    const tempDbPath = path.join(app.getPath('userData'), 'focus_backup.db');
-    const encryptedDbPath = path.join(app.getPath('userData'), 'focus.db');
+    const tempDbPath = join(app.getPath('userData'), 'focus_backup.db');
+    const encryptedDbPath = join(app.getPath('userData'), 'focus.db');
 
     // Helper function to safely quote SQL identifiers (prevents SQL injection)
     function quoteIdentifier(identifier: string): string {

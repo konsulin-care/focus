@@ -5,7 +5,7 @@
  */
 
 import { BrowserWindow, Menu } from 'electron';
-import * as path from 'node:path';
+import { join } from 'node:path';
 
 /**
  * Create and configure the main application window.
@@ -17,7 +17,7 @@ export function createWindow(): BrowserWindow {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/preload.js'),
+      preload: join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -29,7 +29,7 @@ export function createWindow(): BrowserWindow {
     mainWindow.loadURL(devServerUrl);
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
   return mainWindow;

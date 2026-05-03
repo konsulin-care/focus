@@ -5,7 +5,7 @@
  * Uses better-sqlite3 for local data persistence.
  */
 
-import * as path from 'node:path';
+import { join } from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
@@ -161,7 +161,7 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
  * Handles migration from unencrypted to encrypted format.
  */
 export function initDatabase(): void {
-  const dbPath = path.join(app.getPath('userData'), 'focus.db');
+  const dbPath = join(app.getPath('userData'), 'focus.db');
 
   // Get or create encryption key
   const encryptionKey = getOrCreateEncryptionKey();
