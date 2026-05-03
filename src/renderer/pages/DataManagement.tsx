@@ -443,8 +443,12 @@ export default function DataManagement() {
       cancelId: 0,
     });
     if (ok) {
-      void window.electronAPI.queryDatabase('cleanup-expired-records');
-      fetchData();
+      try {
+        await window.electronAPI.queryDatabase('cleanup-expired-records');
+      } catch (error) {
+        console.error('Failed to clear cache:', error);
+      }
+      await fetchData();
     }
   }, [t, fetchData]);
 

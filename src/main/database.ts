@@ -12,6 +12,10 @@ import { existsSync } from 'node:fs';
 import { DatabaseQueryCommand, QueryWhitelistEntry } from './types';
 import { getOrCreateEncryptionKey, migrateToEncrypted } from './encryption';
 import { processTestEvents } from '@/shared/utils/trial-processing';
+import { calculateMean, calculateStdDevWithMean } from '@/shared/utils/basic-stats';
+import { calculateDPrime } from '@/shared/utils/clinical-metrics';
+import { getNormativeStats } from '@/shared/utils/normative-data';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 interface LegacyRow {
   id: number;
@@ -83,12 +87,12 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
     type: 'write',
   },
   'cleanup-expired-records': {
-    sql: 'DELETE FROM test_results WHERE retention_expires_at < datetime("now")',
+    sql: 'DELETE FROM test_sessions WHERE retention_expires_at < datetime("now")',
     paramCount: 0,
     type: 'write',
   },
   'get-expired-count': {
-    sql: 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")',
+    sql: 'SELECT COUNT(*) as count FROM test_sessions WHERE retention_expires_at < datetime("now")',
     paramCount: 0,
     type: 'select-one',
   },
@@ -260,6 +264,11 @@ export function initDatabase(): void {
         );
       `);
 
+    currentDb.exec(`
+        CREATE INDEX IF NOT EXISTS idx_retention_expires ON test_sessions(retention_expires_at);
+        CREATE INDEX IF NOT EXISTS idx_upload_status ON test_sessions(upload_status);
+      `);
+
     // Migration 1: Add outcome column if missing (for databases created before outcome was added)
     const outcomeColumnExists = currentDb
       .prepare(
@@ -301,7 +310,7 @@ export function initDatabase(): void {
 
       currentDb.transaction(() => {
         for (const row of legacyResults) {
-          const testData = JSON.parse(row.test_data as string);
+          const testDataParsed = JSON.parse(row.test_data as string);
 
           // 1. User
           const userStmt = currentDb.prepare(
@@ -312,42 +321,92 @@ export function initDatabase(): void {
             id: number;
           };
 
-          // 2. Metrics (Simplified computation for migration)
-          const metrics = {
-            acs_score: 0.45,
-            acs_interpretation: 'Average',
-            mean_response_time_ms: 400,
-            response_time_variability: 50,
-            commission_errors: 5,
-            omission_errors: 5,
-            hits: 600,
-            d_prime: 2.0,
-            validity: 'Valid',
-            total_trials: 648,
-          };
+          // 2. Trials & Metrics
+          // Process test events first to get trial results for metric computation
+          const totalTrials = testDataParsed.events.filter(
+            (e: any) => e.eventType === 'stimulus-onset'
+          ).length;
+          const trialResults = processTestEvents(testDataParsed.events, { totalTrials });
+
+          const hits = trialResults.filter((t) => t.outcome === 'hit');
+          const omissions = trialResults.filter((t) => t.outcome === 'omission');
+          const commissions = trialResults.filter((t) => t.outcome === 'commission');
+
+          const hitRTs = hits.map((t) => t.responseTimeMs || 0);
+          const meanRT = calculateMean(hitRTs);
+          const variability = calculateStdDevWithMean(hitRTs, meanRT);
+
+          // D-Prime calculation based on second half of trials per ACS methodology
+          const halfIndex = Math.floor(trialResults.length / 2);
+          const secondHalf = trialResults.slice(halfIndex);
+          const shHits = secondHalf.filter((t) => t.outcome === 'hit').length;
+          const shFAs = secondHalf.filter((t) => t.outcome === 'commission').length;
+          const shTargets = secondHalf.filter((t) => t.stimulusType === 'target').length;
+          const shNonTargets = secondHalf.filter((t) => t.stimulusType === 'non-target').length;
+
+          const hitRate = shTargets > 0 ? shHits / shTargets : 0;
+          const faRate = shNonTargets > 0 ? shFAs / shNonTargets : 0;
+          const dPrime = calculateDPrime(hitRate, faRate);
+
+          // ACS Score & Interpretation
+          const normStats = getNormativeStats(25, 'Male');
+          let acsScore = 0;
+          let acsInterpretation = 'Unknown';
+
+          if (normStats) {
+            const rtZ = (meanRT - normStats.responseTimeMean) / normStats.responseTimeSD;
+            const varZ = (variability - normStats.variabilityMean) / normStats.variabilitySD;
+            const dpZ = (dPrime - normStats.dPrimeMean) / normStats.dPrimeSD;
+
+            acsScore = (rtZ ?? 0) + (varZ ?? 0) + (dpZ ?? 0) + TRIAL_CONSTANTS.ACS_CONSTANT;
+
+            if (acsScore >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {
+              acsInterpretation = 'Normal';
+            } else if (acsScore >= TRIAL_CONSTANTS.ACS_BORDERLINE_THRESHOLD) {
+              acsInterpretation = 'Borderline';
+            } else {
+              acsInterpretation = 'Impaired';
+            }
+          }
+
+          // Validity check
+          const anticipatoryCount = trialResults.filter((t) => t.isAnticipatory).length;
+          const anticipatoryPercent = (anticipatoryCount / trialResults.length) * 100;
+          const validResponses = hits.length + commissions.length;
+
+          let validity = 'Valid';
+          let validityReason = '';
+          if (anticipatoryPercent > TRIAL_CONSTANTS.MAX_ANTICIPATORY_PERCENT) {
+            validity = 'Invalid';
+            validityReason = `Excessive anticipatory responses (${anticipatoryPercent.toFixed(1)}%)`;
+          } else if (validResponses < TRIAL_CONSTANTS.MIN_VALID_RESPONSES) {
+            validity = 'Invalid';
+            validityReason = `Insufficient valid responses (${validResponses})`;
+          }
 
           // 3. Session
           const sessionStmt = currentDb.prepare(`
              INSERT INTO test_sessions (
                user_id, test_date, acs_score, acs_interpretation, mean_response_time_ms, 
                response_time_variability, commission_errors, omission_errors, hits, 
-               d_prime, validity, total_trials, test_config, upload_status, 
+               d_prime, validity, validity_reason, total_trials, test_config, upload_status, 
                consent_given, consent_timestamp
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            `);
           const sessionId = sessionStmt.run(
             user.id,
             row.created_at,
-            metrics.acs_score,
-            metrics.acs_interpretation,
-            metrics.mean_response_time_ms,
-            metrics.response_time_variability,
-            metrics.commission_errors,
-            metrics.omission_errors,
-            metrics.hits,
-            metrics.d_prime,
-            metrics.validity,
-            metrics.total_trials,
+            acsScore,
+            acsInterpretation,
+            meanRT,
+            variability,
+            commissions.length,
+            omissions.length,
+            hits.length,
+            dPrime,
+            validity,
+            validityReason,
+            trialResults.length,
             JSON.stringify({}),
             row.upload_status,
             row.consent_given ? 1 : 0,
@@ -355,9 +414,6 @@ export function initDatabase(): void {
           ).lastInsertRowid;
 
           // 4. Trials
-          // Use shared processing to compute derived fields (outcome, followsCommission, isMultipleResponse)
-          const trialResults = processTestEvents(testData.events, { totalTrials: 648 });
-
           const trialStmt = currentDb.prepare(`
               INSERT INTO trial_data (
                 test_session_id, trial_index, stimulus_type, outcome,
@@ -384,7 +440,6 @@ export function initDatabase(): void {
             );
           }
         }
-        currentDb.exec('DROP TABLE test_results');
       })();
       console.log('[DB] Legacy migration completed successfully');
     }

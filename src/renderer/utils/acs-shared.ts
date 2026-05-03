@@ -8,10 +8,10 @@
 
 import { TestEvent } from '@/renderer/types/electronAPI';
 import { SubjectInfo, TrialResult } from '@/renderer/types/trial';
-import { getNormativeStats, NormativeStats } from './normative-data';
-import { calculateDPrime } from './clinical-metrics';
+import { getNormativeStats, NormativeStats } from '@/shared/utils/normative-data';
+import { calculateDPrime } from '@/shared/utils/clinical-metrics';
 import { processTestEvents } from './trial-processing';
-import { calculateMean, calculateStdDevWithMean } from './basic-stats';
+import { calculateMean, calculateStdDevWithMean } from '@/shared/utils/basic-stats';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**

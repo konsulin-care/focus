@@ -6,7 +6,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import About from './pages/About';
-import DataManagement from './pages/DataManagement';
+import DataManagement from '@/renderer/pages/DataManagement';
 import TestScreen from './TestScreen';
 import { useNavigation } from './store';
 

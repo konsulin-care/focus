@@ -169,7 +169,6 @@ ipcMain.handle(
       }
 
       const expectedNumericFields = [
-        'acs',
         'dPrime',
         'meanResponseTimeMs',
         'variability',
@@ -290,7 +289,7 @@ ipcMain.handle(
         return sessionId;
       })();
 
-      console.log(`Test result saved with consent. ID: ${result}, Email: ${email}`);
+      console.log(`Test result saved with consent. ID: ${result}`);
       return result;
     } catch (error) {
       console.error('Failed to save test result with consent:', error);
@@ -351,9 +350,9 @@ ipcMain.handle('get-session-trials', (_event, sessionId: number) => {
   return currentDb
     .prepare(
       `
-    SELECT id, test_session_id, trial_index, stimulus_type,
-           response_correct, response_time_ms, is_anticipatory,
-           is_multiple_response, follows_commission
+     SELECT id, test_session_id, trial_index, stimulus_type, outcome,
+            response_correct, response_time_ms, is_anticipatory,
+            is_multiple_response, follows_commission
     FROM trial_data
     WHERE test_session_id = ?
     ORDER BY trial_index ASC

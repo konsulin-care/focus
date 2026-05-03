@@ -108,12 +108,14 @@ export function processTestEvents(
   for (const event of events) {
     if (event.eventType === 'stimulus-onset') {
       trialOnsets.set(event.trialIndex, event);
-      trialResponses.set(event.trialIndex, []);
-    } else if (event.eventType === 'response') {
-      const responses = trialResponses.get(event.trialIndex);
-      if (responses) {
-        responses.push(event);
+      if (!trialResponses.has(event.trialIndex)) {
+        trialResponses.set(event.trialIndex, []);
       }
+    } else if (event.eventType === 'response') {
+      if (!trialResponses.has(event.trialIndex)) {
+        trialResponses.set(event.trialIndex, []);
+      }
+      trialResponses.get(event.trialIndex)!.push(event);
     }
   }
 

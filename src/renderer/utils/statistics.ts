@@ -9,10 +9,10 @@
  */
 
 // Basic statistics
-export * from './basic-stats';
+export * from '@/shared/utils/basic-stats';
 
 // Probability distributions (pure statistical functions)
-export * from './distributions';
+export * from '@/shared/utils/distributions';
 
 // Clinical metrics (domain-specific functions combining distributions)
-export * from './clinical-metrics';
+export * from '@/shared/utils/clinical-metrics';

@@ -18,26 +18,34 @@ export default function Settings() {
     bufferMs: 500,
   });
   const [status, setStatus] = useState('');
+  const [statusIsError, setStatusIsError] = useState(false);
   const [isTotalTrialsFocused, setIsTotalTrialsFocused] = useState(false);
   const [editingValue, setEditingValue] = useState<string>('');
+  const [totalTrialsRaw, setTotalTrialsRaw] = useState<number>(648);
 
   // Show raw value when focused and editing, otherwise show normalized
   const displayTotalTrials =
     isTotalTrialsFocused && editingValue !== ''
       ? editingValue
-      : config.totalTrials % 2 === 0
-        ? config.totalTrials
-        : config.totalTrials + 1;
+      : totalTrialsRaw % 2 === 0
+        ? totalTrialsRaw
+        : totalTrialsRaw + 1;
 
   // Show warning when normalization would occur AND field is not focused
   const showNormalizationWarning =
-    !isTotalTrialsFocused && config.totalTrials >= 2 && config.totalTrials % 2 !== 0;
+    !isTotalTrialsFocused && totalTrialsRaw >= 2 && totalTrialsRaw % 2 !== 0;
 
   useEffect(() => {
     window.electronAPI
       .getTestConfig()
-      .then(setConfig)
-      .catch(() => setStatus(t('status.loadFailed')));
+      .then((cfg) => {
+        setConfig(cfg);
+        setTotalTrialsRaw(cfg.totalTrials);
+      })
+      .catch(() => {
+        setStatus(t('status.loadFailed'));
+        setStatusIsError(true);
+      });
   }, []);
 
   /**
@@ -47,17 +55,26 @@ export default function Settings() {
   const handleSave = async () => {
     try {
       // Normalize totalTrials on save
-      const normalized = config.totalTrials % 2 === 0 ? config.totalTrials : config.totalTrials + 1;
+      const normalized = totalTrialsRaw % 2 === 0 ? totalTrialsRaw : totalTrialsRaw + 1;
       const configToSave = { ...config, totalTrials: normalized };
       await window.electronAPI.saveTestConfig(configToSave);
       // Refetch from database to ensure UI matches persisted state
       const updatedConfig = await window.electronAPI.getTestConfig();
       setConfig(updatedConfig);
+      setTotalTrialsRaw(updatedConfig.totalTrials);
       setStatus(t('status.saveSuccess'));
-      setTimeout(() => setStatus(''), 3000);
+      setStatusIsError(false);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 3000);
     } catch {
       setStatus(t('status.saveFailed'));
-      setTimeout(() => setStatus(''), 3000);
+      setStatusIsError(true);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 3000);
     }
   };
 
@@ -70,11 +87,20 @@ export default function Settings() {
       await window.electronAPI.resetTestConfig();
       const newConfig = await window.electronAPI.getTestConfig();
       setConfig(newConfig);
+      setTotalTrialsRaw(newConfig.totalTrials);
       setStatus(t('status.resetSuccess'));
-      setTimeout(() => setStatus(''), 3000);
+      setStatusIsError(false);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 3000);
     } catch {
       setStatus(t('status.resetFailed'));
-      setTimeout(() => setStatus(''), 3000);
+      setStatusIsError(true);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 3000);
     }
   };
 
@@ -87,7 +113,8 @@ export default function Settings() {
   const handleChange = (field: keyof TestConfig, value: number) => {
     if (field === 'totalTrials') {
       // Store raw value while typing, normalize on blur
-      setConfig((prev) => ({ ...prev, [field]: Math.max(2, parseInt(String(value), 10) || 2) }));
+      setTotalTrialsRaw(Math.max(2, value));
+      setConfig((prev) => ({ ...prev, [field]: Math.max(2, value) }));
     } else {
       setConfig((prev) => ({ ...prev, [field]: value }));
     }
@@ -99,16 +126,19 @@ export default function Settings() {
    * @param e - Change event from the input element
    */
   const handleTotalTrialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditingValue(e.target.value);
-    const num = parseInt(e.target.value, 10) || 2;
-    setConfig((prev) => ({ ...prev, totalTrials: Math.max(2, num) }));
+    const val = e.target.value;
+    setEditingValue(val);
+    const num = parseInt(val, 10) || 2;
+    const constrainedNum = Math.max(2, num);
+    setTotalTrialsRaw(constrainedNum);
+    setConfig((prev) => ({ ...prev, totalTrials: constrainedNum }));
   };
 
   const handleTotalTrialsBlur = useCallback(() => {
     setIsTotalTrialsFocused(false);
 
-    let value = config.totalTrials;
-    if (!Number.isInteger(value) || value < 2) {
+    let value = totalTrialsRaw;
+    if (!Number.isInteger(value) || value << 2) {
       value = 2;
     } else if (value % 2 !== 0) {
       value = value + 1;
@@ -116,7 +146,7 @@ export default function Settings() {
 
     setEditingValue('');
     setConfig((prev) => ({ ...prev, totalTrials: value }));
-  }, [config.totalTrials]);
+  }, [totalTrialsRaw]);
 
   /**
    * Handles focus event on the total trials input field
@@ -234,9 +264,7 @@ export default function Settings() {
           </div>
 
           {status && (
-            <p
-              className={`mt-3 text-sm ${status.includes('Failed') ? 'text-red-600' : 'text-green-600'}`}
-            >
+            <p className={`mt-3 text-sm ${statusIsError ? 'text-red-600' : 'text-green-600'}`}>
               {status}
             </p>
           )}

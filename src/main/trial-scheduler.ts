@@ -191,7 +191,7 @@ export class TrialScheduler {
    * Schedule the next trial using drift-corrected timing.
    */
   private scheduleNextTrial(): void {
-    if (!this.testRunning || this.currentTrialIndex >= this.config.totalTrials) {
+    if (!this.testRunning || this.currentTrialIndex >= this.trialSequence.length) {
       this.complete();
       return;
     }
@@ -233,7 +233,7 @@ export class TrialScheduler {
    * Present a single stimulus with drift-corrected timing.
    */
   private presentStimulus(): void {
-    if (!this.testRunning || this.currentTrialIndex >= this.config.totalTrials) {
+    if (!this.testRunning || this.currentTrialIndex >= this.trialSequence.length) {
       this.complete();
       return;
     }
