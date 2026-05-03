@@ -18,6 +18,7 @@ export function ZScoreRow({
   result,
   unit = '',
 }: ZScoreRowProps) {
+  /** Format numeric value with optional suffix, showing placeholder for null. */
   const formatValue = (value: number | null, suffix = '') => {
     if (value === null) return <span className="text-gray-500">—</span>;
     return `${value.toFixed(2)}${suffix}`;

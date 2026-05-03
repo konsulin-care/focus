@@ -4,9 +4,97 @@ import { SubjectInfo } from '@/renderer/types/trial';
 
 export interface EmailCaptureFormProps {
   onSubmit: (subjectInfo: SubjectInfo, email: string, consent: boolean) => Promise<void>;
-  onSkip?: (subjectInfo: SubjectInfo) => void; // Called when user clicks Preview
-  lng?: string; // Language code for i18n
+  onSkip?: (subjectInfo: SubjectInfo) => void;
+  lng?: string;
 }
+
+interface PersonalInfoFieldsProps {
+  age: number;
+  gender: string;
+  isSubmitting: boolean;
+  onAgeChange: (age: number) => void;
+  onGenderChange: (gender: 'Male' | 'Female') => void;
+  t: (key: string) => string;
+}
+
+/** Age and gender input fields. */
+const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
+  age,
+  gender,
+  isSubmitting,
+  onAgeChange,
+  onGenderChange,
+  t,
+}) => (
+  <div className="grid grid-cols-2 gap-4 mb-4">
+    <div>
+      <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+        {t('emailForm.fields.age')}
+      </label>
+      <input
+        id="age"
+        type="number"
+        min="0"
+        max="120"
+        value={age || ''}
+        onChange={(e) => onAgeChange(parseInt(e.target.value, 10) || 0)}
+        className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
+        placeholder={t('emailForm.fields.age')}
+        disabled={isSubmitting}
+        required
+      />
+    </div>
+    <div>
+      <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+        {t('emailForm.fields.gender')}
+      </label>
+      <select
+        id="gender"
+        value={gender}
+        onChange={(e) => onGenderChange(e.target.value as 'Male' | 'Female')}
+        className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
+        disabled={isSubmitting}
+        required
+      >
+        <option value="" disabled hidden>
+          {t('emailForm.fields.selectGender')}
+        </option>
+        <option value="Male">{t('emailForm.fields.genderMale')}</option>
+        <option value="Female">{t('emailForm.fields.genderFemale')}</option>
+      </select>
+    </div>
+  </div>
+);
+
+interface ConsentBlockProps {
+  consent: boolean;
+  isSubmitting: boolean;
+  onConsentChange: (checked: boolean) => void;
+  t: (key: string) => string;
+}
+
+/** Consent checkbox with GDPR text. */
+const ConsentBlock: React.FC<ConsentBlockProps> = ({
+  consent,
+  isSubmitting,
+  onConsentChange,
+  t,
+}) => (
+  <div className="flex items-start">
+    <input
+      id="consent"
+      type="checkbox"
+      checked={consent}
+      onChange={(e) => onConsentChange(e.target.checked)}
+      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+      disabled={isSubmitting}
+      required
+    />
+    <label htmlFor="consent" className="ml-2 text-sm text-gray-600">
+      {t('emailForm.consent.text')}
+    </label>
+  </div>
+);
 
 /**
  * Form component for capturing user email and demographic information
@@ -88,45 +176,14 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
         <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('emailForm.title')}</h2>
         <p className="text-sm text-gray-600 mb-4">{t('emailForm.description')}</p>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('emailForm.fields.age')}
-            </label>
-            <input
-              id="age"
-              type="number"
-              min="0"
-              max="120"
-              value={age || ''}
-              onChange={(e) => setAge(parseInt(e.target.value, 10) || 0)}
-              className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
-              placeholder={t('emailForm.fields.age')}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('emailForm.fields.gender')}
-            </label>
-            <select
-              id="gender"
-              value={gender}
-              onChange={(e) => setGender(e.target.value as 'Male' | 'Female')}
-              className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
-              disabled={isSubmitting}
-              required
-            >
-              <option value="" disabled hidden>
-                {t('emailForm.fields.selectGender')}
-              </option>
-              <option value="Male">{t('emailForm.fields.genderMale')}</option>
-              <option value="Female">{t('emailForm.fields.genderFemale')}</option>
-            </select>
-          </div>
-        </div>
+        <PersonalInfoFields
+          age={age}
+          gender={gender}
+          isSubmitting={isSubmitting}
+          onAgeChange={setAge}
+          onGenderChange={setGender}
+          t={t}
+        />
 
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           {t('emailForm.fields.email')}
@@ -143,20 +200,12 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
         />
       </div>
 
-      <div className="flex items-start">
-        <input
-          id="consent"
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-          disabled={isSubmitting}
-          required
-        />
-        <label htmlFor="consent" className="ml-2 text-sm text-gray-600">
-          {t('emailForm.consent.text')}
-        </label>
-      </div>
+      <ConsentBlock
+        consent={consent}
+        isSubmitting={isSubmitting}
+        onConsentChange={setConsent}
+        t={t}
+      />
 
       {errors.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded p-3">

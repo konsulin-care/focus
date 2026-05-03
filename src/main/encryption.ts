@@ -170,7 +170,7 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
 
       // Get table schema
       const schema = backupDb
-        .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name=?")
         .get(table.name) as { sql: string };
 
       // Create table in encrypted database

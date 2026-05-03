@@ -8,6 +8,7 @@ interface SidebarButtonProps {
   onClick: () => void;
 }
 
+/** Primary navigation button for the sidebar with icon and label. */
 export default function SidebarButton({
   icon,
   label,

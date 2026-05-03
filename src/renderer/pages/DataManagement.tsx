@@ -5,8 +5,8 @@ import {
   Trash2,
   Search,
   ChevronDown,
-  ChevronRight,
   ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Filter,
 } from 'lucide-react';
@@ -30,6 +30,121 @@ interface Session {
   upload_status: 'pending' | 'uploaded' | 'failed';
 }
 
+/** Empty state shown when no session records exist. */
+const EmptyState: React.FC<{ t: (key: string) => string }> = ({ t }) => (
+  <div className="text-center py-12 text-gray-500">{t('dataManagement.empty.noRecords')}</div>
+);
+
+interface SessionDetailsProps {
+  session: Session;
+  trials: TrialData[] | undefined;
+  onExtract: (sessionId: number) => void;
+  t: (key: string) => string;
+}
+
+/**
+ * Collapsible expanded row showing session metrics and trial preview.
+ * Displays summary metrics cards and a table of the first 10 trials.
+ */
+const SessionDetails: React.FC<SessionDetailsProps> = ({ session, trials, onExtract, t }) => {
+  if (trials === undefined) {
+    return (
+      <tr>
+        <td colSpan={6} className="p-4 bg-gray-50">
+          <div className="text-center text-gray-400">{t('dataManagement.trials.loading')}</div>
+        </td>
+      </tr>
+    );
+  }
+
+  if (trials.length === 0) {
+    return (
+      <tr>
+        <td colSpan={6} className="p-4 bg-gray-50">
+          <div className="text-center text-gray-400">{t('dataManagement.trials.empty')}</div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr>
+      <td colSpan={6} className="p-4 bg-gray-50">
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="p-3 bg-white border rounded-lg shadow-sm">
+            <div className="text-xs text-gray-500">{t('dataManagement.metrics.hits')}</div>
+            <div className="text-lg font-bold">{session.hits || 0}</div>
+          </div>
+          <div className="p-3 bg-white border rounded-lg shadow-sm">
+            <div className="text-xs text-gray-500">{t('dataManagement.metrics.commissions')}</div>
+            <div className="text-lg font-bold">{session.commission_errors || 0}</div>
+          </div>
+          <div className="p-3 bg-white border rounded-lg shadow-sm">
+            <div className="text-xs text-gray-500">{t('dataManagement.metrics.omissions')}</div>
+            <div className="text-lg font-bold">{session.omission_errors || 0}</div>
+          </div>
+          <div className="p-3 bg-white border rounded-lg shadow-sm">
+            <div className="text-xs text-gray-500">{t('dataManagement.metrics.dPrime')}</div>
+            <div className="text-lg font-bold">{(session.d_prime || 0).toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div className="bg-white border rounded-lg overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-gray-100 border-b">
+              <tr>
+                <th className="px-3 py-2">{t('dataManagement.trials.trial')}</th>
+                <th className="px-3 py-2">{t('dataManagement.trials.type')}</th>
+                <th className="px-3 py-2">{t('dataManagement.trials.outcome')}</th>
+                <th className="px-3 py-2">{t('dataManagement.trials.correct')}</th>
+                <th className="px-3 py-2">{t('dataManagement.trials.rt')}</th>
+                <th className="px-3 py-2" title={t('dataManagement.trials.anticipatory')}>
+                  {t('dataManagement.trials.anticipatory')}
+                </th>
+                <th className="px-3 py-2" title={t('dataManagement.trials.multiple')}>
+                  {t('dataManagement.trials.multiple')}
+                </th>
+                <th className="px-3 py-2" title={t('dataManagement.trials.followsCommission')}>
+                  {t('dataManagement.trials.followsCommission')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {trials.slice(0, 10).map((trial) => (
+                <tr key={trial.trial_index} className="border-b hover:bg-gray-50">
+                  <td className="px-3 py-2">{trial.trial_index}</td>
+                  <td className="px-3 py-2">{trial.stimulus_type}</td>
+                  <td className="px-3 py-2">{trial.outcome ?? '-'}</td>
+                  <td className="px-3 py-2">
+                    {trial.response_correct === null ? '-' : trial.response_correct ? '✓' : '✗'}
+                  </td>
+                  <td className="px-3 py-2">{trial.response_time_ms ?? '-'}</td>
+                  <td className="px-3 py-2 text-center">{trial.is_anticipatory ? '✓' : ''}</td>
+                  <td className="px-3 py-2 text-center">{trial.is_multiple_response ? '✓' : ''}</td>
+                  <td className="px-3 py-2 text-center">{trial.follows_commission ? '✓' : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => onExtract(session.id)}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 text-sm font-medium"
+          >
+            <Download size={14} />
+            {t('dataManagement.trials.extractAll')}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+/**
+ * Data management page: view, filter, export, and delete test sessions.
+ */
 export default function DataManagement() {
   const { t } = useTranslation();
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -50,23 +165,7 @@ export default function DataManagement() {
   const filterRef = useRef<HTMLDivElement>(null);
   const extractRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setIsFilterOpen(false);
-      }
-      if (extractRef.current && !extractRef.current.contains(e.target as Node)) {
-        setIsExtractOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+  /** Fetch all sessions from main process. */
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -79,27 +178,29 @@ export default function DataManagement() {
     }
   };
 
-  const handleSort = (col: keyof Session) => {
-    if (sortCol === col) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortCol(col);
-      setSortDir('asc');
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (!confirm(t('dataManagement.confirm.deleteMultiple', { count: selectedIds.size }))) return;
+  /** Fetch trials for a specific session. */
+  const fetchTrials = async (sessionId: number) => {
     try {
-      await window.electronAPI.bulkDeleteSessions(Array.from(selectedIds));
-      setSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)));
-      setSelectedIds(new Set());
+      const trials = await window.electronAPI.getSessionTrials(sessionId);
+      setSessionTrials((prev) => ({ ...prev, [sessionId]: trials }));
     } catch (error) {
-      console.error('Bulk delete failed:', error);
+      console.error('Failed to fetch trials:', error);
+      setSessionTrials((prev) => ({ ...prev, [sessionId]: [] }));
     }
   };
 
+  /** Trigger file download with blob URL. */
+  const downloadFile = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** Handle export button click with mode selector. */
   const handleExport = async (mode: 'summary-csv' | 'summary-json' | 'full-csv' | 'full-json') => {
     const selected = sessions.filter((s) =>
       selectedIds.size === 0 ? true : selectedIds.has(s.id)
@@ -213,26 +314,7 @@ export default function DataManagement() {
     }
   };
 
-  const fetchTrials = async (sessionId: number) => {
-    try {
-      const trials = await window.electronAPI.getSessionTrials(sessionId);
-      setSessionTrials((prev) => ({ ...prev, [sessionId]: trials }));
-    } catch (error) {
-      console.error('Failed to fetch trials:', error);
-      setSessionTrials((prev) => ({ ...prev, [sessionId]: [] }));
-    }
-  };
-
-  const downloadFile = (content: string, filename: string, type: string) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
+  /** Extract trials for single session as CSV. */
   const handleExtractTrials = (sessionId: number) => {
     const trials = sessionTrials[sessionId];
     if (!trials || trials.length === 0) {
@@ -263,6 +345,7 @@ export default function DataManagement() {
     downloadFile(csvContent, `trials_session_${sessionId}.csv`, 'text/csv');
   };
 
+  /** Toggle expanded row state for session details. */
   const toggleRow = (id: number) => {
     const expanding = !expandedRows[id];
     setExpandedRows((prev) => ({ ...prev, [id]: expanding }));
@@ -271,6 +354,7 @@ export default function DataManagement() {
     }
   };
 
+  /** Toggle status filter checkbox. */
   const toggleStatusFilter = (status: string) => {
     setStatusFilter((prev) => {
       const next = new Set(prev);
@@ -283,6 +367,67 @@ export default function DataManagement() {
     });
     setPage(0);
   };
+
+  /** Return color class based on gender and generic flag. */
+  const getGenderColor = (gender: string, isGeneric: number) => {
+    const color = gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500';
+    return isGeneric ? `${color} border-2 border-dashed border-gray-400` : color;
+  };
+
+  /** Return color class based on ACS score and interpretation. */
+  const getAcsColor = (score: number, interpretation: string) => {
+    if (interpretation === 'normal' || score >= 90) return 'text-green-600';
+    if (interpretation === 'borderline' || score >= 80) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  /** Handle table header click to change sort column/direction. */
+  const handleSort = (col: keyof Session) => {
+    if (sortCol === col) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  };
+
+  /** Handle bulk delete of selected sessions with confirmation. */
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ok = await window.electronAPI.showMessageBox({
+      type: 'question',
+      title: t('confirm.title'),
+      message: t('dataManagement.confirm.deleteMultiple', { count: selectedIds.size }),
+      buttons: [t('button.cancel'), t('button.ok')],
+      defaultId: 1,
+      cancelId: 0,
+    });
+    if (!ok) return;
+    try {
+      await window.electronAPI.bulkDeleteSessions(Array.from(selectedIds));
+      setSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)));
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setIsFilterOpen(false);
+      }
+      if (extractRef.current && !extractRef.current.contains(e.target as Node)) {
+        setIsExtractOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Filtering
   const filtered = useMemo(() => {
@@ -316,17 +461,6 @@ export default function DataManagement() {
   }, [sorted, page, pageSize]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
-
-  const getGenderColor = (gender: string, isGeneric: number) => {
-    const color = gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500';
-    return isGeneric ? `${color} border-2 border-dashed border-gray-400` : color;
-  };
-
-  const getAcsColor = (score: number, interpretation: string) => {
-    if (interpretation === 'normal' || score >= 90) return 'text-green-600';
-    if (interpretation === 'borderline' || score >= 80) return 'text-yellow-600';
-    return 'text-red-600';
-  };
 
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
@@ -467,7 +601,7 @@ export default function DataManagement() {
       </div>
 
       {sessions.length === 0 && !loading ? (
-        <div className="text-center py-12 text-gray-500">{t('dataManagement.empty.noRecords')}</div>
+        <EmptyState t={t} />
       ) : (
         <>
           <div className="bg-white border border-[#ECEFF4] rounded-lg overflow-hidden shadow-sm">
@@ -582,126 +716,12 @@ export default function DataManagement() {
                       </td>
                     </tr>
                     {expandedRows[session.id] && (
-                      <tr>
-                        <td colSpan={6} className="p-4 bg-gray-50">
-                          <div className="grid grid-cols-4 gap-4 mb-4">
-                            <div className="p-3 bg-white border rounded-lg shadow-sm">
-                              <div className="text-xs text-gray-500">
-                                {t('dataManagement.metrics.hits')}
-                              </div>
-                              <div className="text-lg font-bold">{session.hits || 0}</div>
-                            </div>
-                            <div className="p-3 bg-white border rounded-lg shadow-sm">
-                              <div className="text-xs text-gray-500">
-                                {t('dataManagement.metrics.commissions')}
-                              </div>
-                              <div className="text-lg font-bold">
-                                {session.commission_errors || 0}
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white border rounded-lg shadow-sm">
-                              <div className="text-xs text-gray-500">
-                                {t('dataManagement.metrics.omissions')}
-                              </div>
-                              <div className="text-lg font-bold">
-                                {session.omission_errors || 0}
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white border rounded-lg shadow-sm">
-                              <div className="text-xs text-gray-500">
-                                {t('dataManagement.metrics.dPrime')}
-                              </div>
-                              <div className="text-lg font-bold">
-                                {(session.d_prime || 0).toFixed(2)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="bg-white border rounded-lg overflow-hidden">
-                            <table className="w-full text-left text-xs">
-                              <thead className="bg-gray-100 border-b">
-                                <tr>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.trial')}</th>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.type')}</th>
-                                  <th className="px-3 py-2">
-                                    {t('dataManagement.trials.outcome')}
-                                  </th>
-                                  <th className="px-3 py-2">
-                                    {t('dataManagement.trials.correct')}
-                                  </th>
-                                  <th className="px-3 py-2">{t('dataManagement.trials.rt')}</th>
-                                  <th
-                                    className="px-3 py-2"
-                                    title={t('dataManagement.trials.anticipatory')}
-                                  >
-                                    {t('dataManagement.trials.anticipatory')}
-                                  </th>
-                                  <th
-                                    className="px-3 py-2"
-                                    title={t('dataManagement.trials.multiple')}
-                                  >
-                                    {t('dataManagement.trials.multiple')}
-                                  </th>
-                                  <th
-                                    className="px-3 py-2"
-                                    title={t('dataManagement.trials.followsCommission')}
-                                  >
-                                    {t('dataManagement.trials.followsCommission')}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sessionTrials[session.id] === undefined ? (
-                                  <tr>
-                                    <td colSpan={8} className="px-3 py-4 text-center text-gray-400">
-                                      {t('dataManagement.trials.loading')}
-                                    </td>
-                                  </tr>
-                                ) : (sessionTrials[session.id]?.length ?? 0) === 0 ? (
-                                  <tr>
-                                    <td colSpan={8} className="px-3 py-4 text-center text-gray-400">
-                                      {t('dataManagement.trials.empty')}
-                                    </td>
-                                  </tr>
-                                ) : (
-                                  sessionTrials[session.id].slice(0, 10).map((trial, idx) => (
-                                    <tr key={idx} className="border-b hover:bg-gray-50">
-                                      <td className="px-3 py-2">{trial.trial_index}</td>
-                                      <td className="px-3 py-2">{trial.stimulus_type}</td>
-                                      <td className="px-3 py-2">{trial.outcome ?? '-'}</td>
-                                      <td className="px-3 py-2">
-                                        {trial.response_correct === null
-                                          ? '-'
-                                          : trial.response_correct
-                                            ? '✓'
-                                            : '✗'}
-                                      </td>
-                                      <td className="px-3 py-2">{trial.response_time_ms ?? '-'}</td>
-                                      <td className="px-3 py-2 text-center">
-                                        {trial.is_anticipatory ? '✓' : ''}
-                                      </td>
-                                      <td className="px-3 py-2 text-center">
-                                        {trial.is_multiple_response ? '✓' : ''}
-                                      </td>
-                                      <td className="px-3 py-2 text-center">
-                                        {trial.follows_commission ? '✓' : ''}
-                                      </td>
-                                    </tr>
-                                  ))
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                          <div className="mt-3 flex justify-end">
-                            <button
-                              onClick={() => handleExtractTrials(session.id)}
-                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 text-sm font-medium"
-                            >
-                              <Download size={14} />
-                              {t('dataManagement.trials.extractAll')}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                      <SessionDetails
+                        session={session}
+                        trials={sessionTrials[session.id]}
+                        onExtract={handleExtractTrials}
+                        t={t}
+                      />
                     )}
                   </React.Fragment>
                 ))}
@@ -719,8 +739,16 @@ export default function DataManagement() {
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => {
-                  if (confirm(t('dataManagement.confirm.clearCache'))) {
+                onClick={async () => {
+                  const ok = await window.electronAPI.showMessageBox({
+                    type: 'question',
+                    title: t('confirm.title'),
+                    message: t('dataManagement.confirm.clearCache'),
+                    buttons: [t('button.cancel'), t('button.ok')],
+                    defaultId: 1,
+                    cancelId: 0,
+                  });
+                  if (ok) {
                     window.electronAPI.queryDatabase('cleanup-expired-records');
                     fetchData();
                   }

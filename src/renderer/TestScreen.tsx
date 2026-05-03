@@ -12,6 +12,7 @@ import { TestHeader, CountdownDisplay, BufferDisplay, TrialProgress } from './co
 import { StimulusContainer } from './components/Stimulus';
 import { ResultsSummary } from './components/Results';
 
+/** Main test execution screen managing phases, stimuli, and results capture. */
 function TestScreen() {
   const { endTest } = useNavigation();
 

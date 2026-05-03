@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+/** Displays buffer period countdown or title during test warm-up. */
 export function BufferDisplay({ countdown }: { countdown?: number }) {
   const { t } = useTranslation('translation');
 

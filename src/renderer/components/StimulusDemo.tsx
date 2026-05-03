@@ -5,6 +5,7 @@ interface StimulusBoxProps {
   type: 'target' | 'non-target';
 }
 
+/** Demo display showing target and non-target stimulus boxes side by side. */
 const StimulusBox: React.FC<StimulusBoxProps> = ({ type }) => {
   const isTarget = type === 'target';
 
@@ -33,6 +34,7 @@ const StimulusBox: React.FC<StimulusBoxProps> = ({ type }) => {
 };
 
 // Main StimulusDemo Component
+/** Main StimulusDemo component. */
 const StimulusDemo: React.FC = () => {
   return (
     <div className="flex gap-12 justify-center">

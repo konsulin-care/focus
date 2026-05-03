@@ -38,7 +38,7 @@ export class ResponseTracker {
   private pendingResponses: PendingResponse[] = [];
   private responseCountPerTrial: Map<number, number> = new Map();
 
-  constructor(config: TestConfig, anticipatoryThresholdMs: number = 150) {
+  constructor(config: TestConfig, anticipatoryThresholdMs = 150) {
     this.config = config;
     this.anticipatoryThresholdMs = anticipatoryThresholdMs;
   }

@@ -1,6 +1,8 @@
 // Shared types for Electron API
 // This file ensures consistent typing across all renderer components
 
+import type { MessageBoxOptions } from 'electron';
+
 export type StimulusType = 'target' | 'non-target';
 import { AttentionMetrics } from './trial';
 
@@ -70,6 +72,9 @@ export interface ElectronAPI {
     status: 'pending' | 'uploaded' | 'failed'
   ) => Promise<void>;
   bulkDeleteSessions: (sessionIds: number[]) => Promise<{ deleted: number }>;
+
+  // UI Dialogs
+  showMessageBox: (options: MessageBoxOptions) => Promise<boolean>;
 }
 
 // Augment the Window interface to include electronAPI

@@ -4,7 +4,7 @@
  * All IPC handler registrations for main-renderer communication.
  */
 
-import { ipcMain } from 'electron';
+import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
 import { DatabaseQueryCommand, TestConfig, SessionWithUser, TrialData } from './types';
 import { queryWhitelist, db } from './database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from './test-config';
@@ -21,14 +21,14 @@ import { processTestEvents } from '@/shared/utils/trial-processing';
 /**
  * Get high-precision timestamp for renderer.
  */
-ipcMain.handle('get-high-precision-time', async () => {
+ipcMain.handle('get-high-precision-time', () => {
   return getHighPrecisionTimeString();
 });
 
 /**
  * Get event timestamp for renderer.
  */
-ipcMain.handle('get-event-timestamp', async () => {
+ipcMain.handle('get-event-timestamp', () => {
   return getHighPrecisionTimeString();
 });
 
@@ -41,11 +41,7 @@ ipcMain.handle('get-event-timestamp', async () => {
  */
 ipcMain.handle(
   'query-database',
-  async (
-    _event: Electron.IpcMainInvokeEvent,
-    command: DatabaseQueryCommand,
-    params?: unknown[]
-  ) => {
+  (_event: Electron.IpcMainInvokeEvent, command: DatabaseQueryCommand, params?: unknown[]) => {
     if (!db) {
       throw new Error('Database not initialized');
     }
@@ -90,23 +86,20 @@ ipcMain.handle(
 // Test Config Handlers
 // ===========================================
 
-ipcMain.handle('get-test-config', async () => {
+ipcMain.handle('get-test-config', () => {
   return getTestConfig();
 });
 
-ipcMain.handle(
-  'save-test-config',
-  async (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
-    try {
-      saveTestConfig(config);
-    } catch (error) {
-      console.error('Failed to save test config:', error);
-      throw error;
-    }
+ipcMain.handle('save-test-config', (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
+  try {
+    saveTestConfig(config);
+  } catch (error) {
+    console.error('Failed to save test config:', error);
+    throw error;
   }
-);
+});
 
-ipcMain.handle('reset-test-config', async () => {
+ipcMain.handle('reset-test-config', () => {
   try {
     resetTestConfig();
   } catch (error) {
@@ -119,11 +112,11 @@ ipcMain.handle('reset-test-config', async () => {
 // GDPR Compliance Handlers
 // ===========================================
 
-ipcMain.handle('cleanup-expired-records', async () => {
+ipcMain.handle('cleanup-expired-records', () => {
   return cleanupExpiredRecords();
 });
 
-ipcMain.handle('get-expired-count', async () => {
+ipcMain.handle('get-expired-count', () => {
   return getExpiredRecordCount();
 });
 
@@ -150,6 +143,7 @@ ipcMain.handle(
     if (!db) {
       throw new Error('Database not initialized');
     }
+    const currentDb = db; // Capture non-null db for use in transaction callback
 
     // Validate consent is given (GDPR requirement)
     if (!consentGiven) {
@@ -184,13 +178,18 @@ ipcMain.handle(
         'omissions',
         'trialCount',
       ];
-      for (const field of expectedNumericFields) {
-        if (
-          typeof (metrics as any)[field] !== 'number' ||
-          !Number.isFinite((metrics as any)[field])
-        ) {
+      function validateNumericMetric(
+        metrics: AttentionMetrics,
+        field: keyof AttentionMetrics
+      ): number {
+        const value = metrics[field];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
           throw new Error(`Invalid metrics: ${field} must be a finite number`);
         }
+        return value;
+      }
+      for (const field of expectedNumericFields) {
+        validateNumericMetric(metrics, field as keyof AttentionMetrics);
       }
 
       // Map AttentionMetrics to TestSession columns
@@ -217,7 +216,6 @@ ipcMain.handle(
 
       // Use transaction for normalized save
       const result = db.transaction(() => {
-        const currentDb = db!;
         // 1. Insert or get user
         const userStmt = currentDb.prepare(
           'INSERT OR IGNORE INTO users (email, age, gender, is_generic) VALUES (?, ?, ?, ?)'
@@ -305,7 +303,7 @@ ipcMain.handle(
 // Data Management Handlers
 // ===========================================
 
-ipcMain.handle('get-all-sessions', async () => {
+ipcMain.handle('get-all-sessions', () => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   return currentDb
@@ -326,7 +324,7 @@ ipcMain.handle('get-all-sessions', async () => {
     .all() as SessionWithUser[];
 });
 
-ipcMain.handle('get-session-with-user', async (_event, sessionId: number) => {
+ipcMain.handle('get-session-with-user', (_event, sessionId: number) => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   return currentDb
@@ -347,7 +345,7 @@ ipcMain.handle('get-session-with-user', async (_event, sessionId: number) => {
     .get(sessionId) as SessionWithUser | undefined;
 });
 
-ipcMain.handle('get-session-trials', async (_event, sessionId: number) => {
+ipcMain.handle('get-session-trials', (_event, sessionId: number) => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   return currentDb
@@ -366,7 +364,7 @@ ipcMain.handle('get-session-trials', async (_event, sessionId: number) => {
 
 ipcMain.handle(
   'update-session-status',
-  async (_event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
+  (_event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
     if (!db) throw new Error('Database not initialized');
     const currentDb = db;
     const uploadedAt = status === 'uploaded' ? new Date().toISOString() : null;
@@ -382,7 +380,7 @@ ipcMain.handle(
   }
 );
 
-ipcMain.handle('bulk-delete-sessions', async (_event, sessionIds: number[]) => {
+ipcMain.handle('bulk-delete-sessions', (_event, sessionIds: number[]) => {
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   if (!Array.isArray(sessionIds) || sessionIds.length === 0) {
@@ -402,20 +400,31 @@ ipcMain.handle('bulk-delete-sessions', async (_event, sessionIds: number[]) => {
 // Test Control Handlers
 // ===========================================
 
-ipcMain.handle('start-test', async () => {
+ipcMain.handle('start-test', () => {
   return startTest();
 });
 
-ipcMain.handle('stop-test', async () => {
+ipcMain.handle('stop-test', () => {
   return stopTest();
 });
 
-ipcMain.handle(
-  'record-response',
-  async (_event: Electron.IpcMainInvokeEvent, responded: boolean) => {
-    recordResponse(responded);
-  }
-);
+ipcMain.handle('record-response', (_event: Electron.IpcMainInvokeEvent, responded: boolean) => {
+  recordResponse(responded);
+});
+
+// ===========================================
+// UI Dialog Handlers
+// ===========================================
+
+/**
+ * Show native modal dialog with specified options.
+ * Returns true if user clicked first button (OK/Yes), false otherwise.
+ */
+ipcMain.handle('show-message-box', async (_event, options: MessageBoxOptions) => {
+  const result = await dialog.showMessageBox(options);
+  // response === 0 means first button (typically OK/Yes)
+  return result.response === 0;
+});
 
 // ===========================================
 // Initialization Helpers

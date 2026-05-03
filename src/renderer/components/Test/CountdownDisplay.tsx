@@ -4,6 +4,7 @@ interface CountdownDisplayProps {
   countdown: number;
 }
 
+/** Full-screen countdown before test starts. */
 export function CountdownDisplay({ countdown }: CountdownDisplayProps) {
   const { t } = useTranslation('translation');
 

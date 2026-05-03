@@ -9,6 +9,7 @@ interface UseTestInputReturn {
   resetResponse: () => void;
 }
 
+/** Tracks user response state and registers click/spacebar handlers. */
 export function useTestInput(phase: TestPhase): UseTestInputReturn {
   const [hasResponded, setHasResponded] = useState(false);
   const lastClickTime = useRef<number>(0);
@@ -33,6 +34,7 @@ export function useTestInput(phase: TestPhase): UseTestInputReturn {
   }, [phase]);
 
   useEffect(() => {
+    /** Handle mouse click to record response (debounced). */
     const handleClick = (event: MouseEvent) => {
       if (phase !== 'running') return;
       if (hasResponded) return;
@@ -47,6 +49,7 @@ export function useTestInput(phase: TestPhase): UseTestInputReturn {
       recordResponse(true);
     };
 
+    /** Handle Space key to record response. */
     const handleKeyDown = (event: KeyboardEvent) => {
       if (phase !== 'running') return;
       if (hasResponded) return;

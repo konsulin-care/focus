@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { TestCompleteResult } from '@/renderer/types/electronAPI';
 import type { AttentionMetrics } from '@/renderer/types/trial';
+import type { MessageBoxOptions } from 'electron';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand =
@@ -110,4 +111,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('update-session-status', sessionId, status),
   bulkDeleteSessions: (sessionIds: number[]) =>
     ipcRenderer.invoke('bulk-delete-sessions', sessionIds),
+
+  // UI Dialog API
+  showMessageBox: (options: MessageBoxOptions) => ipcRenderer.invoke('show-message-box', options),
 });

@@ -89,6 +89,10 @@ function ageInRange(age: number, ageRange: [number, number]): boolean {
 // Parse JSON data once at module load
 let normativeDataCache: NormativeStats[] | null = null;
 
+/**
+ * Parse raw normative JSON data into typed array, caching result at module scope.
+ * @returns Array of normative statistics by age/gender group.
+ */
 function parseNormativeData(): NormativeStats[] {
   if (normativeDataCache) {
     return normativeDataCache;

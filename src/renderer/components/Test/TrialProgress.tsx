@@ -5,6 +5,7 @@ interface TrialProgressProps {
   totalTrials: number;
 }
 
+/** Shows current trial number out of total during test execution. */
 export function TrialProgress({ currentTrial, totalTrials }: TrialProgressProps) {
   const { t } = useTranslation('translation');
 

@@ -20,6 +20,7 @@ interface AcsResultSectionProps {
 export function AcsResultSection({ acs }: AcsResultSectionProps) {
   const { t } = useTranslation();
 
+  /** Format z-score value for display, handling null case. */
   const formatZScore = (value: number | null) => {
     if (value === null) return <span className="text-gray-500">—</span>;
     return value.toFixed(2);

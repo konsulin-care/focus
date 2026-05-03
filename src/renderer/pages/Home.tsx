@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
 import { TestConfig } from '@/renderer/types/electronAPI';
 
+/** Home page: displays app intro, test duration, and start button. */
 export default function Home() {
   const { t } = useTranslation('translation', { keyPrefix: 'home' });
   const { t: buttonT } = useTranslation('translation', { keyPrefix: 'button' });
@@ -13,6 +14,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    /** Fetch test configuration and compute displayed test duration. */
     const fetchTestConfig = async () => {
       try {
         const config: TestConfig = await window.electronAPI.getTestConfig();

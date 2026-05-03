@@ -17,6 +17,10 @@ export interface TestCompleteData {
   elapsedTimeNs: string;
 }
 
+/**
+ * Schedules trial timing with drift correction, delegating response tracking to ResponseTracker.
+ * Manages stimulus presentation, timing windows, and test completion.
+ */
 export class TrialScheduler {
   private config: TestConfig;
   private responseTracker: ResponseTracker;

@@ -137,12 +137,12 @@ export const queryWhitelist: Record<DatabaseQueryCommand, QueryWhitelistEntry> =
     type: 'select-many',
   },
   'update-session-status': {
-    sql: `UPDATE test_sessions SET upload_status = ?, uploaded_at = ? WHERE id = ?`,
+    sql: 'UPDATE test_sessions SET upload_status = ?, uploaded_at = ? WHERE id = ?',
     paramCount: 3,
     type: 'write',
   },
   'bulk-delete-sessions': {
-    sql: `DELETE FROM test_sessions WHERE id = ?`,
+    sql: 'DELETE FROM test_sessions WHERE id = ?',
     paramCount: 1,
     type: 'write',
   },

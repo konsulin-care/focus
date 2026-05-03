@@ -6,11 +6,11 @@
  * registers module-alias, then loads the actual main process.
  */
 
-import * as path from 'path';
+import { resolve } from 'node:path';
 
 // Determine the application root (where package.json resides)
 // This works both in development and packaged Electron builds
-const appRoot = path.resolve(__dirname, '../..');
+const appRoot = resolve(__dirname, '../..');
 process.chdir(appRoot);
 
 // Register module-alias to resolve @/ imports
