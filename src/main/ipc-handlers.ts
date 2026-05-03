@@ -14,6 +14,17 @@ import { startTest, stopTest, recordResponse, setMainWindow } from './test-engin
 import type { AttentionMetrics } from '@/renderer/types/trial';
 import { processTestEvents } from '@/shared/utils/trial-processing';
 
+/**
+ * Validates that a specific metric is a finite number.
+ */
+function validateNumericMetric(metrics: AttentionMetrics, field: keyof AttentionMetrics): number {
+  const value = metrics[field];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid metrics: ${String(field)} must be a finite number`);
+  }
+  return value;
+}
+
 // ===========================================
 // Timing Handlers
 // ===========================================
@@ -177,17 +188,11 @@ ipcMain.handle(
         'omissions',
         'trialCount',
       ];
-      function validateNumericMetric(
-        metrics: AttentionMetrics,
-        field: keyof AttentionMetrics
-      ): number {
-        const value = metrics[field];
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-          throw new Error(`Invalid metrics: ${field} must be a finite number`);
-        }
-        return value;
-      }
       for (const field of expectedNumericFields) {
+        // Security: Use a whitelist to prevent object injection via bracket notation
+        if (!expectedNumericFields.includes(field)) {
+          throw new Error(`Unauthorized metric field: ${String(field)}`);
+        }
         validateNumericMetric(metrics, field as keyof AttentionMetrics);
       }
 
@@ -250,7 +255,7 @@ ipcMain.handle(
           totalTrials, // metrics.trialCount
           JSON.stringify({}), // test_config placeholder (unchanged)
           'pending',
-          consentGiven ? 1 : 0,
+          Number(consentGiven),
           consentTimestamp
         ).lastInsertRowid;
 
@@ -280,9 +285,9 @@ ipcMain.handle(
             trial.outcome,
             responseCorrect,
             trial.responseTimeMs,
-            trial.isAnticipatory ? 1 : 0,
-            trial.isMultipleResponse ? 1 : 0,
-            trial.followsCommission ? 1 : 0
+            Number(trial.isAnticipatory),
+            Number(trial.isMultipleResponse),
+            Number(trial.followsCommission)
           );
         }
 

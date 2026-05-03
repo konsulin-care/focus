@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -17,6 +17,7 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Company Logo</title>
     <defs id="defs2">
       <style type="text/css" id="style1">
         {`

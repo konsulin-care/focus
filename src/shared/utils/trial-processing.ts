@@ -115,7 +115,10 @@ export function processTestEvents(
       if (!trialResponses.has(event.trialIndex)) {
         trialResponses.set(event.trialIndex, []);
       }
-      trialResponses.get(event.trialIndex)!.push(event);
+      const responses = trialResponses.get(event.trialIndex);
+      if (responses) {
+        responses.push(event);
+      }
     }
   }
 
@@ -159,11 +162,14 @@ export function processTestEvents(
 
   // Second pass: mark trials that follow commission errors
   for (let i = 1; i < trialResults.length; i++) {
-    if (trialResults[i - 1].outcome === 'commission') {
+    const currentTrial = trialResults[i];
+    const previousTrial = trialResults[i - 1];
+
+    if (previousTrial && previousTrial.outcome === 'commission') {
       trialResults[i] = {
-        ...trialResults[i],
+        ...currentTrial,
         followsCommission: true,
-        postCommissionResponseTimeMs: trialResults[i].responseTimeMs ?? undefined,
+        postCommissionResponseTimeMs: currentTrial.responseTimeMs ?? undefined,
       };
     }
   }

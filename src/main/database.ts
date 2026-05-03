@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
-import { DatabaseQueryCommand, QueryWhitelistEntry } from './types';
+import { DatabaseQueryCommand, QueryWhitelistEntry, TestEvent } from './types';
 import { getOrCreateEncryptionKey, migrateToEncrypted } from './encryption';
 import { processTestEvents } from '@/shared/utils/trial-processing';
 import { calculateMean, calculateStdDevWithMean } from '@/shared/utils/basic-stats';
@@ -324,7 +324,7 @@ export function initDatabase(): void {
           // 2. Trials & Metrics
           // Process test events first to get trial results for metric computation
           const totalTrials = testDataParsed.events.filter(
-            (e: any) => e.eventType === 'stimulus-onset'
+            (e: TestEvent) => e.eventType === 'stimulus-onset'
           ).length;
           const trialResults = processTestEvents(testDataParsed.events, { totalTrials });
 
@@ -359,9 +359,9 @@ export function initDatabase(): void {
             const dpZ = (dPrime - normStats.dPrimeMean) / normStats.dPrimeSD;
 
             acsScore =
-              (isFinite(rtZ) ? rtZ : 0) +
-              (isFinite(varZ) ? varZ : 0) +
-              (isFinite(dpZ) ? dpZ : 0) +
+              (Number.isFinite(rtZ) ? rtZ : 0) +
+              (Number.isFinite(varZ) ? varZ : 0) +
+              (Number.isFinite(dpZ) ? dpZ : 0) +
               TRIAL_CONSTANTS.ACS_CONSTANT;
 
             if (acsScore >= TRIAL_CONSTANTS.ACS_NORMAL_THRESHOLD) {

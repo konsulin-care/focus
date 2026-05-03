@@ -2,9 +2,12 @@
   "compilerOptions": {
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -14,13 +17,24 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "jsx": "react-jsx",
-    "types": ["node", "better-sqlite3"],
+    "types": [
+      "node",
+      "better-sqlite3"
+    ],
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*", "./src/vite-env-override.d.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "./src/vite-env-override.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

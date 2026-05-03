@@ -248,7 +248,7 @@ export default function DataManagement() {
         }))
       );
       downloadFile(JSON.stringify(data, null, 2), `${filename}.json`, 'application/json');
-    } else if (mode === 'full-csv') {
+    } else {
       const rows: string[] = [];
       const headers = [
         'Email',
@@ -353,7 +353,7 @@ export default function DataManagement() {
     const expanding = !expandedRows[id];
     setExpandedRows((prev) => ({ ...prev, [id]: expanding }));
     if (expanding && sessionTrials[id] === undefined) {
-      fetchTrials(id);
+      void fetchTrials(id);
     }
   };
 
@@ -484,6 +484,7 @@ export default function DataManagement() {
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
+      if (!Object.hasOwn(a, sortCol) || !Object.hasOwn(b, sortCol)) return 0;
       const aVal = a[sortCol];
       const bVal = b[sortCol];
       if (typeof aVal === 'number' && typeof bVal === 'number') {
@@ -602,6 +603,7 @@ export default function DataManagement() {
               <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
                 <div className="py-1">
                   <button
+                    type="button"
                     onClick={() => {
                       void handleExport('summary-csv');
                       setIsExtractOpen(false);
@@ -611,6 +613,7 @@ export default function DataManagement() {
                     Summary (CSV)
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       void handleExport('summary-json');
                       setIsExtractOpen(false);
@@ -620,6 +623,7 @@ export default function DataManagement() {
                     Summary (JSON)
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       void handleExport('full-csv');
                       setIsExtractOpen(false);
@@ -629,6 +633,7 @@ export default function DataManagement() {
                     Full Data (CSV)
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       void handleExport('full-json');
                       setIsExtractOpen(false);
@@ -702,16 +707,26 @@ export default function DataManagement() {
                 {paginated.map((session) => (
                   <React.Fragment key={session.id}>
                     <tr
+                      key={session.id}
                       className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => {
                         toggleRow(session.id);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleRow(session.id);
+                        }
+                      }}
+                      tabIndex={0}
                     >
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(session.id)}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
                           onChange={(e) => {
                             e.stopPropagation();
                             const next = new Set(selectedIds);
@@ -753,6 +768,12 @@ export default function DataManagement() {
                         onClick={(e) => {
                           e.stopPropagation();
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                          }
+                        }}
+                        tabIndex={-1}
                       >
                         <select
                           value={session.upload_status}

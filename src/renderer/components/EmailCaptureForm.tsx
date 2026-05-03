@@ -214,8 +214,8 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
 
       {errors.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded p-3">
-          {errors.map((err, i) => (
-            <div key={`${err}-${i}`} className="text-red-600 text-sm">
+          {errors.map((err) => (
+            <div key={err} className="text-red-600 text-sm">
               {err}
             </div>
           ))}
