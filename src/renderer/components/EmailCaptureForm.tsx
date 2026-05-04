@@ -169,7 +169,9 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => {
+        handleSubmit(e);
+      }}
       className="space-y-6 max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg"
     >
       <div>

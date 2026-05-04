@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { randomBytes } from 'node:crypto';
-import { isValidEmail } from './main/gdpr';
+import { isValidEmail } from '@/main/gdpr';
 import { queryWhitelist } from '@/main/database';
 
 // ===========================================

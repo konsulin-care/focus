@@ -165,7 +165,7 @@ export function processTestEvents(
     const currentTrial = trialResults[i];
     const previousTrial = trialResults[i - 1];
 
-    if (previousTrial && previousTrial.outcome === 'commission') {
+    if (previousTrial.outcome === 'commission') {
       trialResults[i] = {
         ...currentTrial,
         followsCommission: true,

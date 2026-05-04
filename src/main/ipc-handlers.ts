@@ -5,12 +5,12 @@
  */
 
 import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
-import { DatabaseQueryCommand, TestConfig, SessionWithUser, TrialData } from './types';
-import { queryWhitelist, db } from './database';
-import { getTestConfig, saveTestConfig, resetTestConfig } from './test-config';
-import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from './gdpr';
-import { getHighPrecisionTimeString, TIMING_VALIDATION_PASSED } from './timing';
-import { startTest, stopTest, recordResponse, setMainWindow } from './test-engine';
+import { DatabaseQueryCommand, TestConfig, SessionWithUser, TrialData } from '@/main/types';
+import { queryWhitelist, db } from '@/main/database';
+import { getTestConfig, saveTestConfig, resetTestConfig } from '@/main/test-config';
+import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from '@/main/gdpr';
+import { getHighPrecisionTimeString, TIMING_VALIDATION_PASSED } from '@/main/timing';
+import { startTest, stopTest, recordResponse, setMainWindow } from '@/main/test-engine';
 import type { AttentionMetrics } from '@/renderer/types/trial';
 import { processTestEvents } from '@/shared/utils/trial-processing';
 
@@ -58,7 +58,7 @@ ipcMain.handle(
     }
 
     // Validate command is in whitelist
-    if (!(command in queryWhitelist)) {
+    if (!Object.hasOwn(queryWhitelist, command)) {
       throw new Error(`Invalid database command: ${command}`);
     }
 
@@ -141,7 +141,7 @@ ipcMain.handle('get-expired-count', () => {
  */
 ipcMain.handle(
   'save-test-result-with-consent',
-  async (
+  (
     _event: Electron.IpcMainInvokeEvent,
     testData: string,
     email: string,

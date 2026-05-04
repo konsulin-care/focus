@@ -1,5 +1,10 @@
 import type React from 'react';
 
+/**
+ * Presentational component that renders the Konsulin FOCUS logo as an SVG.
+ *
+ * @param props - SVG properties for customization (e.g., className, style)
+ */
 export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlSpace="preserve"

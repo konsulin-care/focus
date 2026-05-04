@@ -72,6 +72,7 @@ export function getOrCreateEncryptionKey(): string {
     console.log('[ENC] New encryption key generated and stored');
   } catch (error) {
     console.error('[ENC] Failed to store encryption key:', error);
+    throw error;
   }
 
   return newKey;

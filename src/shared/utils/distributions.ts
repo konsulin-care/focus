@@ -95,35 +95,44 @@ export function inverseNormalCDFMoro(p: number): number {
   const pLow = 0.02425; // Lower tail threshold
   const pHigh = 1 - pLow; // Upper tail threshold
 
-  let q: number, r: number;
+  let qVal: number, rVal: number;
 
   if (p < pLow) {
     // Lower tail region
-    q = Math.sqrt(-2 * Math.log(p));
+    qVal = Math.sqrt(-2 * Math.log(p));
     return (
-      (((((coeffC[0] * q + coeffC[1]) * q + coeffC[2]) * q + coeffC[3]) * q + coeffC[4]) * q +
+      (((((coeffC[0] * qVal + coeffC[1]) * qVal + coeffC[2]) * qVal + coeffC[3]) * qVal +
+        coeffC[4]) *
+        qVal +
         coeffC[5]) /
-      ((((coeffD[0] * q + coeffD[1]) * q + coeffD[2]) * q + coeffD[3]) * q + 1)
+      ((((coeffD[0] * qVal + coeffD[1]) * qVal + coeffD[2]) * qVal + coeffD[3]) * qVal + 1)
     );
   } else if (p <= pHigh) {
     // Central region
-    q = p - 0.5;
-    r = q * q;
+    qVal = p - 0.5;
+    rVal = qVal * qVal;
     return (
-      ((((((coeffA[0] * r + coeffA[1]) * r + coeffA[2]) * r + coeffA[3]) * r + coeffA[4]) * r +
+      ((((((coeffA[0] * rVal + coeffA[1]) * rVal + coeffA[2]) * rVal + coeffA[3]) * rVal +
+        coeffA[4]) *
+        rVal +
         coeffA[5]) *
-        q) /
-      (((((coeffB[0] * r + coeffB[1]) * r + coeffB[2]) * r + coeffB[3]) * r + coeffB[4]) * r + 1)
+        qVal) /
+      (((((coeffB[0] * rVal + coeffB[1]) * rVal + coeffB[2]) * rVal + coeffB[3]) * rVal +
+        coeffB[4]) *
+        rVal +
+        1)
     );
   } else {
     // Upper tail region
-    q = Math.sqrt(-2 * Math.log(1 - p));
+    qVal = Math.sqrt(-2 * Math.log(1 - p));
     return (
       -(
-        ((((coeffC[0] * q + coeffC[1]) * q + coeffC[2]) * q + coeffC[3]) * q + coeffC[4]) * q +
+        ((((coeffC[0] * qVal + coeffC[1]) * qVal + coeffC[2]) * qVal + coeffC[3]) * qVal +
+          coeffC[4]) *
+          qVal +
         coeffC[5]
       ) /
-      ((((coeffD[0] * q + coeffD[1]) * q + coeffD[2]) * q + coeffD[3]) * q + 1)
+      ((((coeffD[0] * qVal + coeffD[1]) * qVal + coeffD[2]) * qVal + coeffD[3]) * qVal + 1)
     );
   }
 }
@@ -150,11 +159,13 @@ export function normalCDF(z: number): number {
   const erfParam = 0.3275911; // Parameter for error function approximation
 
   const sign = z < 0 ? -1 : 1;
-  const x = Math.abs(z) / Math.sqrt(2);
+  const xVal = Math.abs(z) / Math.sqrt(2);
 
-  const t = 1.0 / (1.0 + erfParam * x);
-  const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  const tVal = 1.0 / (1.0 + erfParam * xVal);
+  const yVal =
+    1.0 -
+    ((((a5 * tVal + a4) * tVal + a3) * tVal + a2) * tVal + a1) * tVal * Math.exp(-xVal * xVal);
 
-  const result = 0.5 * (1.0 + sign * y);
+  const result = 0.5 * (1.0 + sign * yVal);
   return result * 100;
 }

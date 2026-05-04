@@ -1,7 +1,11 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+import {
+  contextBridge,
+  ipcRenderer,
+  type IpcRendererEvent,
+  type MessageBoxOptions,
+} from 'electron';
 import type { TestCompleteResult } from '@/renderer/types/electronAPI';
 import type { AttentionMetrics } from '@/renderer/types/trial';
-import type { MessageBoxOptions } from 'electron';
 
 // Type definitions for the safe database API
 type DatabaseQueryCommand =
