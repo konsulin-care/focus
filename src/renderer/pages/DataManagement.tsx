@@ -375,7 +375,9 @@ const SessionRow: React.FC<SessionRowProps> = ({
     <td className="px-4 py-3">{new Date(session.test_date).toLocaleDateString()}</td>
     <td
       className="px-4 py-3"
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -750,7 +752,7 @@ export default function DataManagement() {
     const expanding = !expandedRows[id];
     setExpandedRow(id, expanding);
     if (expanding && sessionTrials[id] === undefined) {
-      fetchTrials(id);
+      void fetchTrials(id);
     }
   };
 
@@ -836,7 +838,7 @@ export default function DataManagement() {
   }, [t, fetchData]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   useEffect(() => {
@@ -853,7 +855,7 @@ export default function DataManagement() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [setIsFilterOpen, setIsExtractOpen]);
 
   const filtered = useMemo(() => {
     return sessions.filter((s) => {
@@ -944,7 +946,7 @@ export default function DataManagement() {
               <button
                 type="button"
                 onClick={() => {
-                  handleClearCache();
+                  void handleClearCache();
                 }}
                 className="px-3 py-2 border border-[#ECEFF4] rounded-md text-sm font-medium hover:bg-gray-50"
               >

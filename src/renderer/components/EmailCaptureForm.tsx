@@ -170,7 +170,7 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
   return (
     <form
       onSubmit={(e) => {
-        handleSubmit(e);
+        void handleSubmit(e);
       }}
       className="space-y-6 max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg"
     >
