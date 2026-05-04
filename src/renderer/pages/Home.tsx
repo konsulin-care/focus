@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
 import { TestConfig } from '@/renderer/types/electronAPI';
 
+/** Home page: displays app intro, test duration, and start button. */
 export default function Home() {
   const { t } = useTranslation('translation', { keyPrefix: 'home' });
   const { t: buttonT } = useTranslation('translation', { keyPrefix: 'button' });
@@ -13,6 +14,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    /** Fetch test configuration and compute displayed test duration. */
     const fetchTestConfig = async () => {
       try {
         const config: TestConfig = await window.electronAPI.getTestConfig();
@@ -31,22 +33,16 @@ export default function Home() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4 text-gray-900">
-        {appT('app.title')}
-      </h1>
-      <p className="text-gray-600 mb-6 text-lg">
-        {t('description')}
-      </p>
+      <h1 className="text-3xl font-bold mb-4 text-gray-900">{appT('app.title')}</h1>
+      <p className="text-gray-600 mb-6 text-lg">{t('description')}</p>
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-3 text-blue-900">
-          {t('duration.title')}
-        </h2>
+        <h2 className="text-xl font-semibold mb-3 text-blue-900">{t('duration.title')}</h2>
         <p className="text-blue-700">
-          {isLoading ? t('duration.text', { duration: '...' }) : t('duration.text', { duration: testDuration.toString() })}
+          {isLoading
+            ? t('duration.text', { duration: '...' })
+            : t('duration.text', { duration: testDuration.toString() })}
         </p>
-        <p className="text-blue-700 mt-3">
-          {t('instructions.text')}
-        </p>
+        <p className="text-blue-700 mt-3">{t('instructions.text')}</p>
       </div>
       <button
         onClick={() => setPage('test')}

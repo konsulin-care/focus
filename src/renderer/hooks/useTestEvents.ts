@@ -28,8 +28,8 @@ export function useTestEvents(
   useEffect(() => {
     const unsubscribeStimulus = window.electronAPI.onStimulusChange((event) => {
       setLastEvent(event);
-      setTestEvents(prev => [...prev, event]);
-      
+      setTestEvents((prev) => [...prev, event]);
+
       if (event.eventType === 'stimulus-onset') {
         setTrialCount(event.trialIndex + 1);
         resetResponse(); // Reset response state for new trial

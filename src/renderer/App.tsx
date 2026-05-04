@@ -6,6 +6,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import About from './pages/About';
+import DataManagement from '@/renderer/pages/DataManagement';
 import TestScreen from './TestScreen';
 import { useNavigation } from './store';
 
@@ -55,6 +56,8 @@ function App() {
         return <Settings />;
       case 'about':
         return <About />;
+      case 'data-management':
+        return <DataManagement />;
       default:
         return <Home />;
     }
@@ -69,11 +72,9 @@ function App() {
           <header className="flex justify-end items-center px-6 py-4 bg-white border-b border-gray-200 shadow-sm">
             <LanguageSwitcher />
           </header>
-          
+
           {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            {renderPage()}
-          </main>
+          <main className="flex-1 overflow-auto">{renderPage()}</main>
         </div>
       </div>
     </I18nextProvider>

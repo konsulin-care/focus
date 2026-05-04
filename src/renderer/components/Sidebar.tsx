@@ -1,9 +1,9 @@
 import React from 'react';
-import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight, Database } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { useNavigation, Page } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
-import logoUrl from '@/../public/images/logo.svg';
+import { Logo } from '.';
 
 /**
  * Sidebar component for application navigation
@@ -16,6 +16,11 @@ export default function Sidebar() {
   const navItems: { page: Page; icon: React.ReactNode; labelKey: string }[] = [
     { page: 'home', icon: <Home size={20} strokeWidth={2} />, labelKey: 'nav.home' },
     { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, labelKey: 'nav.test' },
+    {
+      page: 'data-management',
+      icon: <Database size={20} strokeWidth={2} />,
+      labelKey: 'nav.dataManagement',
+    },
     { page: 'settings', icon: <Cog size={20} strokeWidth={2} />, labelKey: 'nav.settings' },
     { page: 'about', icon: <Info size={20} strokeWidth={2} />, labelKey: 'nav.about' },
   ];
@@ -23,11 +28,7 @@ export default function Sidebar() {
   // Store logo element to avoid repetition
   const logoElement = (
     <div className="w-10 h-10 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0">
-      <img
-        src={logoUrl}
-        alt="F.O.C.U.S. Logo"
-        className="w-full h-full"
-      />
+      <Logo className="w-full h-full" aria-label="F.O.C.U.S. Logo" />
     </div>
   );
 
@@ -43,9 +44,11 @@ export default function Sidebar() {
         `}
       >
         {/* Logo and Collapse Toggle */}
-        <div className={`
+        <div
+          className={`
           px-4 h-16 border-b border-sidebar-border flex items-center justify-center relative
-        `}>
+        `}
+        >
           {isSidebarCollapsed ? (
             logoElement
           ) : (
@@ -80,9 +83,7 @@ export default function Sidebar() {
           absolute right-0 top-8 z-10
           ${
             /* Position toggle: full offset when collapsed, half-hanging when expanded */
-            isSidebarCollapsed
-              ? 'translate-x-full ml-2'
-              : 'translate-x-1/2'
+            isSidebarCollapsed ? 'translate-x-full ml-2' : 'translate-x-1/2'
           }
           -translate-y-1/2
           transition-all duration-300
@@ -93,7 +94,11 @@ export default function Sidebar() {
           className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
           title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isSidebarCollapsed ? <ChevronRight size={20} strokeWidth={2} /> : <ChevronLeft size={20} strokeWidth={2} />}
+          {isSidebarCollapsed ? (
+            <ChevronRight size={20} strokeWidth={2} />
+          ) : (
+            <ChevronLeft size={20} strokeWidth={2} />
+          )}
         </button>
       </div>
     </div>

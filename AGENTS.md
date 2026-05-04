@@ -56,8 +56,9 @@ updated: 2026-05-01
 - No credentials in source; configure via `.env` (`N8N_WEBHOOK_URL`, `SUPERTOKENS_*`).
 
 ## Node.js Built-in Imports
-- Use `node:` protocol for Node.js built-in modules (e.g., `import * as crypto from 'node:crypto'`).
+- Use `node:` protocol for Node.js built-in modules using named imports (e.g., `import { randomBytes } from 'node:crypto'`, `import { join } from 'node:path'`).
 - The `node:` protocol improves clarity and avoids potential conflicts.
+- Avoid namespace/wildcard imports (`import * as`) — use named imports for better tree-shaking and explicitness.
 
 ## Sub‑module AGENTS.md locations
 - `src/main/AGENTS.md` – main‑process IPC and timing details.

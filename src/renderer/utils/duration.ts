@@ -4,15 +4,13 @@
  * Utilities for calculating test duration from test configuration.
  */
 
-
-
 import { TestConfig } from '@/renderer/types/electronAPI';
 
 /**
  * Calculate test duration in minutes from test configuration.
- * 
+ *
  * Formula: totalTrials × (stimulusDurationMs + interstimulusIntervalMs) / 60000
- * 
+ *
  * @param config - Test configuration object
  * @returns Duration in minutes (rounded to 1 decimal place)
  */
@@ -24,7 +22,7 @@ export function calculateTestDuration(config: TestConfig): number {
 
 /**
  * Calculate test duration in milliseconds from test configuration.
- * 
+ *
  * @param config - Test configuration object
  * @returns Duration in milliseconds
  */

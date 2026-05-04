@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Trial Result Types
- * 
+ *
  * Types for post-processed trial data and computed metrics.
  */
 
@@ -17,25 +17,25 @@ export type TrialOutcome = 'hit' | 'omission' | 'commission' | 'correct-rejectio
 export interface TrialResult {
   /** Index of the trial (0-based) */
   trialIndex: number;
-  
+
   /** Type of stimulus presented */
   stimulusType: StimulusType;
-  
+
   /** Primary behavioral outcome */
   outcome: TrialOutcome;
-  
+
   /** Response time in milliseconds, null if no response */
   responseTimeMs: number | null;
-  
+
   /** True if response was within 150ms of stimulus onset */
   isAnticipatory: boolean;
-  
+
   /** True if more than one response was recorded in this trial */
   isMultipleResponse: boolean;
-  
+
   /** True if this trial immediately follows a commission error */
   followsCommission: boolean;
-  
+
   /** Response time for post-commission trials, if applicable */
   postCommissionResponseTimeMs?: number;
 }
@@ -82,7 +82,7 @@ export interface AttentionMetrics {
   acs: number | null;
   /** Interpretation of ACS score (unavailable if no normative data) */
   acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits' | 'unavailable';
-  
+
   // Raw response counts (for accurate total responses calculation)
   /** Number of correct target detections (CORTGT) */
   hits: number;
@@ -96,13 +96,13 @@ export interface AttentionMetrics {
   anticipatoryResponses: number;
   /** Number of trials with multiple button presses (MULT) */
   multipleResponses: number;
-  
+
   // Percentages (T.O.V.A. style calculations exclude anticipatory from denominator)
   /** Omission error percentage */
   omissionPercent: number;
   /** Commission error percentage */
   commissionPercent: number;
-  
+
   // Other metrics
   /** D Prime (signal detection sensitivity) */
   dPrime: number;
@@ -133,7 +133,7 @@ export interface AcsCalculationDetails {
   normativeGroup: string;
   /** Whether normative data was found for this subject */
   normativeAvailable: boolean;
-  
+
   // D' Calculation details
   dPrime: {
     /** Raw hit rate (0-1) */
@@ -151,7 +151,7 @@ export interface AcsCalculationDetails {
     /** Final D' value */
     result: number;
   };
-  
+
   // Variability details
   variability: {
     /** Mean response time in ms */
@@ -161,7 +161,7 @@ export interface AcsCalculationDetails {
     /** All valid response times used in calculation */
     responseTimes: number[];
   };
-  
+
   // Z-score calculations
   zScores: {
     responseTime: {
@@ -195,7 +195,7 @@ export interface AcsCalculationDetails {
       result: number | null;
     };
   };
-  
+
   // Final ACS calculation (null if no normative data available)
   acs: {
     /** Response Time Z-score (Half 1, null if no normative data) */

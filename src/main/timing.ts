@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Timing Utilities
- * 
+ *
  * High-precision timing functions for clinical-grade measurement.
  * Uses Node.js process.hrtime.bigint() for nanosecond resolution.
  */
@@ -18,19 +18,19 @@ export function bigIntSqrt(n: bigint): bigint {
   if (n < 0n) {
     throw new Error('Cannot compute square root of negative number');
   }
-  
+
   if (n === 0n || n === 1n) {
     return n;
   }
-  
+
   let low = 1n;
   let high = n;
   let result = 0n;
-  
+
   while (low <= high) {
     const mid = (low + high) / 2n;
     const midSquared = mid * mid;
-    
+
     if (midSquared === n) {
       return mid;
     } else if (midSquared < n) {
@@ -40,7 +40,7 @@ export function bigIntSqrt(n: bigint): bigint {
       high = mid - 1n;
     }
   }
-  
+
   return result;
 }
 
@@ -51,7 +51,7 @@ export function bigIntSqrt(n: bigint): bigint {
 /**
  * Validates the timing precision of the system using process.hrtime.bigint().
  * Measures 1000 iterations of timestamp capture and calculates mean and standard deviation.
- * 
+ *
  * @returns boolean indicating whether timing precision meets clinical requirements
  *          (standard deviation < 0.001 milliseconds)
  */
@@ -128,7 +128,7 @@ export const TIMING_VALIDATION_PASSED = timingValidationPassed;
 /**
  * Get current high-precision timestamp as nanosecond bigint.
  * Wraps process.hrtime.bigint() for consistent API.
- * 
+ *
  * @returns Current timestamp as bigint (nanoseconds)
  */
 export function getHighPrecisionTime(): bigint {
@@ -138,7 +138,7 @@ export function getHighPrecisionTime(): bigint {
 /**
  * Get current high-precision timestamp as string.
  * Useful for IPC communication which requires serializable types.
- * 
+ *
  * @returns Current timestamp as string
  */
 export function getHighPrecisionTimeString(): string {

@@ -214,5 +214,61 @@
     "saveFailed": "Gagal menyimpan pengaturan",
     "resetSuccess": "Pengaturan dikembalikan ke bawaan",
     "resetFailed": "Gagal mengembalikan pengaturan"
+  },
+  "dataManagement": {
+    "title": "Manajemen Data",
+    "searchPlaceholder": "Cari berdasarkan email...",
+    "filterAll": "Semua",
+    "filterPending": "Tertunda",
+    "filterUploaded": "Terunggah",
+    "filterFailed": "Gagal",
+    "bulkDelete": "Hapus Yang Dipilih",
+    "clearCache": "Hapus Cache Lokal",
+    "empty": {
+      "noRecords": "Tidak ada data tes"
+    },
+    "confirm": {
+      "deleteSingle": "Anda yakin ingin menghapus sesi ini?",
+      "deleteMultiple": "Anda yakin ingin menghapus {{count}} sesi?",
+      "clearCache": "Anda yakin ingin menghapus semua data cache lokal?"
+    },
+    "table": {
+      "email": "Email",
+      "age": "Usia",
+      "acs": "ACS",
+      "date": "Tanggal",
+      "status": "Status",
+      "actions": "Aksi"
+    },
+    "genericDemo": "Demo",
+    "actions": {
+      "viewDetails": "Lihat detail",
+      "delete": "Hapus sesi"
+    },
+    "metrics": {
+      "hits": "Sukses",
+      "commissions": "Komisi",
+      "omissions": "Kelalaian",
+      "dPrime": "D'"
+    },
+    "trials": {
+      "trial": "Percobaan",
+      "type": "Jenis",
+      "outcome": "Hasil",
+      "correct": "Benar",
+      "rt": "RT (md)",
+      "anticipatory": "Antisipasi",
+      "multiple": "Resp. Ganda",
+      "followsCommission": "Pasca-Komisi",
+      "loading": "Memuat percobaan...",
+      "empty": "Tidak ada percobaan",
+      "extractAll": "Ekstrak Semua Percobaan"
+    },
+    "status": {
+      "pending": "Tertunda",
+      "uploaded": "Terunggah",
+      "failed": "Gagal"
+    },
+    "showing": "Menampilkan {{from}} - {{to}} dari {{total}} sesi"
   }
 }

@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Trial Scheduler
- * 
+ *
  * Dedicated class for managing trial timing and stimulus presentation.
  * Handles drift-corrected scheduling with high-precision timestamps.
  * Delegates response tracking to ResponseTracker.
@@ -17,12 +17,16 @@ export interface TestCompleteData {
   elapsedTimeNs: string;
 }
 
+/**
+ * Schedules trial timing with drift correction, delegating response tracking to ResponseTracker.
+ * Manages stimulus presentation, timing windows, and test completion.
+ */
 export class TrialScheduler {
   private config: TestConfig;
   private responseTracker: ResponseTracker;
   private onStimulusChange: (event: TestEvent) => void;
   private onTestComplete: (data: TestCompleteData) => void;
-  
+
   // State (moved from test-engine.ts module variables)
   private testRunning = false;
   private testEvents: TestEvent[] = [];
@@ -49,33 +53,33 @@ export class TrialScheduler {
 
   /**
    * Start the test sequence with the given trial sequence.
-   * 
+   *
    * @param sequence - Array of stimulus types for the full test
    * @param startTimeNs - Start timestamp in nanoseconds
    */
   start(sequence: StimulusType[], startTimeNs: bigint): void {
     if (this.testRunning) return;
-    
+
     // Normalize config.totalTrials to ensure it matches sequence length
     const expectedTrials = normalizeToEven(this.config.totalTrials);
-    
+
     // Guard: Validate sequence length matches expected totalTrials
     if (sequence.length !== expectedTrials) {
       throw new Error(
         `Sequence length (${sequence.length}) does not match expected trials (${expectedTrials}). `
       );
     }
-    
+
     this.testRunning = true;
     this.testEvents = [];
     this.currentTrialIndex = 0;
     this.currentStimulusType = 'target';
     this.trialSequence = sequence;
     this.testStartTimeNs = startTimeNs;
-    
+
     // Clear response tracker state
     this.responseTracker.clear();
-    
+
     this.scheduleNextTrial();
   }
 
@@ -89,7 +93,7 @@ export class TrialScheduler {
 
   /**
    * Check if the test is currently running.
-   * 
+   *
    * @returns true if test is running
    */
   isRunning(): boolean {
@@ -98,7 +102,7 @@ export class TrialScheduler {
 
   /**
    * Get the current trial index.
-   * 
+   *
    * @returns Current trial index (0-based)
    */
   getCurrentTrialIndex(): number {
@@ -111,7 +115,7 @@ export class TrialScheduler {
 
   /**
    * Get all pending responses for the current stimulus window.
-   * 
+   *
    * @returns Readonly array of pending responses
    */
   getPendingResponses(): ReadonlyArray<{
@@ -126,7 +130,7 @@ export class TrialScheduler {
   /**
    * Add a pending response after stimulus onset.
    * Delegates to ResponseTracker.
-   * 
+   *
    * @param data - Pending response data
    */
   addPendingResponse(data: {
@@ -141,7 +145,7 @@ export class TrialScheduler {
   /**
    * Remove a pending response after a valid response is recorded.
    * Delegates to ResponseTracker.
-   * 
+   *
    * @param trialIndex - Trial index to remove
    */
   removePendingResponse(trialIndex: number): void {
@@ -154,7 +158,7 @@ export class TrialScheduler {
 
   /**
    * Add a test event (e.g., response event).
-   * 
+   *
    * @param event - Test event to add
    */
   addEvent(event: TestEvent): void {
@@ -163,7 +167,7 @@ export class TrialScheduler {
 
   /**
    * Get all recorded test events.
-   * 
+   *
    * @returns Array of test events
    */
   getEvents(): TestEvent[] {
@@ -172,7 +176,7 @@ export class TrialScheduler {
 
   /**
    * Get the test start timestamp.
-   * 
+   *
    * @returns Start timestamp as bigint
    */
   getStartTimeNs(): bigint {
@@ -187,7 +191,7 @@ export class TrialScheduler {
    * Schedule the next trial using drift-corrected timing.
    */
   private scheduleNextTrial(): void {
-    if (!this.testRunning || this.currentTrialIndex >= this.config.totalTrials) {
+    if (!this.testRunning || this.currentTrialIndex >= this.trialSequence.length) {
       this.complete();
       return;
     }
@@ -195,25 +199,30 @@ export class TrialScheduler {
     // First trial: emit buffer-start and schedule stimulus
     if (this.currentTrialIndex === 0) {
       this.emitStimulusChange(-1, 'target', 'buffer-start');
-      
+
       const bufferEndTime = this.testStartTimeNs + BigInt(this.config.bufferMs) * 1_000_000n;
       const now = getHighPrecisionTime();
       const delayMs = Math.max(0, Number(bufferEndTime - now) / 1_000_000);
-      
+
       setTimeout(() => {
         if (!this.testRunning) return;
         this.presentStimulus();
       }, delayMs);
       return;
     }
-    
+
     // For subsequent trials, use drift-corrected scheduling
-    const trialStartTime = this.testStartTimeNs + 
+    const trialStartTime =
+      this.testStartTimeNs +
       BigInt(this.config.bufferMs) * 1_000_000n +
-      BigInt(this.currentTrialIndex * (this.config.stimulusDurationMs + this.config.interstimulusIntervalMs)) * 1_000_000n;
+      BigInt(
+        this.currentTrialIndex *
+          (this.config.stimulusDurationMs + this.config.interstimulusIntervalMs)
+      ) *
+        1_000_000n;
     const now = getHighPrecisionTime();
     const delayMs = Math.max(0, Number(trialStartTime - now) / 1_000_000);
-    
+
     setTimeout(() => {
       if (!this.testRunning) return;
       this.presentStimulus();
@@ -224,7 +233,7 @@ export class TrialScheduler {
    * Present a single stimulus with drift-corrected timing.
    */
   private presentStimulus(): void {
-    if (!this.testRunning || this.currentTrialIndex >= this.config.totalTrials) {
+    if (!this.testRunning || this.currentTrialIndex >= this.trialSequence.length) {
       this.complete();
       return;
     }
@@ -248,17 +257,20 @@ export class TrialScheduler {
 
     // Calculate absolute timing targets using drift-corrected scheduling
     const now = Number(getHighPrecisionTime() - this.testStartTimeNs) / 1_000_000;
-    const trialStartTime = this.config.bufferMs + this.currentTrialIndex * (this.config.stimulusDurationMs + this.config.interstimulusIntervalMs);
+    const trialStartTime =
+      this.config.bufferMs +
+      this.currentTrialIndex *
+        (this.config.stimulusDurationMs + this.config.interstimulusIntervalMs);
     const stimulusEndTime = trialStartTime + this.config.stimulusDurationMs;
     const nextTrialStartTime = stimulusEndTime + this.config.interstimulusIntervalMs;
-    
+
     const offsetDelay = Math.max(0, stimulusEndTime - now);
     setTimeout(() => {
       if (!this.testRunning) return;
-      
+
       const currentNow = Number(getHighPrecisionTime() - this.testStartTimeNs) / 1_000_000;
       this.emitStimulusChange(this.currentTrialIndex, this.currentStimulusType, 'stimulus-offset');
-      
+
       const remainingDelay = Math.max(0, nextTrialStartTime - currentNow);
       setTimeout(() => {
         if (!this.testRunning) return;
@@ -274,38 +286,38 @@ export class TrialScheduler {
   private complete(): void {
     this.testRunning = false;
     console.log(`Test completed. Total events: ${this.testEvents.length}`);
-    
+
     const endTimeNs = getHighPrecisionTime();
     const elapsedTimeNs = endTimeNs - this.testStartTimeNs;
-    
+
     this.onTestComplete({
       events: this.testEvents,
       startTimeNs: this.testStartTimeNs.toString(),
-      elapsedTimeNs: elapsedTimeNs.toString()
+      elapsedTimeNs: elapsedTimeNs.toString(),
     });
   }
 
   /**
    * Emit a stimulus change event.
-   * 
+   *
    * @param trialIndex - Trial index
    * @param stimulusType - Type of stimulus
    * @param eventType - Type of event
    */
   private emitStimulusChange(
-    trialIndex: number, 
-    stimulusType: StimulusType, 
+    trialIndex: number,
+    stimulusType: StimulusType,
     eventType: TestEventType
   ): void {
     const timestampNs = getHighPrecisionTime().toString();
-    
+
     const event: TestEvent = {
       trialIndex,
       stimulusType,
       timestampNs,
       eventType,
     };
-    
+
     this.testEvents.push(event);
     this.onStimulusChange(event);
   }

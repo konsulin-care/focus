@@ -1,36 +1,33 @@
 /**
  * GDPR Compliance Verification Tests
- * 
+ *
  * This test suite verifies the GDPR compliance features implemented in the FOCUS application:
  * - Database schema with consent tracking and retention policy
  * - Auto-expire records on startup
  * - Consent validation in IPC handlers
- * 
+ *
  * Note: Tests requiring native SQLCipher/better-sqlite3 module require:
  *   npm run electron-rebuild
- * 
+ *
  * Run with: npm run test
  */
 
 import { describe, it, expect } from 'vitest';
-import * as crypto from 'node:crypto';
+import { randomBytes } from 'node:crypto';
+import { isValidEmail } from '@/main/gdpr';
+import { queryWhitelist } from '@/main/database';
 
 // ===========================================
 // Test Utilities
 // ===========================================
 
 /**
- * Validate email format
- */
-function validateEmail(email: string): boolean {
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-  return emailRegex.test(email);
-}
-
-/**
  * Validate consent data
  */
-function validateConsent(consentGiven: boolean, consentTimestamp?: string): { valid: boolean; error?: string } {
+function validateConsent(
+  consentGiven: boolean,
+  consentTimestamp?: string
+): { valid: boolean; error?: string } {
   if (!consentGiven) {
     return { valid: false, error: 'Consent is required' };
   }
@@ -69,24 +66,24 @@ function isExpired(retentionExpiresAt: string): boolean {
 describe('GDPR Compliance', () => {
   describe('Email Validation', () => {
     it('should accept valid email addresses', () => {
-      expect(validateEmail('test@example.com')).toBe(true);
-      expect(validateEmail('user.name@domain.org')).toBe(true);
-      expect(validateEmail('user+tag@example.co.uk')).toBe(true);
-      expect(validateEmail('user@subdomain.example.com')).toBe(true);
-      expect(validateEmail('test@123.456.789.10')).toBe(true);
-      expect(validateEmail('test@museum.example')).toBe(true);
+      expect(isValidEmail('test@example.com')).toBe(true);
+      expect(isValidEmail('user.name@domain.org')).toBe(true);
+      expect(isValidEmail('user+tag@example.co.uk')).toBe(true);
+      expect(isValidEmail('user@subdomain.example.com')).toBe(true);
+      expect(isValidEmail('test@museum.example')).toBe(true);
+      expect(isValidEmail('  test@example.com  ')).toBe(true);
     });
 
     it('should reject most invalid email addresses', () => {
-      expect(validateEmail('invalid')).toBe(false);
-      expect(validateEmail('@example.com')).toBe(false);
-      expect(validateEmail('test@')).toBe(false);
-      expect(validateEmail('test@@example.com')).toBe(false);
-      expect(validateEmail('test example.com')).toBe(false);
-      expect(validateEmail('')).toBe(false);
-      expect(validateEmail('test@.com')).toBe(false);
-      // Note: .test@example.com is technically valid per RFC (local part can start with dot)
-      // Hyphens in domain are valid: test@ex-ample.com
+      expect(isValidEmail('invalid')).toBe(false);
+      expect(isValidEmail('@example.com')).toBe(false);
+      expect(isValidEmail('test@')).toBe(false);
+      expect(isValidEmail('test@@example.com')).toBe(false);
+      expect(isValidEmail('test example.com')).toBe(false);
+      expect(isValidEmail('')).toBe(false);
+      expect(isValidEmail('test@.com')).toBe(false);
+      // Note: The simplified regex /^[^\s@]+@[^\s@]+\.[^\s@]+$/ is less strict
+      // than the previous one. It allows IP-like domains and single-char TLDs.
     });
   });
 
@@ -143,7 +140,7 @@ describe('GDPR Compliance', () => {
     it('should calculate retention_expires_at as 7 days after created_at', () => {
       const createdAt = '2024-01-15T10:00:00.000Z';
       const expiresAt = calculateRetentionExpiresAt(createdAt);
-      
+
       // Should be exactly 7 days later
       expect(expiresAt).toBe('2024-01-22 10:00:00.000');
     });
@@ -151,14 +148,14 @@ describe('GDPR Compliance', () => {
     it('should identify expired records', () => {
       const expiredDate = '2024-01-15T10:00:00.000'; // 7+ days ago from now
       const expiresAt = calculateRetentionExpiresAt(expiredDate);
-      
+
       expect(isExpired(expiresAt)).toBe(true);
     });
 
     it('should identify non-expired records', () => {
       const recentDate = new Date().toISOString();
       const expiresAt = calculateRetentionExpiresAt(recentDate);
-      
+
       expect(isExpired(expiresAt)).toBe(false);
     });
 
@@ -166,12 +163,12 @@ describe('GDPR Compliance', () => {
       // A record created 7 days ago should be expired now
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const expiresAt = calculateRetentionExpiresAt(sevenDaysAgo);
-      
+
       // The boundary condition: if expiresAt < now, it's expired
       // This tests the edge case
       const expires = new Date(expiresAt);
       const now = new Date();
-      
+
       // Record created 7 days ago expires exactly 7 days later
       // At the moment of expiry, it should be considered expired
       const shouldBeExpired = expires <= now;
@@ -181,22 +178,22 @@ describe('GDPR Compliance', () => {
 
   describe('Encryption Key Generation', () => {
     it('should generate 256-bit (32 byte) key', () => {
-      const key = crypto.randomBytes(32);
+      const key = randomBytes(32);
       expect(key.length).toBe(32);
     });
 
     it('should generate 192-bit (24 byte) key', () => {
-      const key = crypto.randomBytes(24);
+      const key = randomBytes(24);
       expect(key.length).toBe(24);
     });
 
     it('should generate 128-bit (16 byte) key', () => {
-      const key = crypto.randomBytes(16);
+      const key = randomBytes(16);
       expect(key.length).toBe(16);
     });
 
     it('should generate hex string of 64 characters for 256-bit', () => {
-      const key = crypto.randomBytes(32);
+      const key = randomBytes(32);
       const hexKey = key.toString('hex');
       expect(hexKey.length).toBe(64);
       expect(/^[a-fA-F0-9]+$/.test(hexKey)).toBe(true);
@@ -205,19 +202,19 @@ describe('GDPR Compliance', () => {
     it('should generate unique keys', () => {
       const keys = new Set<string>();
       for (let i = 0; i < 100; i++) {
-        keys.add(crypto.randomBytes(32).toString('hex'));
+        keys.add(randomBytes(32).toString('hex'));
       }
       expect(keys.size).toBe(100); // All keys should be unique
     });
 
     it('should generate keys with sufficient entropy', () => {
       // Verify keys don't have obvious patterns
-      const key1 = crypto.randomBytes(32).toString('hex');
-      const key2 = crypto.randomBytes(32).toString('hex');
-      
+      const key1 = randomBytes(32).toString('hex');
+      const key2 = randomBytes(32).toString('hex');
+
       // Keys should be completely different (not just shifted)
       expect(key1).not.toBe(key2);
-      
+
       // Check that there's no obvious repetition
       const half1 = key1.substring(0, 32);
       const half2 = key1.substring(32);
@@ -226,73 +223,101 @@ describe('GDPR Compliance', () => {
   });
 
   describe('GDPR Schema Definition', () => {
-    it('should define all required columns for test_results table', () => {
-      // Expected schema definition
-      const expectedColumns = [
+    it('should define all required columns for normalized schema', () => {
+      // Expected schema definitions
+      const testSessionsColumns = [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
-        'test_data TEXT NOT NULL',
-        'email TEXT NOT NULL',
-        'upload_status TEXT DEFAULT \'pending\'',
-        'created_at TEXT DEFAULT CURRENT_TIMESTAMP',
+        'user_id INTEGER NOT NULL',
+        'test_date TEXT DEFAULT CURRENT_TIMESTAMP',
+        'acs_score REAL',
+        'acs_interpretation TEXT',
+        'mean_response_time_ms REAL',
+        'response_time_variability REAL',
+        'commission_errors INTEGER',
+        'omission_errors INTEGER',
+        'hits INTEGER',
+        'd_prime REAL',
+        'validity TEXT',
+        'validity_reason TEXT',
+        'total_trials INTEGER',
+        'test_config TEXT',
+        "upload_status TEXT DEFAULT 'pending' CHECK(upload_status IN ('pending', 'uploaded', 'failed'))",
+        'uploaded_at TEXT',
         'consent_given BOOLEAN NOT NULL DEFAULT 0',
         'consent_timestamp TEXT',
-        'retention_expires_at TEXT GENERATED ALWAYS AS (datetime(created_at, \'+7 days\')) VIRTUAL'
+        "retention_expires_at TEXT GENERATED ALWAYS AS (datetime(test_date, '+7 days')) VIRTUAL",
       ];
-      
-      // Verify column definitions match expected schema
-      expect(expectedColumns).toHaveLength(8);
-      expect(expectedColumns[0]).toContain('id');
-      expect(expectedColumns[0]).toContain('PRIMARY KEY');
-      expect(expectedColumns[1]).toContain('test_data');
-      expect(expectedColumns[1]).toContain('NOT NULL');
-      expect(expectedColumns[2]).toContain('email');
-      expect(expectedColumns[3]).toContain('upload_status');
-      expect(expectedColumns[4]).toContain('created_at');
-      expect(expectedColumns[5]).toContain('consent_given');
-      expect(expectedColumns[5]).toContain('DEFAULT 0');
-      expect(expectedColumns[6]).toContain('consent_timestamp');
-      expect(expectedColumns[7]).toContain('retention_expires_at');
-      expect(expectedColumns[7]).toContain('VIRTUAL');
-      expect(expectedColumns[7]).toContain('+7 days');
+
+      const trialDataColumns = [
+        'id INTEGER PRIMARY KEY AUTOINCREMENT',
+        'test_session_id INTEGER NOT NULL',
+        'trial_index INTEGER',
+        'stimulus_type TEXT',
+        'outcome TEXT',
+        'response_correct BOOLEAN',
+        'response_time_ms REAL',
+        'is_anticipatory BOOLEAN',
+        'is_multiple_response BOOLEAN',
+        'follows_commission BOOLEAN',
+      ];
+
+      // Verify test_sessions columns
+      expect(testSessionsColumns).toHaveLength(20);
+      expect(testSessionsColumns[0]).toContain('id');
+      expect(testSessionsColumns[1]).toContain('user_id');
+      expect(testSessionsColumns[2]).toContain('test_date');
+      expect(testSessionsColumns[15]).toContain('upload_status');
+      expect(testSessionsColumns[17]).toContain('consent_given');
+      expect(testSessionsColumns[19]).toContain('retention_expires_at');
+      expect(testSessionsColumns[19]).toContain('VIRTUAL');
+      expect(testSessionsColumns[19]).toContain('+7 days');
+
+      // Verify trial_data columns
+      expect(trialDataColumns).toHaveLength(10);
+      expect(trialDataColumns[0]).toContain('id');
+      expect(trialDataColumns[1]).toContain('test_session_id');
+      expect(trialDataColumns[4]).toContain('outcome');
     });
 
     it('should define required indexes for performance', () => {
       const expectedIndexes = [
-        'CREATE INDEX IF NOT EXISTS idx_retention_expires ON test_results(retention_expires_at)',
-        'CREATE INDEX IF NOT EXISTS idx_upload_status ON test_results(upload_status)'
+        'CREATE INDEX IF NOT EXISTS idx_retention_expires ON test_sessions(retention_expires_at)',
+        'CREATE INDEX IF NOT EXISTS idx_upload_status ON test_sessions(upload_status)',
       ];
-      
+
       expect(expectedIndexes).toHaveLength(2);
       expect(expectedIndexes[0]).toContain('idx_retention_expires');
-      expect(expectedIndexes[0]).toContain('retention_expires_at');
+      expect(expectedIndexes[0]).toContain('test_sessions');
       expect(expectedIndexes[1]).toContain('idx_upload_status');
-      expect(expectedIndexes[1]).toContain('upload_status');
+      expect(expectedIndexes[1]).toContain('test_sessions');
     });
   });
 
   describe('Database Query Whitelist', () => {
     it('should define insert-test-result-with-consent command', () => {
-      const expectedSQL = 'INSERT INTO test_results (test_data, email, upload_status, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?)';
-      const expectedParamCount = 5;
-      
+      // Match current implementation in src/main/database.ts
+      const expectedSQL =
+        'INSERT INTO test_results (test_data, email, upload_status, consent_given, consent_timestamp) VALUES (?, ?, ?, ?, ?)';
+
       expect(expectedSQL).toContain('INSERT INTO test_results');
       expect(expectedSQL).toContain('consent_given');
       expect(expectedSQL).toContain('consent_timestamp');
-      expect(expectedParamCount).toBe(5);
     });
 
     it('should define cleanup-expired-records command', () => {
-      const expectedSQL = 'DELETE FROM test_results WHERE retention_expires_at < datetime("now")';
-      
-      expect(expectedSQL).toContain('DELETE FROM test_results');
+      const expectedSQL = 'DELETE FROM test_sessions WHERE retention_expires_at < datetime("now")';
+
+      expect(expectedSQL).toContain('DELETE FROM test_sessions');
       expect(expectedSQL).toContain('retention_expires_at');
       expect(expectedSQL).toContain('datetime("now")');
     });
 
     it('should define get-expired-count command', () => {
-      const expectedSQL = 'SELECT COUNT(*) as count FROM test_results WHERE retention_expires_at < datetime("now")';
-      
+      const expectedSQL =
+        'SELECT COUNT(*) as count FROM test_sessions WHERE retention_expires_at < datetime("now")';
+
       expect(expectedSQL).toContain('SELECT COUNT(*)');
+      expect(expectedSQL).toContain('test_sessions');
       expect(expectedSQL).toContain('retention_expires_at');
     });
 
@@ -307,13 +332,20 @@ describe('GDPR Compliance', () => {
         'insert-test-result-with-consent',
         'update-test-result',
         'cleanup-expired-records',
-        'get-expired-count'
+        'get-expired-count',
+        'get-all-sessions',
+        'get-session-with-user',
+        'get-session-trials',
+        'update-session-status',
+        'bulk-delete-sessions',
       ];
-      
-      expect(whitelistCommands).toHaveLength(10);
+
+      expect(whitelistCommands).toHaveLength(15);
       expect(whitelistCommands).toContain('insert-test-result-with-consent');
       expect(whitelistCommands).toContain('cleanup-expired-records');
       expect(whitelistCommands).toContain('get-expired-count');
+      expect(whitelistCommands).toContain('get-all-sessions');
+      expect(whitelistCommands).toContain('bulk-delete-sessions');
     });
   });
 
@@ -323,13 +355,13 @@ describe('GDPR Compliance', () => {
         consentGiven: boolean;
         consentTimestamp: string;
       }
-      
+
       // Valid consent data
       const validConsent: ConsentData = {
         consentGiven: true,
-        consentTimestamp: new Date().toISOString()
+        consentTimestamp: new Date().toISOString(),
       };
-      
+
       expect(validConsent.consentGiven).toBe(true);
       expect(validConsent.consentTimestamp).toBeDefined();
       expect(typeof validConsent.consentTimestamp).toBe('string');
@@ -340,12 +372,12 @@ describe('GDPR Compliance', () => {
         consentGiven: boolean;
         consentTimestamp?: string;
       }
-      
+
       const invalidConsent: ConsentData = {
         consentGiven: false,
-        consentTimestamp: undefined
+        consentTimestamp: undefined,
       };
-      
+
       expect(invalidConsent.consentGiven).toBe(false);
       expect(invalidConsent.consentTimestamp).toBeUndefined();
     });
@@ -353,17 +385,26 @@ describe('GDPR Compliance', () => {
 
   describe('GDPR Compliance Requirements', () => {
     it('should enforce data minimization (only necessary fields)', () => {
-      const requiredFields = ['test_data', 'email', 'created_at', 'consent_given', 'consent_timestamp'];
+      const requiredFields = [
+        'test_data',
+        'email',
+        'created_at',
+        'consent_given',
+        'consent_timestamp',
+      ];
       const optionalFields = ['upload_status', 'retention_expires_at'];
-      
-      // Verify all required fields are present
-      requiredFields.forEach(field => {
-        expect(requiredFields).toContain(field);
+
+      // Verify all required fields are present in the database schema
+      const allWhitelistSQL = Object.values(queryWhitelist)
+        .map((entry) => entry.sql)
+        .join(' ');
+      requiredFields.forEach((field) => {
+        expect(allWhitelistSQL).toContain(field);
       });
-      
+
       // Verify no unnecessary personal data fields
       const personalDataFields = ['first_name', 'last_name', 'phone', 'address', 'ssn'];
-      personalDataFields.forEach(field => {
+      personalDataFields.forEach((field) => {
         expect(requiredFields).not.toContain(field);
         expect(optionalFields).not.toContain(field);
       });
@@ -371,35 +412,35 @@ describe('GDPR Compliance', () => {
 
     it('should enforce storage limitation (7-day retention)', () => {
       const retentionDays = 7;
-      
+
       expect(retentionDays).toBe(7);
-      
+
       // Verify the retention calculation matches
       const oneDayMs = 24 * 60 * 60 * 1000;
       const sevenDaysMs = 7 * oneDayMs;
-      
+
       expect(sevenDaysMs).toBe(604800000); // 7 days in milliseconds
     });
 
     it('should require explicit consent before data processing', () => {
       const requireConsent = true;
-      
+
       expect(requireConsent).toBe(true);
-      
+
       // Verify consent validation is enforced
       const consentValidation = validateConsent(true, new Date().toISOString());
       expect(consentValidation.valid).toBe(true);
-      
+
       const noConsentValidation = validateConsent(false);
       expect(noConsentValidation.valid).toBe(false);
     });
 
     it('should provide audit trail via consent_timestamp', () => {
       const consentTimestamp = new Date().toISOString();
-      
+
       expect(consentTimestamp).toBeDefined();
       expect(consentTimestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-      
+
       // Verify ISO 8601 format
       const date = new Date(consentTimestamp);
       expect(isNaN(date.getTime())).toBe(false);
@@ -413,9 +454,9 @@ describe('GDPR Compliance', () => {
 
 /**
  * Manual Testing Instructions for GDPR Compliance
- * 
+ *
  * These tests require manual verification or SQLCipher integration:
- * 
+ *
  * 1. Encryption Verification:
  *    - Run: npm run electron-rebuild
  *    - Run app, complete test, enter email with consent
@@ -423,13 +464,13 @@ describe('GDPR Compliance', () => {
  *    - Open database file: ~/.config/focus/focus.db
  *    - Check header: xxd -l 32 ~/.config/focus/focus.db
  *    - Verify file is encrypted (not readable as text)
- * 
+ *
  * 2. Retention Cleanup Verification:
  *    - Insert test record with past created_at (8 days ago)
  *    - Restart app
  *    - Check logs for: "GDPR cleanup: Deleted X expired records"
  *    - Verify record was deleted from database
- * 
+ *
  * 3. Consent Flow Verification:
  *    - Try to submit form without consent checkbox
  *    - Verify error message: "Consent is required"
@@ -437,12 +478,12 @@ describe('GDPR Compliance', () => {
  *    - Verify error message: "Invalid email format"
  *    - Submit with valid data
  *    - Verify record saved with consent timestamp
- * 
+ *
  * 4. Key File Verification:
  *    - Check .focus_db_key file exists in userData
  *    - Verify key file has correct permissions (600)
  *    - Verify key is 64 hex characters
- * 
+ *
  * Commands:
  *    npm run test              # Run unit tests
  *    npm run test:watch       # Run tests in watch mode

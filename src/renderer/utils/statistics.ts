@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Statistics Index
- * 
+ *
  * This module re-exports all statistical functions for convenience.
  * Import from specific modules for better tree-shaking:
  * - ./basic-stats for fundamental statistics (mean, stdDev, zScore, variability)
@@ -9,10 +9,10 @@
  */
 
 // Basic statistics
-export * from './basic-stats';
+export * from '@/shared/utils/basic-stats';
 
 // Probability distributions (pure statistical functions)
-export * from './distributions';
+export * from '@/shared/utils/distributions';
 
 // Clinical metrics (domain-specific functions combining distributions)
-export * from './clinical-metrics';
+export * from '@/shared/utils/clinical-metrics';

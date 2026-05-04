@@ -8,6 +8,7 @@ interface SidebarButtonProps {
   onClick: () => void;
 }
 
+/** Primary navigation button for the sidebar with icon and label. */
 export default function SidebarButton({
   icon,
   label,
@@ -26,15 +27,11 @@ export default function SidebarButton({
       title={isCollapsed ? label : undefined}
     >
       {/* Selection indicator: fills button with px-4 for edge gaps */}
-      {isActive && (
-        <div className="absolute inset-0 bg-primary rounded-lg -z-10" />
-      )}
-      
+      {isActive && <div className="absolute inset-0 bg-primary rounded-lg -z-10" />}
+
       {/* Content container: gap-3 for icon spacing */}
       <div className="relative flex items-center gap-3">
-        <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-          {icon}
-        </span>
+        <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center">{icon}</span>
         {!isCollapsed && <span className="font-medium truncate">{label}</span>}
       </div>
     </button>

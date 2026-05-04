@@ -1,18 +1,18 @@
 /**
  * F.O.C.U.S. Assessment - Attention Metrics
- * 
+ *
  * Utility functions for calculating comprehensive attention metrics with ACS scoring.
  */
 
 import { TestEvent } from '@/renderer/types/electronAPI';
 import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
 import { computeAcsValues } from './acs-shared';
-import { TRIAL_CONSTANTS } from './trial-constants';
+import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**
  * Calculate comprehensive attention metrics with ACS scoring.
  * Uses computeAcsValues() for shared ACS calculation logic.
- * 
+ *
  * @param events - Array of raw test events
  * @param subjectInfo - Subject demographic information
  * @returns Comprehensive attention metrics
@@ -22,40 +22,32 @@ export function calculateAttentionMetrics(
   subjectInfo: SubjectInfo
 ): AttentionMetrics {
   // Use shared helper for ACS calculations
-  const {
-    trials,
-    firstHalfMeanRT,
-    dPrime,
-    variability,
-    rtZ,
-    dPrimeZ,
-    variabilityZ,
-    acs,
-  } = computeAcsValues(events, subjectInfo);
-  
+  const { trials, firstHalfMeanRT, dPrime, variability, rtZ, dPrimeZ, variabilityZ, acs } =
+    computeAcsValues(events, subjectInfo);
+
   // Count outcomes from processed trials
-  const hits = trials.filter(t => t.outcome === 'hit').length;
-  const omissions = trials.filter(t => t.outcome === 'omission').length;
-  const commissions = trials.filter(t => t.outcome === 'commission').length;
-  const correctRejections = trials.filter(t => t.outcome === 'correct-rejection').length;
-  const anticipatoryResponses = trials.filter(t => t.isAnticipatory).length;
-  const multipleResponses = trials.filter(t => t.isMultipleResponse).length;
-  
+  const hits = trials.filter((t) => t.outcome === 'hit').length;
+  const omissions = trials.filter((t) => t.outcome === 'omission').length;
+  const commissions = trials.filter((t) => t.outcome === 'commission').length;
+  const correctRejections = trials.filter((t) => t.outcome === 'correct-rejection').length;
+  const anticipatoryResponses = trials.filter((t) => t.isAnticipatory).length;
+  const multipleResponses = trials.filter((t) => t.isMultipleResponse).length;
+
   // Calculate totals
   const totalTargets = hits + omissions;
   const totalNonTargets = commissions + correctRejections;
-  
+
   // Calculate percentages
   const omissionPercent = totalTargets > 0 ? (omissions / totalTargets) * 100 : 0;
   const commissionPercent = totalNonTargets > 0 ? (commissions / totalNonTargets) * 100 : 0;
-  
+
   // Validity assessment
   const anticipatoryPercent = totalTargets > 0 ? (anticipatoryResponses / totalTargets) * 100 : 0;
-  const validResponses = trials.filter(t => t.outcome === 'hit' && !t.isAnticipatory).length;
+  const validResponses = trials.filter((t) => t.outcome === 'hit' && !t.isAnticipatory).length;
   const minValidResponses = TRIAL_CONSTANTS.MIN_VALID_RESPONSES;
-  
+
   let validity: AttentionMetrics['validity'];
-  
+
   if (anticipatoryPercent > TRIAL_CONSTANTS.MAX_ANTICIPATORY_PERCENT) {
     validity = {
       anticipatoryResponses,
@@ -74,7 +66,7 @@ export function calculateAttentionMetrics(
       valid: true,
     };
   }
-  
+
   // Interpret ACS (handle null case when no normative data)
   let acsInterpretation: 'normal' | 'borderline' | 'not-within-normal-limits' | 'unavailable';
   if (acs === null) {
@@ -86,7 +78,7 @@ export function calculateAttentionMetrics(
   } else {
     acsInterpretation = 'not-within-normal-limits';
   }
-  
+
   return {
     // Raw response counts
     hits,
@@ -95,15 +87,15 @@ export function calculateAttentionMetrics(
     correctRejections,
     anticipatoryResponses,
     multipleResponses,
-    
+
     // ACS scoring
     acs,
     acsInterpretation,
-    
+
     // Percentages
     omissionPercent,
     commissionPercent,
-    
+
     // Other metrics
     dPrime,
     variability,

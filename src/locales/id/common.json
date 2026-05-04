@@ -13,6 +13,7 @@
   "nav": {
     "home": "Beranda",
     "test": "Tes",
+    "dataManagement": "Manajemen Data",
     "settings": "Pengaturan",
     "about": "Tentang"
   },

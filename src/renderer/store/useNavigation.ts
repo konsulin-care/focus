@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Page = 'home' | 'test' | 'settings' | 'about';
+export type Page = 'home' | 'test' | 'settings' | 'about' | 'data-management';
 
 interface NavigationState {
   currentPage: Page;
@@ -17,9 +17,10 @@ export const useNavigation = create<NavigationState>((set) => ({
   isSidebarCollapsed: false,
   isTestActive: false,
   setPage: (page) => set({ currentPage: page }),
-  toggleSidebar: () => set((state) => ({
-    isSidebarCollapsed: !state.isSidebarCollapsed
-  })),
+  toggleSidebar: () =>
+    set((state) => ({
+      isSidebarCollapsed: !state.isSidebarCollapsed,
+    })),
   startTest: () => set({ isTestActive: true, isSidebarCollapsed: true }),
   endTest: () => set({ isTestActive: false, isSidebarCollapsed: false }),
 }));

@@ -13,6 +13,7 @@
   "nav": {
     "home": "Home",
     "test": "Test",
+    "dataManagement": "Data Management",
     "settings": "Settings",
     "about": "About"
   },

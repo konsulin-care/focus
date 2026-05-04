@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Response Tracker
- * 
+ *
  * Dedicated class for managing response validation during test execution.
  * Handles pending response tracking, validation, and error detection.
  */
@@ -22,7 +22,7 @@ export interface ResponseResult {
 
 /**
  * ResponseTracker manages response validation during test execution.
- * 
+ *
  * Responsibilities:
  * - Track pending responses for current stimulus window
  * - Validate responses against stimulus onset timing
@@ -34,14 +34,11 @@ export interface ResponseResult {
 export class ResponseTracker {
   private config: TestConfig;
   private anticipatoryThresholdMs: number;
-  
+
   private pendingResponses: PendingResponse[] = [];
   private responseCountPerTrial: Map<number, number> = new Map();
 
-  constructor(
-    config: TestConfig,
-    anticipatoryThresholdMs: number = 150
-  ) {
+  constructor(config: TestConfig, anticipatoryThresholdMs = 150) {
     this.config = config;
     this.anticipatoryThresholdMs = anticipatoryThresholdMs;
   }
@@ -57,7 +54,7 @@ export class ResponseTracker {
    * Remove a pending response after a valid response is recorded.
    */
   removePendingResponse(trialIndex: number): void {
-    const idx = this.pendingResponses.findIndex(pr => pr.trialIndex === trialIndex);
+    const idx = this.pendingResponses.findIndex((pr) => pr.trialIndex === trialIndex);
     if (idx !== -1) {
       this.pendingResponses.splice(idx, 1);
     }
@@ -87,7 +84,7 @@ export class ResponseTracker {
 
   /**
    * Process a user response.
-   * 
+   *
    * @param responseTimestampNs - Nanosecond timestamp of the response
    * @param actualResponse - Whether the user actually responded (clicked/pressed)
    * @param stimulusType - Type of stimulus for the trial
@@ -111,7 +108,7 @@ export class ResponseTracker {
     // Find valid pending response within the full response window
     // The window includes stimulus duration + interstimulus interval
     const responseWindowMs = this.config.stimulusDurationMs + this.config.interstimulusIntervalMs;
-    const pendingIndex = this.pendingResponses.findIndex(pr => {
+    const pendingIndex = this.pendingResponses.findIndex((pr) => {
       const elapsedMs = Number(responseTimestampNs - pr.onsetTimestampNs) / 1_000_000;
       return elapsedMs < responseWindowMs;
     });
@@ -131,22 +128,22 @@ export class ResponseTracker {
     }
 
     const pending = this.pendingResponses[pendingIndex];
-    
+
     // Calculate response time from stimulus onset
     const responseTimeMs = Number(responseTimestampNs - pending.onsetTimestampNs) / 1_000_000;
-    
+
     // Determine if response is anticipatory
     const isAnticipatory = responseTimeMs < this.anticipatoryThresholdMs;
-    
+
     // Determine if response was correct (compare user's actual response to what was expected)
     const isCorrect = pending.expectedResponse === actualResponse;
-    
+
     // Remove from pending responses
     this.pendingResponses.splice(pendingIndex, 1);
-    
+
     // Increment response count
     this.responseCountPerTrial.set(trialIndex, existingCount + 1);
-    
+
     return {
       trialIndex,
       stimulusType,
@@ -160,7 +157,7 @@ export class ResponseTracker {
 
   /**
    * Create a TestEvent from a ResponseResult.
-   * 
+   *
    * @param result - The response result
    * @param timestampNs - The timestamp of the response
    * @returns TestEvent for recording in the scheduler

@@ -214,5 +214,61 @@
     "saveFailed": "Failed to save settings",
     "resetSuccess": "Settings reset to defaults",
     "resetFailed": "Failed to reset settings"
+  },
+  "dataManagement": {
+    "title": "Data Management",
+    "searchPlaceholder": "Search by email...",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterUploaded": "Uploaded",
+    "filterFailed": "Failed",
+    "bulkDelete": "Delete Selected",
+    "clearCache": "Clear Local Cache",
+    "empty": {
+      "noRecords": "No test records found"
+    },
+    "confirm": {
+      "deleteSingle": "Are you sure you want to delete this session?",
+      "deleteMultiple": "Are you sure you want to delete {{count}} sessions?",
+      "clearCache": "Are you sure you want to clear all local cached data?"
+    },
+    "table": {
+      "email": "Email",
+      "age": "Age",
+      "acs": "ACS",
+      "date": "Date",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "genericDemo": "(Demo)",
+    "actions": {
+      "viewDetails": "View details",
+      "delete": "Delete session"
+    },
+    "metrics": {
+      "hits": "Hits",
+      "commissions": "Commission Errors",
+      "omissions": "Omission Errors",
+      "dPrime": "D'"
+    },
+    "trials": {
+      "trial": "Trial",
+      "type": "Type",
+      "outcome": "Outcome",
+      "correct": "Correct",
+      "rt": "RT (ms)",
+      "anticipatory": "Anticipatory",
+      "multiple": "Multiple Resp.",
+      "followsCommission": "Post-Commission",
+      "loading": "Loading trials...",
+      "empty": "No trials",
+      "extractAll": "Extract All Trials"
+    },
+    "status": {
+      "pending": "Pending",
+      "uploaded": "Uploaded",
+      "failed": "Failed"
+    },
+    "showing": "Showing {{from}} - {{to}} of {{total}} sessions"
   }
 }

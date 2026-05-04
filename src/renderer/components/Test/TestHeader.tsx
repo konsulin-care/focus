@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { TestPhase } from '@/renderer/hooks';
 
-
 interface TestHeaderProps {
   phase: TestPhase;
   onExitTest: () => void;
@@ -14,7 +13,7 @@ interface TestHeaderProps {
  */
 export function TestHeader({ phase, onExitTest }: TestHeaderProps) {
   const { t } = useTranslation('translation');
-  
+
   if (phase !== 'completed') {
     return null;
   }

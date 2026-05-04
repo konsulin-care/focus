@@ -1,6 +1,6 @@
 /**
  * F.O.C.U.S. Assessment - Type Definitions
- * 
+ *
  * Centralized type definitions for the Electron main process.
  * All type definitions should be imported from this module.
  */
@@ -119,7 +119,12 @@ export type DatabaseQueryCommand =
   | 'insert-test-result-with-consent'
   | 'update-test-result'
   | 'cleanup-expired-records'
-  | 'get-expired-count';
+  | 'get-expired-count'
+  | 'get-all-sessions'
+  | 'get-session-with-user'
+  | 'get-session-trials'
+  | 'update-session-status'
+  | 'bulk-delete-sessions';
 
 /**
  * Type of query for determining the appropriate execution method.
@@ -146,3 +151,59 @@ export interface QueryWhitelistEntry {
  * Retention period in days for GDPR storage limitation principle.
  */
 export const RETENTION_DAYS = 7;
+
+// ===========================================
+// Database Record Types
+// ===========================================
+
+export interface User {
+  id: number;
+  email: string;
+  age: number;
+  gender: 'Male' | 'Female';
+  is_generic: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestSession {
+  id: number;
+  user_id: number;
+  test_date: string;
+  acs_score: number;
+  acs_interpretation: string;
+  mean_response_time_ms: number;
+  response_time_variability: number;
+  commission_errors: number;
+  omission_errors: number;
+  hits: number;
+  d_prime: number;
+  validity: string;
+  validity_reason?: string;
+  total_trials: number;
+  test_config: string;
+  upload_status: string;
+  uploaded_at?: string | null;
+  consent_given: boolean;
+  consent_timestamp?: string | null;
+}
+
+export interface SessionWithUser extends TestSession {
+  email: string;
+  age: number;
+  gender: 'Male' | 'Female';
+  is_generic: number; // 0 or 1 from DB
+}
+
+export interface TrialData {
+  id: number;
+  test_session_id: number;
+  trial_index: number;
+  stimulus_type: 'target' | 'non-target';
+  outcome: 'hit' | 'omission' | 'commission' | 'correct-rejection' | null;
+  response_correct: boolean | null;
+  response_time_ms: number | null;
+  is_anticipatory: boolean;
+  is_multiple_response: boolean;
+  follows_commission: boolean;
+}

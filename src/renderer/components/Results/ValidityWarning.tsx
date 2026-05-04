@@ -11,7 +11,7 @@ interface ValidityWarningProps {
  */
 export function ValidityWarning({ metrics }: ValidityWarningProps) {
   const { t } = useTranslation();
-  
+
   if (metrics.validity.valid) return null;
 
   return (

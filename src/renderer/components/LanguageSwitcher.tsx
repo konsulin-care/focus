@@ -18,10 +18,8 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentLanguage = languages.find(
-    (lang) => lang.code === i18n.language
-  ) || languages[0];
-  
+  const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
+
   /**
    * Handles language selection change
    * @param code - Language code to switch to
@@ -34,6 +32,7 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
   return (
     <div className={`relative ${className}`}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
         aria-expanded={isOpen}
@@ -60,12 +59,7 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -73,13 +67,16 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
         <>
           <div
             className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+            }}
             aria-hidden="true"
           />
           <div className="absolute right-0 z-20 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg origin-top-right focus:outline-none">
             <div className="py-1" role="menu" aria-orientation="vertical">
               {languages.map((lang) => (
                 <button
+                  type="button"
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
                   className={`w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
@@ -94,6 +91,7 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
                       className="w-4 h-4 text-blue-600"
                       fill="currentColor"
                       viewBox="0 0 20 20"
+                      aria-hidden="true"
                     >
                       <path
                         fillRule="evenodd"

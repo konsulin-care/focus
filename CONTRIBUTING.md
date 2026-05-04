@@ -16,7 +16,8 @@ Thank you for considering contributing to the F.O.C.U.S. project! Please read th
 - Use strict TypeScript mode (`tsconfig.json` already configured)
 - Follow existing code style in the repository
 - Use `@/` alias for imports to avoid deep relative paths
-- Use `node:` protocol for Node.js built-in modules (e.g., `import * as crypto from 'node:crypto'`)
+- Use `node:` protocol for Node.js built-in modules with named imports (e.g., `import { randomBytes } from 'node:crypto'`, `import { join } from 'node:path'`)
+- Avoid namespace/wildcard imports (`import * as`) — prefer named exports for better tree-shaking
 
 ### Electron Specifics
 - **Main Process**: Use `process.hrtime.bigint()` for precise timing

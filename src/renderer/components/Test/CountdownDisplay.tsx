@@ -4,9 +4,10 @@ interface CountdownDisplayProps {
   countdown: number;
 }
 
+/** Full-screen countdown before test starts. */
 export function CountdownDisplay({ countdown }: CountdownDisplayProps) {
   const { t } = useTranslation('translation');
-  
+
   return (
     <div className="flex flex-col items-center text-white font-mono">
       <div className="text-3xl mb-6">{t('test.countdown.title')}</div>

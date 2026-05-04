@@ -23,31 +23,31 @@ interface AcsCalculationModalProps {
  * - Keyboard navigation (Escape to close)
  * - Screen reader support
  * - Touch support
- * 
+ *
  * Maximum JSX nesting depth: 4 levels
  */
 export function AcsCalculationModal({ details, onClose }: AcsCalculationModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { t } = useTranslation();
-  
+
   // Show/hide dialog using native API
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    
+
     dialog.showModal();
     /**
      * Handles modal close button click
      */
     const handleCancel = () => onClose();
     dialog.addEventListener('close', handleCancel);
-    
+
     return () => {
       dialog.removeEventListener('close', handleCancel);
       dialog.close();
     };
   }, [onClose]);
-  
+
   // Handle backdrop click - dialog element handles Escape key natively
   const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     const rect = dialogRef.current?.getBoundingClientRect();
@@ -57,7 +57,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
       e.clientX <= rect.right &&
       e.clientY >= rect.top &&
       e.clientY <= rect.bottom;
-    
+
     if (!isInDialog) {
       onClose();
     }
@@ -76,7 +76,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
         <ModalHeader title="results.acs.calculationDetails" />
 
         {/* Subject Information */}
-        <SubjectInfoSection 
+        <SubjectInfoSection
           age={details.age}
           gender={details.gender}
           normativeGroup={details.normativeGroup}
@@ -87,10 +87,11 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
 
         {/* Warning when normative data is unavailable */}
         {!details.normativeAvailable && (
-          <div className="bg-yellow-600/20 border border-yellow-600 p-4 rounded-lg mb-6" role="alert">
-            <p className="text-yellow-200 text-sm">
-              {t('results.acs.noNormativeData')}
-            </p>
+          <div
+            className="bg-yellow-600/20 border border-yellow-600 p-4 rounded-lg mb-6"
+            role="alert"
+          >
+            <p className="text-yellow-200 text-sm">{t('results.acs.noNormativeData')}</p>
           </div>
         )}
 

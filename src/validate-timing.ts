@@ -13,19 +13,19 @@ function bigIntSqrt(n: bigint): bigint {
   if (n < 0n) {
     throw new Error('Cannot compute square root of negative number');
   }
-  
+
   if (n === 0n || n === 1n) {
     return n;
   }
-  
+
   let low = 1n;
   let high = n;
   let result = 0n;
-  
+
   while (low <= high) {
     const mid = (low + high) / 2n;
     const midSquared = mid * mid;
-    
+
     if (midSquared === n) {
       return mid;
     } else if (midSquared < n) {
@@ -35,14 +35,14 @@ function bigIntSqrt(n: bigint): bigint {
       high = mid - 1n;
     }
   }
-  
+
   return result;
 }
 
 /**
  * Validates the timing precision of the system using process.hrtime.bigint().
  * Measures 1000 iterations of timestamp capture and calculates mean and standard deviation.
- * 
+ *
  * @returns boolean indicating whether timing precision meets clinical requirements
  *          (standard deviation < 0.001 milliseconds)
  */
@@ -111,7 +111,9 @@ if (!timingValidationPassed) {
   console.warn('⚠️  WARNING: Hardware does not meet clinical timing precision requirements');
   console.warn('⚠️  Standard deviation exceeds 0.001 ms threshold');
   console.warn('⚠️  This hardware may be unsuitable for clinical use');
-  console.warn('⚠️  Consider running on hardware with better timing precision for clinical deployments\n');
+  console.warn(
+    '⚠️  Consider running on hardware with better timing precision for clinical deployments\n'
+  );
   process.exit(0); // Exit with success but with warnings
 } else {
   console.log('Hardware validation successful - ready for clinical use');
