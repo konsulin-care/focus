@@ -189,10 +189,7 @@ ipcMain.handle(
         'trialCount',
       ];
       for (const field of expectedNumericFields) {
-        // Security: Use a whitelist to prevent object injection via bracket notation
-        if (!expectedNumericFields.includes(field)) {
-          throw new Error(`Unauthorized metric field: ${String(field)}`);
-        }
+        // Security: iterate whitelisted fields to validate only known metrics
         validateNumericMetric(metrics, field as keyof AttentionMetrics);
       }
 

@@ -838,7 +838,10 @@ export default function DataManagement() {
   }, [t, fetchData]);
 
   useEffect(() => {
-    void fetchData();
+    async function load() {
+      await fetchData();
+    }
+    load();
   }, [fetchData]);
 
   useEffect(() => {
@@ -945,8 +948,8 @@ export default function DataManagement() {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  void handleClearCache();
+                onClick={async () => {
+                  await handleClearCache();
                 }}
                 className="px-3 py-2 border border-[#ECEFF4] rounded-md text-sm font-medium hover:bg-gray-50"
               >
