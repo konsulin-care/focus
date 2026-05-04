@@ -286,7 +286,7 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
                 key={mode.id}
                 type="button"
                 onClick={() => {
-                  handleExport(mode.id);
+                  void handleExport(mode.id);
                   setIsExtractOpen(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -302,7 +302,9 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
     {/* Bulk delete */}
     <button
       type="button"
-      onClick={() => handleBulkDelete()}
+      onClick={() => {
+        void handleBulkDelete();
+      }}
       disabled={selectedIds.size === 0}
       className="p-2 bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50"
       title={t('dataManagement.bulkDelete')}
