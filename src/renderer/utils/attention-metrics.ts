@@ -4,8 +4,8 @@
  * Utility functions for calculating comprehensive attention metrics with ACS scoring.
  */
 
-import { TestEvent } from '@/renderer/types/electronAPI';
-import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
+import type { TestEvent } from '@/renderer/types/electronAPI';
+import type { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
 import { computeAcsValues } from './acs-shared';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 

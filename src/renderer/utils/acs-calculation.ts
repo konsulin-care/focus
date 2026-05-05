@@ -5,8 +5,8 @@
  * Uses computeAcsValues from acs-shared.ts for core calculations.
  */
 
-import { TestEvent } from '@/renderer/types/electronAPI';
-import { SubjectInfo, AcsCalculationDetails } from '@/renderer/types/trial';
+import type { TestEvent } from '@/renderer/types/electronAPI';
+import type { SubjectInfo, AcsCalculationDetails } from '@/renderer/types/trial';
 import { inverseNormalCDF, clampProbability } from '@/shared/utils/distributions';
 import { computeAcsValues, AcsIntermediateResult } from './acs-shared';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';

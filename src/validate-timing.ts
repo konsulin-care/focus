@@ -96,7 +96,7 @@ function validateTimingPrecision(): boolean {
     console.error('❌ Timing validation FAILED');
     console.error('  Hardware does NOT meet clinical precision requirements');
     console.error('  Required: Standard deviation < 0.001 ms (1 microsecond)');
-    console.error('  Actual: Standard deviation = ' + stdDevMs.toFixed(6) + ' ms');
+    console.error(`  Actual: Standard deviation = ${stdDevMs.toFixed(6)} ms`);
     console.error('========================================\n');
   }
 

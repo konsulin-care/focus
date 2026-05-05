@@ -73,7 +73,7 @@ export function ResultsSummary({
 
   // Generate calculation details when we have events and subject info
   useEffect(() => {
-    if (testEvents && testEvents.length > 0 && subjectInfo) {
+    if (testEvents.length > 0 && subjectInfo) {
       const details = generateAcsCalculationDetails(testEvents, subjectInfo);
       setCalculationDetails(details);
     } else {

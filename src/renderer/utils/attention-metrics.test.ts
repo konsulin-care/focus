@@ -16,8 +16,8 @@ import { calculateVariability } from '@/shared/utils/basic-stats';
 import { calculateDPrime as clinicalCalculateDPrime } from '@/shared/utils/clinical-metrics';
 import { getNormativeStats } from '@/shared/utils/normative-data';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
-import { TestEvent } from '@/renderer/types/electronAPI';
-import { SubjectInfo } from '@/renderer/types/trial';
+import type { TestEvent } from '@/renderer/types/electronAPI';
+import type { SubjectInfo } from '@/renderer/types/trial';
 
 // ============================================================================
 // TOVA Manual Calculation Functions
@@ -32,7 +32,7 @@ function manualCalculateVariability(responseTimes: number[]): number {
   if (responseTimes.length === 0) return 0;
 
   const mean = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
-  const squaredDiffs = responseTimes.map((rt) => Math.pow(rt - mean, 2));
+  const squaredDiffs = responseTimes.map((rt) => (rt - mean) ** 2);
   const variance = squaredDiffs.reduce((a, b) => a + b, 0) / responseTimes.length;
   return Math.sqrt(variance);
 }

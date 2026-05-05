@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect, FC } from 'react';
 import { useTranslation } from '@/i18n';
-import { SubjectInfo } from '@/renderer/types/trial';
+import type { SubjectInfo } from '@/renderer/types/trial';
 
 export interface EmailCaptureFormProps {
   onSubmit: (subjectInfo: SubjectInfo, email: string, consent: boolean) => Promise<void>;

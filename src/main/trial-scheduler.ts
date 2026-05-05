@@ -6,7 +6,7 @@
  * Delegates response tracking to ResponseTracker.
  */
 
-import { TestConfig, StimulusType, TestEvent, TestEventType } from './types';
+import type { TestConfig, StimulusType, TestEvent, TestEventType } from './types';
 import { getHighPrecisionTime } from './timing';
 import { ResponseTracker } from './response-tracker';
 import { normalizeToEven } from './test-config';

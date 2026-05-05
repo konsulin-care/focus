@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { TestEvent } from '@/renderer/types/electronAPI';
-import { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
+import type { TestEvent } from '@/renderer/types/electronAPI';
+import type { SubjectInfo, AttentionMetrics } from '@/renderer/types/trial';
 import { calculateAttentionMetrics } from '@/renderer/utils/attention-metrics';
 
 /**

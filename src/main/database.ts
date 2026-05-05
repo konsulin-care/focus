@@ -530,7 +530,7 @@ export function executeWhitelistedQuery(
       case 'write':
         return stmt.run(...(params || [])) as WriteResult;
       default:
-        throw new Error(`Unknown query type: ${queryEntry.type}`);
+        throw new Error(`Unknown query type: ${String(queryEntry.type)}`);
     }
   } catch (error) {
     console.error('Database query error:', error);

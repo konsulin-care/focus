@@ -122,6 +122,11 @@ export function isDatabaseEncrypted(dbPath: string): boolean {
 // Database Migration
 // ===========================================
 
+// Helper function to safely quote SQL identifiers (prevents SQL injection)
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
 /**
  * Migrate an unencrypted database to encrypted format.
  * Uses the export/re-import pattern to re-encrypt the database.
@@ -133,14 +138,8 @@ export function migrateToEncrypted(db: Database.Database, newKey: string): void 
   console.log('[ENC] Migrating database to encrypted format...');
 
   try {
-    // Create a temporary encrypted database by exporting and re-importing
     const tempDbPath = join(app.getPath('userData'), 'focus_backup.db');
     const encryptedDbPath = join(app.getPath('userData'), 'focus.db');
-
-    // Helper function to safely quote SQL identifiers (prevents SQL injection)
-    function quoteIdentifier(identifier: string): string {
-      return `"${identifier.replace(/"/g, '""')}"`;
-    }
 
     // Close current connection
     db.close();
