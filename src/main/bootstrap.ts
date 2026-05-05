@@ -2,19 +2,16 @@
 /**
  * F.O.C.U.S. Assessment - Bootstrap Entry Point
  *
- * Sets up the application root as the current working directory,
- * registers module-alias, then loads the actual main process.
+ * Configures module-alias for @/ imports, then loads the main process.
  */
 
 import { resolve } from 'node:path';
+import { addAlias } from 'module-alias';
 
-// Determine the application root (where package.json resides)
-// This works both in development and packaged Electron builds
-const appRoot = resolve(__dirname, '../..');
-process.chdir(appRoot);
-
-// Register module-alias to resolve @/ imports
-require('module-alias/register');
+// __dirname is '.../dist/main'
+// We want '@' to resolve to '.../dist'
+const distRoot = resolve(__dirname, '..');
+addAlias('@', distRoot);
 
 // Load the actual main process entry point
 require('./main');
