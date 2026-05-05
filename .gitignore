@@ -4,6 +4,7 @@
 /.vscode
 *.swp
 *.swo
+.kilo
 
 # dependencies
 /node_modules
