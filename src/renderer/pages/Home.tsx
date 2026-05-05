@@ -2,7 +2,7 @@ import { useTranslation } from '@/i18n';
 import { useNavigation } from '@/renderer/store';
 import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
-import { TestConfig } from '@/renderer/types/electronAPI';
+import type { TestConfig } from '@/renderer/types/electronAPI';
 
 /** Home page: displays app intro, test duration, and start button. */
 export default function Home() {
@@ -45,6 +45,7 @@ export default function Home() {
         <p className="text-blue-700 mt-3">{t('instructions.text')}</p>
       </div>
       <button
+        type="button"
         onClick={() => setPage('test')}
         className="bg-primary text-white px-8 py-4 rounded-lg hover:bg-[#099B9E] transition-colors font-semibold text-lg shadow-sm cursor-pointer"
       >

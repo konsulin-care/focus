@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { AcsCalculationDetails } from '@/renderer/types/trial';
+import type { AcsCalculationDetails } from '@/renderer/types/trial';
 import { ModalHeader } from './ModalHeader';
 import { SubjectInfoSection } from './SubjectInfoSection';
 import { DPrimeSection } from './DPrimeSection';
@@ -103,6 +103,7 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
 
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
           aria-label={t('results.acs.closeModal')}

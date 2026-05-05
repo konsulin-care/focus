@@ -5,8 +5,8 @@
  * and determining trial outcomes.
  */
 
-import { TestEvent, TestConfig } from '@/renderer/types/electronAPI';
-import { TrialResult, TrialOutcome } from '@/renderer/types/trial';
+import type { TestEvent, TestConfig } from '@/renderer/types/electronAPI';
+import type { TrialResult, TrialOutcome } from '@/renderer/types/trial';
 import { TRIAL_CONSTANTS } from '@/shared/utils/constants';
 
 /**

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AttentionMetrics, AcsCalculationDetails } from '@/renderer/types/trial';
+import type { AttentionMetrics, AcsCalculationDetails } from '@/renderer/types/trial';
 import { normalCDF } from '@/renderer/utils/statistics';
 import { AcsCalculationModal } from './AcsCalculationModal';
 
@@ -33,6 +33,7 @@ export function AcsScoreCard({ metrics, calculationDetails }: AcsScoreCardProps)
   return (
     <>
       <button
+        type="button"
         className={`mb-6 bg-blue-900/50 p-6 rounded-lg border border-blue-700 ${
           isClickable
             ? 'cursor-pointer hover:bg-blue-800/50 hover:scale-[1.02] transition-all duration-200 text-center'

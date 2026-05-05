@@ -3,7 +3,7 @@ import { useNavigation } from '@/renderer/store';
 import { StimulusDemo } from '@/renderer/components';
 import { useEffect, useState } from 'react';
 import { calculateTestDuration } from '@/renderer/utils/duration';
-import { TestConfig } from '@/renderer/types/electronAPI';
+import type { TestConfig } from '@/renderer/types/electronAPI';
 
 /**
  * Test page component that runs the attention test and displays results
@@ -65,6 +65,7 @@ export default function Test() {
 
       <div className="flex justify-center">
         <button
+          type="button"
           onClick={startTest}
           className="px-8 py-4 bg-primary hover:bg-[#099B9E] text-white text-xl font-semibold rounded-lg transition-colors shadow-lg"
         >

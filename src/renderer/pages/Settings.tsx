@@ -46,7 +46,7 @@ export default function Settings() {
         setStatus(t('status.loadFailed'));
         setStatusIsError(true);
       });
-  }, []);
+  }, [t]);
 
   /**
    * Handles saving of settings configuration
@@ -169,10 +169,14 @@ export default function Settings() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="stimulus-duration"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {t('settings.timing.stimulusDuration')}
               </label>
               <input
+                id="stimulus-duration"
                 type="number"
                 value={config.stimulusDurationMs}
                 onChange={(e) => {
@@ -185,10 +189,14 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="interstimulus-interval"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {t('settings.timing.interstimulusInterval')}
               </label>
               <input
+                id="interstimulus-interval"
                 type="number"
                 value={config.interstimulusIntervalMs}
                 onChange={(e) => {
@@ -201,10 +209,14 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="total-trials"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {t('settings.timing.totalTrials')}
               </label>
               <input
+                id="total-trials"
                 type="number"
                 value={displayTotalTrials}
                 onChange={handleTotalTrialsChange}
@@ -217,7 +229,13 @@ export default function Settings() {
               </p>
               {showNormalizationWarning && (
                 <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <title>{t('settings.timing.warningIcon') || 'Warning'}</title>
                     <path
                       fillRule="evenodd"
                       d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
@@ -230,10 +248,11 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="buffer-time" className="block text-sm font-medium text-gray-700 mb-1">
                 {t('settings.timing.bufferTime')}
               </label>
               <input
+                id="buffer-time"
                 type="number"
                 value={config.bufferMs}
                 onChange={(e) => {

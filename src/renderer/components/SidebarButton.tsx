@@ -18,6 +18,7 @@ export default function SidebarButton({
 }: SidebarButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`
         w-full relative

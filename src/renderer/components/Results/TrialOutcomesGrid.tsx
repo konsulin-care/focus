@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { AttentionMetrics } from '@/renderer/types/trial';
+import type { AttentionMetrics } from '@/renderer/types/trial';
 
 interface TrialOutcomesGridProps {
   metrics: AttentionMetrics;

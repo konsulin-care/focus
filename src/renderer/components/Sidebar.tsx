@@ -90,6 +90,7 @@ export default function Sidebar() {
         `}
       >
         <button
+          type="button"
           onClick={toggleSidebar}
           className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
           title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}

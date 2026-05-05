@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TestEvent, TestCompleteResult } from '@/renderer/types/electronAPI';
+import type { TestEvent, TestCompleteResult } from '@/renderer/types/electronAPI';
 
 interface UseTestEventsReturn {
   testEvents: TestEvent[];

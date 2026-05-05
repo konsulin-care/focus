@@ -4,7 +4,7 @@
  * Utilities for calculating test duration from test configuration.
  */
 
-import { TestConfig } from '@/renderer/types/electronAPI';
+import type { TestConfig } from '@/renderer/types/electronAPI';
 
 /**
  * Calculate test duration in minutes from test configuration.
