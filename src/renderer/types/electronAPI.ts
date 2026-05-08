@@ -88,6 +88,7 @@ export interface ElectronAPI {
     newPassword: string
   ) => Promise<{ sessionToken: string }>;
   authChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  authDeleteAdmin: (password: string, wipeData: boolean) => Promise<void>;
   authStatus: () => Promise<{ isAuthenticated: boolean; isSetupComplete: boolean }>;
   onSessionInvalidated: (callback: () => void) => () => void;
 }

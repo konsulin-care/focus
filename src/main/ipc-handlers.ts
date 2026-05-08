@@ -16,6 +16,8 @@ import {
   requireAdmin,
   isAuthenticated,
   getSessionTokenByWebContentsId,
+  invalidateAllSessions,
+  deleteAdmin,
 } from './auth';
 import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
 import { DatabaseQueryCommand, TestConfig, SessionWithUser } from '@/main/types';
@@ -98,6 +100,13 @@ ipcMain.handle(
 
 ipcMain.handle('auth-status', (event) => {
   return { isAuthenticated: isAuthenticated(event.sender.id), isSetupComplete: isAdminSetup() };
+});
+
+ipcMain.handle('admin-delete', async (event, password: string, wipeData: boolean) => {
+  requireAdmin(event);
+  await deleteAdmin(password, wipeData);
+  // Invalidate all sessions after deletion
+  invalidateAllSessions();
 });
 
 // ===========================================

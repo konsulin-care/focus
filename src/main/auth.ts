@@ -186,7 +186,7 @@ export function verifySession(token: string, webContentsId: number): boolean {
 }
 
 /**
- * Terminate a specific session.
+ * Logout session for a specific token.
  */
 export function logoutSession(token: string): void {
   activeSessions.delete(token);
@@ -203,6 +203,60 @@ export function invalidateAllSessions(): void {
   if (db) {
     db.prepare('UPDATE test_config SET value = ? WHERE key = ?').run('0', 'session_expiry');
   }
+}
+
+/**
+ * Delete admin account and optionally wipe all test data.
+ * Requires password verification before deletion.
+ * @param password - Current admin password for verification
+ * @param wipeData - If true, also delete all test sessions and trial data
+ */
+export async function deleteAdmin(password: string, wipeData: boolean): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+
+  // Verify password before deletion
+  const hashRow = db
+    .prepare('SELECT value FROM test_config WHERE key = ?')
+    .get('admin_password_hash') as { value: string } | undefined;
+
+  if (!hashRow || !bcrypt.compareSync(password, hashRow.value)) {
+    throw new Error('Current password is incorrect');
+  }
+
+  // Begin transaction for atomic deletion
+  db.transaction(() => {
+    // Clear all admin auth fields
+    const clearKeys = [
+      'admin_password_hash',
+      'admin_email_ciphertext',
+      'admin_email_iv',
+      'admin_email_tag',
+      'admin_device_uuid',
+      'recovery_ciphertext',
+      'recovery_iv',
+      'recovery_tag',
+      'failed_login_attempts',
+      'lockout_until',
+      'session_expiry',
+    ];
+
+    for (const key of clearKeys) {
+      db!.prepare('DELETE FROM test_config WHERE key = ?').run(key);
+    }
+
+    // Reset setup complete flag
+    db!
+      .prepare(
+        'INSERT INTO test_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+      )
+      .run('admin_setup_complete', '0');
+
+    // Optionally wipe test data
+    if (wipeData) {
+      db!.prepare('DELETE FROM trial_data').run();
+      db!.prepare('DELETE FROM test_sessions').run();
+    }
+  })();
 }
 
 /**

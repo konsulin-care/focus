@@ -74,40 +74,45 @@ function createMockDb() {
       }
       return seeds[key] !== undefined ? { value: seeds[key] } : undefined;
     },
-    run(...args: [string, string]) {
+    run(...args: [string, string?] | [string]) {
+      // DELETE queries: just the key (e.g., DELETE FROM test_config WHERE key = ?)
+      if (args.length === 1) {
+        const [key] = args as [string];
+        delete seeds[key];
+        return { changes: 1, lastInsertRowid: 1 };
+      }
       // Handle both UPDATE (value, key) and INSERT (key, value) orders
       // UPDATE: `SET value = ? WHERE key = ?` → run(value, key)
       // INSERT: `VALUES (?, ?)` → run(key, value)
-      if (args.length === 2) {
-        const [first, second] = args as [string, string];
-        // Keys used in INSERT statements (key, value) order
-        const insertKeys = new Set([
-          'session_expiry',
-          'admin_password_hash',
-          'lockout_until',
-          'failed_login_attempts',
-          'recovery_ciphertext',
-          'recovery_iv',
-          'recovery_tag',
-          'admin_email_ciphertext',
-          'admin_email_iv',
-          'admin_email_tag',
-          'admin_device_uuid',
-          'device_uuid',
-        ]);
-        if (insertKeys.has(first)) {
-          seeds[first] = second; // INSERT format: (key, value)
-          // Sync device_uuid from admin_device_uuid for getOrCreateDeviceUUID compatibility
-          if (first === 'admin_device_uuid') {
-            seeds['device_uuid'] = second;
-            deviceUuidQueryCount = 2;
-          }
-        } else {
-          seeds[second] = first; // UPDATE format: (value, key)
-          // Also sync device_uuid to admin_device_uuid for requestRecovery compatibility
-          if (second === 'device_uuid') {
-            seeds['admin_device_uuid'] = first;
-          }
+      const [first, second] = args as [string, string];
+      // Keys used in INSERT statements (key, value) order
+      const insertKeys = new Set([
+        'session_expiry',
+        'admin_password_hash',
+        'lockout_until',
+        'failed_login_attempts',
+        'recovery_ciphertext',
+        'recovery_iv',
+        'recovery_tag',
+        'admin_email_ciphertext',
+        'admin_email_iv',
+        'admin_email_tag',
+        'admin_device_uuid',
+        'device_uuid',
+        'admin_setup_complete',
+      ]);
+      if (insertKeys.has(first)) {
+        seeds[first] = second; // INSERT format: (key, value)
+        // Sync device_uuid from admin_device_uuid for getOrCreateDeviceUUID compatibility
+        if (first === 'admin_device_uuid') {
+          seeds['device_uuid'] = second;
+          deviceUuidQueryCount = 2;
+        }
+      } else {
+        seeds[second] = first; // UPDATE format: (value, key)
+        // Also sync device_uuid to admin_device_uuid for requestRecovery compatibility
+        if (second === 'device_uuid') {
+          seeds['admin_device_uuid'] = first;
         }
       }
       return { changes: 1, lastInsertRowid: 1 };
@@ -119,14 +124,14 @@ function createMockDb() {
       if (query.includes('SELECT value FROM test_config WHERE key =')) {
         return { get: statementMock.get.bind(statementMock) };
       }
-      if (query.includes('INSERT') || query.includes('UPDATE')) {
+      if (query.includes('INSERT') || query.includes('UPDATE') || query.includes('DELETE')) {
         return { run: statementMock.run.bind(statementMock) };
       }
       return { get: () => undefined, run: () => ({ changes: 1 }) };
     },
     exec: vi.fn(),
     transaction<T>(fn: () => T): () => T {
-      return fn as () => T;
+      return () => fn();
     },
     _seeds: seeds,
   };
@@ -393,6 +398,59 @@ describe('Authentication Module', () => {
 
       // Verify exp is exactly 300 seconds (5 min) after iat
       expect(payload.exp - payload.iat).toBe(300);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // deleteAdmin function
+  // --------------------------------------------------------------------------
+
+  describe('deleteAdmin', () => {
+    it('should throw error when password is incorrect', async () => {
+      const { deleteAdmin } = auth;
+
+      await expect(deleteAdmin('wrongPassword', false)).rejects.toThrow(
+        'Current password is incorrect'
+      );
+    });
+
+    it('should clear admin auth fields and reset setup flag', async () => {
+      const { deleteAdmin } = auth;
+
+      await deleteAdmin('correctPassword', false);
+
+      // Verify setup complete flag is reset
+      expect(db!._seeds['admin_setup_complete']).toBe('0');
+
+      // Verify auth fields are deleted
+      expect(db!._seeds['admin_password_hash']).toBeUndefined();
+      expect(db!._seeds['admin_email_ciphertext']).toBeUndefined();
+      expect(db!._seeds['admin_email_iv']).toBeUndefined();
+      expect(db!._seeds['admin_email_tag']).toBeUndefined();
+      expect(db!._seeds['admin_device_uuid']).toBeUndefined();
+      expect(db!._seeds['recovery_ciphertext']).toBeUndefined();
+      expect(db!._seeds['recovery_iv']).toBeUndefined();
+      expect(db!._seeds['recovery_tag']).toBeUndefined();
+    });
+
+    it('should wipe test data when wipeData is true', async () => {
+      // Re-seed the db with test data
+      const { deleteAdmin, registerAdmin } = auth;
+
+      // Seed keytar for registration
+      keytarState.password = 'c'.repeat(64);
+
+      // First register an admin
+      await registerAdmin('test@example.com', 'password123');
+
+      // Create mock tables by inserting seed data for trial_data and test_sessions
+      db!._seeds['admin_setup_complete'] = '1';
+      db!._seeds['admin_password_hash'] = deterministicHash('password123');
+
+      await deleteAdmin('password123', true);
+
+      // Verify setup flag is reset
+      expect(db!._seeds['admin_setup_complete']).toBe('0');
     });
   });
 });

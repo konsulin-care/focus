@@ -132,6 +132,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('admin-perform-recovery', encryptedKeyJson, newPassword),
   authChangePassword: (currentPassword: string, newPassword: string) =>
     ipcRenderer.invoke('admin-change-password', currentPassword, newPassword),
+  authDeleteAdmin: (password: string, wipeData: boolean) =>
+    ipcRenderer.invoke('admin-delete', password, wipeData),
   authStatus: () => ipcRenderer.invoke('auth-status'),
   onSessionInvalidated: (callback: () => void) => {
     const listener = () => callback();
