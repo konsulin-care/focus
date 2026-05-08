@@ -373,7 +373,15 @@ describe('Authentication Module', () => {
       // Verify axios.post was called with Authorization header
       expect(axiosPostMock.post).toHaveBeenCalled();
       const callArgs = (axiosPostMock.post as ReturnType<typeof vi.fn>).mock.calls[0];
-      const authHeader = callArgs[2]?.headers?.Authorization as string;
+      // Verify axios.post was called with expected arguments (url, data, config)
+      if (!callArgs[2]) {
+        throw new Error('Expected axios.post to be called with config object (3rd argument)');
+      }
+      const config = callArgs[2] as { headers?: { Authorization?: string } };
+      if (!config.headers?.Authorization) {
+        throw new Error('Authorization header missing in axios.post config');
+      }
+      const authHeader = config.headers.Authorization;
       expect(authHeader).toMatch(/^Bearer \S+$/);
 
       // Decode the JWT payload (first segment before the dot)
