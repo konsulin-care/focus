@@ -15,7 +15,8 @@
     "test": "Tes",
     "dataManagement": "Manajemen Data",
     "settings": "Pengaturan",
-    "about": "Tentang"
+    "about": "Tentang",
+    "adminAccessRequired": "Diperlukan akses admin"
   },
   "language": {
     "label": "Bahasa",

@@ -1,4 +1,5 @@
 import { useState, type FC } from 'react';
+import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
 
 export interface RecoveryModalProps {
@@ -19,6 +20,7 @@ interface RecoveryKeyPayload {
  *   Step 2 – Paste the encrypted recovery key JSON and set a new password.
  */
 export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation('translation');
   const login = useAuthStore((state) => state.login);
 
   // Step 1 state
@@ -59,12 +61,12 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     setError('');
 
     if (!email.trim()) {
-      setError('Email is required');
+      setError(t('admin.recovery.step1.error.required'));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError(t('admin.recovery.step1.error.invalidEmail'));
       return;
     }
 
@@ -74,7 +76,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       await window.electronAPI.authRequestRecovery(email);
       setStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Recovery request failed';
+      const message = err instanceof Error ? err.message : t('admin.recovery.step1.error.failed');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -98,23 +100,23 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     // Validate JSON payload
     const parsed = parseRecoveryKey(recoveryKeyJson);
     if (!parsed.c || !parsed.iv || !parsed.tag) {
-      setError('Recovery key JSON must contain "c", "iv", and "tag" fields');
+      setError(t('admin.recovery.step2.error.jsonParse'));
       return;
     }
 
     // Validate passwords
     if (!newPassword || !confirmPassword) {
-      setError('Both password fields are required');
+      setError(t('admin.recovery.step2.error.required'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('admin.recovery.step2.error.newPasswordLength'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('admin.recovery.step2.error.passwordsMatch'));
       return;
     }
 
@@ -125,7 +127,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       login(result.sessionToken);
       handleClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Password reset failed';
+      const message = err instanceof Error ? err.message : t('admin.recovery.step2.error.failed');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -145,20 +147,18 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       >
         <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
           <h2 id="recovery-step1-title" className="text-xl font-semibold text-gray-800 mb-4">
-            Password Recovery
+            {t('admin.recovery.step1.title')}
           </h2>
 
           <form onSubmit={handleSendRecovery} className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Enter the email address associated with the admin account you wish to recover.
-            </p>
+            <p className="text-sm text-gray-600">{t('admin.recovery.step1.description')}</p>
 
             <div>
               <label
                 htmlFor="recovery-email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Email
+                {t('admin.recovery.step1.email')}
               </label>
               <input
                 id="recovery-email"
@@ -169,7 +169,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
                   if (error) setError('');
                 }}
                 className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-                placeholder="admin@example.com"
+                placeholder={t('admin.recovery.step1.emailPlaceholder')}
                 disabled={isLoading}
                 autoFocus
                 required
@@ -189,14 +189,14 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
                 className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
                 disabled={isLoading}
               >
-                Cancel
+                {t('button.cancel')}
               </button>
               <button
                 type="submit"
                 className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 disabled={isLoading}
               >
-                {isLoading ? 'Sending...' : 'Send Recovery Email'}
+                {isLoading ? t('admin.recovery.step1.sending') : t('admin.recovery.step1.send')}
               </button>
             </div>
           </form>
@@ -215,14 +215,12 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     >
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
         <h2 id="recovery-step2-title" className="text-xl font-semibold text-gray-800 mb-4">
-          Reset Password
+          {t('admin.recovery.step2.title')}
         </h2>
 
         {/* Success message */}
         <div className="bg-green-50 border border-green-200 rounded p-3 mb-4">
-          <p className="text-sm text-green-800">
-            If an admin account matches this email, you will receive recovery instructions shortly.
-          </p>
+          <p className="text-sm text-green-800">{t('admin.recovery.step2.successMessage')}</p>
         </div>
 
         <form onSubmit={handleResetPassword} className="space-y-4">
@@ -232,13 +230,10 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
               htmlFor="recovery-key-json"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Recovery Key
+              {t('admin.recovery.step2.recoveryKey')}
             </label>
             <p className="text-xs text-gray-500 mb-2">
-              Paste the JSON payload from the recovery email (must contain{' '}
-              <code className="bg-gray-100 px-1 rounded">c</code>,{' '}
-              <code className="bg-gray-100 px-1 rounded">iv</code>, and{' '}
-              <code className="bg-gray-100 px-1 rounded">tag</code> fields).
+              {t('admin.recovery.step2.recoveryKeyHelp')}
             </p>
             <textarea
               id="recovery-key-json"
@@ -249,7 +244,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
               }}
               rows={4}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white font-mono text-sm focus:ring-primary focus:border-primary"
-              placeholder='{"c": "...", "iv": "...", "tag": "..."}'
+              placeholder={t('admin.recovery.step2.recoveryKeyPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -258,7 +253,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
           {/* New password */}
           <div>
             <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
-              New Password
+              {t('admin.recovery.step2.newPassword')}
             </label>
             <input
               id="new-password"
@@ -269,7 +264,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="At least 8 characters"
+              placeholder={t('admin.recovery.step2.newPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -281,7 +276,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
               htmlFor="confirm-new-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Confirm New Password
+              {t('admin.recovery.step2.confirmNewPassword')}
             </label>
             <input
               id="confirm-new-password"
@@ -292,7 +287,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Re-enter new password"
+              placeholder={t('admin.recovery.step2.confirmNewPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -311,14 +306,14 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
               className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isLoading}
             >
-              Cancel
+              {t('button.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
-              {isLoading ? 'Resetting...' : 'Reset Password'}
+              {isLoading ? t('admin.recovery.step2.resetting') : t('admin.recovery.step2.reset')}
             </button>
           </div>
         </form>

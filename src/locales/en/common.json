@@ -15,7 +15,8 @@
     "test": "Test",
     "dataManagement": "Data Management",
     "settings": "Settings",
-    "about": "About"
+    "about": "About",
+    "adminAccessRequired": "Admin access required"
   },
   "language": {
     "label": "Language",

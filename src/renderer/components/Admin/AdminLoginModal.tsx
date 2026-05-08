@@ -1,4 +1,5 @@
 import { useState, type FC, type KeyboardEvent } from 'react';
+import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
 
 export interface AdminLoginModalProps {
@@ -18,6 +19,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
   onSuccess,
   onClose,
 }) => {
+  const { t } = useTranslation('translation');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
     setError('');
 
     if (!password.trim()) {
-      setError('Password is required');
+      setError(t('admin.login.error.required'));
       return;
     }
 
@@ -48,12 +50,12 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
       onSuccess?.();
       handleClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Authentication failed';
+      const message = err instanceof Error ? err.message : t('admin.login.error.invalid');
 
       if (message.toLowerCase().includes('lockout') || message.toLowerCase().includes('locked')) {
         setError(message);
       } else {
-        setError('Invalid password. Please try again.');
+        setError(t('admin.login.error.invalid'));
       }
       setPassword('');
     } finally {
@@ -91,7 +93,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
     >
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
         <h2 id="admin-login-title" className="text-xl font-semibold text-gray-800 mb-4">
-          Admin Authentication
+          {t('admin.login.title')}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,7 +102,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
               htmlFor="admin-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Password
+              {t('admin.login.password')}
             </label>
             <input
               id="admin-password"
@@ -111,7 +113,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Enter admin password"
+              placeholder={t('admin.login.placeholder')}
               disabled={isLoading}
               autoFocus
               required
@@ -131,7 +133,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
               className="text-sm text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
               disabled={isLoading}
             >
-              Forgot Password?
+              {t('admin.login.forgotPassword')}
             </button>
           </div>
 
@@ -142,14 +144,14 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
               className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
               disabled={mandatory || isLoading}
             >
-              Cancel
+              {t('button.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? t('admin.login.loggingIn') : t('admin.login.login')}
             </button>
           </div>
         </form>

@@ -1,4 +1,5 @@
 import { useState, type FC } from 'react';
+import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
 
 export interface AdminRegisterModalProps {
@@ -13,6 +14,7 @@ export interface AdminRegisterModalProps {
  * that must be acknowledged before proceeding.
  */
 export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComplete }) => {
+  const { t } = useTranslation('translation');
   const setSetupComplete = useAuthStore((state) => state.setSetupComplete);
 
   // Registration phase state
@@ -53,22 +55,22 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
     setError('');
 
     if (!email.trim() || !password || !confirmPassword) {
-      setError('All fields are required');
+      setError(t('admin.register.error.required'));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError(t('admin.register.error.invalidEmail'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('admin.register.error.passwordsMatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('admin.register.error.passwordLength'));
       return;
     }
 
@@ -79,7 +81,8 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
       setRecoveryKey(result.recoveryKey);
       // Transition to recovery key phase
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Registration failed';
+      const message =
+        err instanceof Error ? err.message : t('admin.register.error.registrationFailed');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -121,20 +124,18 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
       >
         <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
           <h2 id="recovery-key-title" className="text-xl font-semibold text-gray-800 mb-4">
-            Setup Admin Account
+            {t('admin.register.title')}
           </h2>
 
           {/* Warning */}
           <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-4">
-            <p className="text-sm text-amber-800 font-medium">
-              This is your only way to recover admin access. Save it securely.
-            </p>
+            <p className="text-sm text-amber-800 font-medium">{t('admin.register.saveWarning')}</p>
           </div>
 
           {/* Recovery key display */}
           <div className="mb-4">
             <label htmlFor="recovery-key" className="block text-sm font-medium text-gray-700 mb-1">
-              Recovery Key
+              {t('admin.register.recoveryKey')}
             </label>
             <div className="flex gap-2">
               <code
@@ -147,9 +148,9 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
                 type="button"
                 onClick={handleCopyKey}
                 className="shrink-0 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium transition-colors text-sm"
-                aria-label="Copy recovery key"
+                aria-label={t('admin.register.copy')}
               >
-                Copy
+                {t('admin.register.copy')}
               </button>
             </div>
           </div>
@@ -162,7 +163,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               onChange={(e) => setHasSavedKey(e.target.checked)}
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <span className="text-sm text-gray-700">I have saved this recovery key securely</span>
+            <span className="text-sm text-gray-700">{t('admin.register.acknowledge')}</span>
           </label>
 
           {/* Action buttons */}
@@ -173,7 +174,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isLoading}
             >
-              Back
+              {t('admin.register.back')}
             </button>
             <button
               type="button"
@@ -181,7 +182,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={!hasSavedKey}
             >
-              Continue
+              {t('admin.register.continue')}
             </button>
           </div>
         </div>
@@ -199,7 +200,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
     >
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
         <h2 id="register-title" className="text-xl font-semibold text-gray-800 mb-4">
-          Setup Admin Account
+          {t('admin.register.title')}
         </h2>
 
         <form onSubmit={handleRegister} className="space-y-4">
@@ -209,7 +210,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               htmlFor="register-email"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Email
+              {t('admin.register.email')}
             </label>
             <input
               id="register-email"
@@ -220,7 +221,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="admin@example.com"
+              placeholder={t('admin.register.emailPlaceholder')}
               disabled={isLoading}
               autoFocus
               required
@@ -233,7 +234,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               htmlFor="register-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Password
+              {t('admin.register.password')}
             </label>
             <input
               id="register-password"
@@ -244,7 +245,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="At least 8 characters"
+              placeholder={t('admin.register.passwordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -256,7 +257,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               htmlFor="register-confirm-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Confirm Password
+              {t('admin.register.confirmPassword')}
             </label>
             <input
               id="register-confirm-password"
@@ -267,7 +268,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Re-enter password"
+              placeholder={t('admin.register.confirmPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -288,14 +289,14 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
               className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isLoading}
             >
-              Cancel
+              {t('button.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
-              {isLoading ? 'Registering...' : 'Register'}
+              {isLoading ? t('admin.register.registering') : t('admin.register.register')}
             </button>
           </div>
         </form>

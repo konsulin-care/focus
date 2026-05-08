@@ -1,4 +1,5 @@
 import { useState, type FC, type KeyboardEvent } from 'react';
+import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
 
 export interface ChangePasswordModalProps {
@@ -11,6 +12,7 @@ export interface ChangePasswordModalProps {
  * Requires the admin to be currently authenticated.
  */
 export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation('translation');
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,17 +38,17 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
 
     // Validation
     if (!currentPassword.trim()) {
-      setError('Current password is required');
+      setError(t('admin.changePassword.error.required'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('New password must be at least 8 characters');
+      setError(t('admin.changePassword.error.newPasswordLength'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
+      setError(t('admin.changePassword.error.passwordsMatch'));
       return;
     }
 
@@ -61,7 +63,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
         handleClose();
       }, 2000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to change password';
+      const message = err instanceof Error ? err.message : t('admin.changePassword.error.failed');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -93,7 +95,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
     >
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
         <h2 id="change-password-title" className="text-xl font-semibold text-gray-800 mb-4">
-          Change Admin Password
+          {t('admin.changePassword.title')}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,7 +104,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
               htmlFor="current-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Current Password
+              {t('admin.changePassword.currentPassword')}
             </label>
             <input
               id="current-password"
@@ -113,7 +115,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Enter current password"
+              placeholder={t('admin.changePassword.currentPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -121,7 +123,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
 
           <div>
             <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
-              New Password
+              {t('admin.changePassword.newPassword')}
             </label>
             <input
               id="new-password"
@@ -132,7 +134,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Enter new password (min 8 characters)"
+              placeholder={t('admin.changePassword.newPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -143,7 +145,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
               htmlFor="confirm-password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Confirm New Password
+              {t('admin.changePassword.confirmNewPassword')}
             </label>
             <input
               id="confirm-password"
@@ -154,7 +156,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
                 if (error) setError('');
               }}
               className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
-              placeholder="Confirm new password"
+              placeholder={t('admin.changePassword.confirmNewPasswordPlaceholder')}
               disabled={isLoading}
               required
             />
@@ -168,7 +170,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
 
           {success && (
             <div className="bg-green-50 border border-green-200 rounded p-3">
-              <p className="text-sm text-green-600">Password changed successfully! Closing…</p>
+              <p className="text-sm text-green-600">{t('admin.changePassword.success')}</p>
             </div>
           )}
 
@@ -179,14 +181,16 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
               className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isLoading}
             >
-              Cancel
+              {t('button.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
-              {isLoading ? 'Changing…' : 'Change Password'}
+              {isLoading
+                ? t('admin.changePassword.changing')
+                : t('admin.changePassword.changePassword')}
             </button>
           </div>
         </form>
