@@ -35,11 +35,41 @@ runs:
         set -e
         npm run electron-rebuild
 
+    - name: Generate main config from secrets
+      if: env.RECOVERY_WEBHOOK_SECRET != ''
+      shell: bash
+      env:
+        RECOVERY_WEBHOOK_URL: ${{ secrets.RECOVERY_WEBHOOK_URL }}
+        RECOVERY_WEBHOOK_SECRET: ${{ secrets.RECOVERY_WEBHOOK_SECRET }}
+      run: |
+        node -e "\
+          const fs = require('fs'); \
+          const cfg = { \
+            RECOVERY_WEBHOOK_URL: process.env.RECOVERY_WEBHOOK_URL, \
+            RECOVERY_WEBHOOK_SECRET: process.env.RECOVERY_WEBHOOK_SECRET \
+          }; \
+          fs.writeFileSync('src/main/generated-config.ts', 'export const CONFIG = ' + JSON.stringify(cfg) + ';'); \
+        "
+
     - name: Build TypeScript
       shell: bash
       run: |
         set -e
         npm run build:main
+
+    - name: Copy config to dist
+      shell: bash
+      run: |
+        cp src/main/generated-config.ts dist/main/generated-config.ts
+
+    - name: Create .env for renderer
+      shell: bash
+      env:
+        VITE_RECOVERY_WEBHOOK_URL: ${{ secrets.RECOVERY_WEBHOOK_URL }}
+        VITE_RECOVERY_WEBHOOK_SECRET: ${{ secrets.RECOVERY_WEBHOOK_SECRET }}
+      run: |
+        echo "VITE_RECOVERY_WEBHOOK_URL=${VITE_RECOVERY_WEBHOOK_URL}" >> .env
+        echo "VITE_RECOVERY_WEBHOOK_SECRET=${VITE_RECOVERY_WEBHOOK_SECRET}" >> .env
 
     - name: Build Renderer
       shell: bash

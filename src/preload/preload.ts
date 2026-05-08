@@ -118,4 +118,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // UI Dialog API
   showMessageBox: (options: MessageBoxOptions) => ipcRenderer.invoke('show-message-box', options),
+
+  // Admin Authentication API
+  authIsSetup: () => ipcRenderer.invoke('admin-is-setup'),
+  authRegister: (email: string, password: string) =>
+    ipcRenderer.invoke('admin-register', email, password),
+  authLogin: (password: string) => ipcRenderer.invoke('admin-login', password),
+  authLogout: () => ipcRenderer.invoke('admin-logout'),
+  authVerifySession: (sessionToken: string) =>
+    ipcRenderer.invoke('admin-verify-session', sessionToken),
+  authRequestRecovery: (email: string) => ipcRenderer.invoke('admin-request-recovery', email),
+  authPerformRecovery: (encryptedKeyJson: string, newPassword: string) =>
+    ipcRenderer.invoke('admin-perform-recovery', encryptedKeyJson, newPassword),
+  authChangePassword: (currentPassword: string, newPassword: string) =>
+    ipcRenderer.invoke('admin-change-password', currentPassword, newPassword),
+  authStatus: () => ipcRenderer.invoke('auth-status'),
+  onSessionInvalidated: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('admin-session-invalidated', listener);
+    return () => {
+      ipcRenderer.removeListener('admin-session-invalidated', listener);
+    };
+  },
 });

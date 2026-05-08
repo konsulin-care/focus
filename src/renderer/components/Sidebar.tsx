@@ -1,7 +1,17 @@
 import React from 'react';
-import { Home, CirclePlay, Cog, Info, ChevronLeft, ChevronRight, Database } from 'lucide-react';
+import {
+  Home,
+  CirclePlay,
+  Cog,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  Database,
+  Lock,
+} from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { useNavigation, Page } from '@/renderer/store';
+import { useAuthStore } from '@/renderer/store/useAuthStore';
 import SidebarButton from './SidebarButton';
 import { Logo } from '.';
 
@@ -12,8 +22,15 @@ import { Logo } from '.';
 export default function Sidebar() {
   const { t } = useTranslation('common');
   const { currentPage, setPage, isSidebarCollapsed, toggleSidebar } = useNavigation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const navItems: { page: Page; icon: React.ReactNode; labelKey: string }[] = [
+  const lockedPages: Page[] = ['data-management', 'settings'];
+
+  const navItems: {
+    page: Page;
+    icon: React.ReactNode;
+    labelKey: string;
+  }[] = [
     { page: 'home', icon: <Home size={20} strokeWidth={2} />, labelKey: 'nav.home' },
     { page: 'test', icon: <CirclePlay size={20} strokeWidth={2} />, labelKey: 'nav.test' },
     {
@@ -64,16 +81,39 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2 items-stretch">
-          {navItems.map((item) => (
-            <SidebarButton
-              key={item.page}
-              icon={item.icon}
-              label={t(item.labelKey)}
-              isActive={currentPage === item.page}
-              isCollapsed={isSidebarCollapsed}
-              onClick={() => setPage(item.page)}
-            />
-          ))}
+          {navItems.map((item) => {
+            const needsAuth = !isAuthenticated && lockedPages.includes(item.page);
+            return (
+              <div
+                key={item.page}
+                title={needsAuth ? t('nav.adminAccessRequired') : undefined}
+                className={needsAuth ? 'opacity-50' : 'cursor-pointer'}
+              >
+                <SidebarButton
+                  icon={
+                    needsAuth ? (
+                      <div className="relative">
+                        {item.icon}
+                        <Lock
+                          size={14}
+                          strokeWidth={2}
+                          className="absolute -top-1 -right-1 text-amber-500"
+                        />
+                      </div>
+                    ) : (
+                      item.icon
+                    )
+                  }
+                  label={t(item.labelKey)}
+                  isActive={currentPage === item.page}
+                  isCollapsed={isSidebarCollapsed}
+                  onClick={() => {
+                    setPage(item.page);
+                  }}
+                />
+              </div>
+            );
+          })}
         </nav>
       </aside>
 

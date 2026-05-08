@@ -4,7 +4,7 @@
 import type { MessageBoxOptions } from 'electron';
 
 export type StimulusType = 'target' | 'non-target';
-import type { AttentionMetrics } from './trial';
+import type { AttentionMetrics } from '@/renderer/types/trial';
 
 export interface TestConfig {
   stimulusDurationMs: number;
@@ -75,6 +75,21 @@ export interface ElectronAPI {
 
   // UI Dialogs
   showMessageBox: (options: MessageBoxOptions) => Promise<boolean>;
+
+  // Admin Authentication API
+  authIsSetup: () => Promise<boolean>;
+  authRegister: (email: string, password: string) => Promise<{ recoveryKey: string }>;
+  authLogin: (password: string) => Promise<{ sessionToken: string }>;
+  authLogout: () => Promise<void>;
+  authVerifySession: (sessionToken: string) => Promise<boolean>;
+  authRequestRecovery: (email: string) => Promise<{ success: boolean; message: string }>;
+  authPerformRecovery: (
+    encryptedKeyJson: string,
+    newPassword: string
+  ) => Promise<{ sessionToken: string }>;
+  authChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  authStatus: () => Promise<{ isAuthenticated: boolean; isSetupComplete: boolean }>;
+  onSessionInvalidated: (callback: () => void) => () => void;
 }
 
 // Augment the Window interface to include electronAPI

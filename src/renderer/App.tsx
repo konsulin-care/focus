@@ -1,17 +1,18 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n';
-import Sidebar from './components/Sidebar';
-import LanguageSwitcher from './components/LanguageSwitcher';
-import Home from './pages/Home';
-import Settings from './pages/Settings';
-import About from './pages/About';
+import Sidebar from '@/renderer/components/Sidebar';
+import LanguageSwitcher from '@/renderer/components/LanguageSwitcher';
+import Home from '@/renderer/pages/Home';
+import Settings from '@/renderer/pages/Settings';
+import About from '@/renderer/pages/About';
 import DataManagement from '@/renderer/pages/DataManagement';
-import TestScreen from './TestScreen';
-import { useNavigation } from './store';
+import TestScreen from '@/renderer/TestScreen';
+import { useNavigation } from '@/renderer/store';
+import { useAuthStore } from '@/renderer/store/useAuthStore';
 
 // Lazy load Test page for better performance
-const Test = lazy(() => import('./pages/Test'));
+const Test = lazy(() => import('@/renderer/pages/Test'));
 
 // Loading fallback component for Suspense
 function LoadingFallback() {
@@ -28,6 +29,14 @@ function LoadingFallback() {
  */
 function App() {
   const { currentPage, isTestActive } = useNavigation();
+
+  // Listen for session invalidation and log out the user
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onSessionInvalidated(() => {
+      useAuthStore.getState().logout();
+    });
+    return unsubscribe;
+  }, []);
 
   // When test is active, render only the test screen (full screen, no sidebar)
   if (isTestActive) {

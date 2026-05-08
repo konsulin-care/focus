@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n';
-import { useDataManagementStore } from '@/renderer/store';
+import { useAuthStore, useDataManagementStore } from '@/renderer/store';
+import { useAuthGuard } from '@/renderer/hooks';
+import { AdminLoginModal, AdminRegisterModal } from '@/renderer/components/Admin';
 import {
   Download,
   Trash2,
@@ -521,6 +523,9 @@ const SessionTable: React.FC<SessionTableProps> = ({
  */
 export default function DataManagement() {
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
+  const refreshStatus = useAuthStore((state) => state.refreshStatus);
   const {
     sessions,
     setSessions,
@@ -551,6 +556,47 @@ export default function DataManagement() {
   } = useDataManagementStore();
   const filterRef = useRef<HTMLDivElement>(null);
   const extractRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- auth guard state ---------- */
+  const { authModalStatus, handleLoginSuccess, handleRegisterSuccess } = useAuthGuard();
+
+  /* ---------- auth status check ---------- */
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus]);
+
+  /* ---------- idle timer (10 min) ---------- */
+  useEffect(() => {
+    const IDLE_MS = 10 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void window.electronAPI.authLogout();
+        logout();
+      }, IDLE_MS);
+    };
+
+    resetTimer();
+
+    document.addEventListener('mousemove', resetTimer);
+    document.addEventListener('keydown', resetTimer);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('mousemove', resetTimer);
+      document.removeEventListener('keydown', resetTimer);
+    };
+  }, [logout]);
+
+  /* ---------- session invalidation listener ---------- */
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onSessionInvalidated(() => {
+      logout();
+    });
+    return unsubscribe;
+  }, [logout]);
 
   /** Fetch all sessions from main process. */
   const fetchData = useCallback(async () => {
@@ -840,11 +886,9 @@ export default function DataManagement() {
   }, [t, fetchData]);
 
   useEffect(() => {
-    async function load() {
-      await fetchData();
-    }
-    void load();
-  }, [fetchData]);
+    if (!isAuthenticated) return;
+    void fetchData();
+  }, [fetchData, isAuthenticated]);
 
   useEffect(() => {
     /** Closes filter and extract dropdowns when clicking outside of them. */
@@ -892,6 +936,23 @@ export default function DataManagement() {
   }, [sorted, page, pageSize]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
+
+  /* ---------- auth guard: show modals when not authenticated ---------- */
+  if (!isAuthenticated) {
+    return (
+      <>
+        <AdminLoginModal
+          isOpen={authModalStatus === 'login'}
+          mandatory
+          onSuccess={handleLoginSuccess}
+        />
+        <AdminRegisterModal
+          isOpen={authModalStatus === 'register'}
+          onComplete={handleRegisterSuccess}
+        />
+      </>
+    );
+  }
 
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 

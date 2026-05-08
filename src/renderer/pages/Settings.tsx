@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@/renderer/store';
+import { useNavigation, useAuthStore } from '@/renderer/store';
+import { useAuthGuard } from '@/renderer/hooks';
+import {
+  AdminLoginModal,
+  AdminRegisterModal,
+  ChangePasswordModal,
+} from '@/renderer/components/Admin';
 import type { TestConfig } from '@/renderer/types/electronAPI';
 
 /**
@@ -22,6 +28,66 @@ export default function Settings() {
   const [isTotalTrialsFocused, setIsTotalTrialsFocused] = useState(false);
   const [editingValue, setEditingValue] = useState<string>('');
   const [totalTrialsRaw, setTotalTrialsRaw] = useState<number>(648);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  // Auth modal state - using state machine to prevent race conditions
+  const { authModalStatus, handleLoginSuccess, handleRegisterSuccess } = useAuthGuard();
+
+  // Idle timer refs
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
+  // Reset idle timer on user activity
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = setTimeout(() => {
+      window.electronAPI.authLogout();
+      useAuthStore.getState().logout();
+      setStatus('Session expired due to inactivity');
+      setStatusIsError(true);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 5000);
+    }, IDLE_TIMEOUT_MS);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+    return () => {
+      window.removeEventListener('mousemove', resetIdleTimer);
+      window.removeEventListener('keydown', resetIdleTimer);
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+    };
+  }, [resetIdleTimer]);
+
+  // Refresh auth status on mount
+  useEffect(() => {
+    void useAuthStore.getState().refreshStatus();
+  }, []);
+
+  // Get auth state from store
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isSetupComplete = useAuthStore((state) => state.isSetupComplete);
+
+  // Listen for external session invalidation (e.g., system sleep)
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onSessionInvalidated(() => {
+      useAuthStore.getState().logout();
+      setStatus('Session invalidated. Please log in again.');
+      setStatusIsError(true);
+      setTimeout(() => {
+        setStatus('');
+        setStatusIsError(false);
+      }, 5000);
+    });
+    return unsubscribe;
+  }, []);
 
   // Show raw value when focused and editing, otherwise show normalized
   const displayTotalTrials =
@@ -35,7 +101,10 @@ export default function Settings() {
   const showNormalizationWarning =
     !isTotalTrialsFocused && totalTrialsRaw >= 2 && totalTrialsRaw % 2 !== 0;
 
+  // Load test config only when authenticated
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     window.electronAPI
       .getTestConfig()
       .then((cfg) => {
@@ -46,7 +115,7 @@ export default function Settings() {
         setStatus(t('status.loadFailed'));
         setStatusIsError(true);
       });
-  }, [t]);
+  }, [t, isAuthenticated]);
 
   /**
    * Handles saving of settings configuration
@@ -161,143 +230,177 @@ export default function Settings() {
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">{t('settings.title')}</h1>
 
-      <div className="space-y-6">
-        {/* Test Configuration */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('settings.timing.title')}</h2>
-          <p className="text-gray-600 mb-4">{t('settings.timing.configDescription')}</p>
+      {/* Auth Modals */}
+      <AdminRegisterModal
+        isOpen={authModalStatus === 'register'}
+        onComplete={handleRegisterSuccess}
+      />
+      <AdminLoginModal
+        isOpen={authModalStatus === 'login'}
+        mandatory
+        onSuccess={handleLoginSuccess}
+      />
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label
-                htmlFor="stimulus-duration"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {t('settings.timing.stimulusDuration')}
-              </label>
-              <input
-                id="stimulus-duration"
-                type="number"
-                value={config.stimulusDurationMs}
-                onChange={(e) => {
-                  handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                min="10"
-                max="1000"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="interstimulus-interval"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {t('settings.timing.interstimulusInterval')}
-              </label>
-              <input
-                id="interstimulus-interval"
-                type="number"
-                value={config.interstimulusIntervalMs}
-                onChange={(e) => {
-                  handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                min="100"
-                max="5000"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="total-trials"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {t('settings.timing.totalTrials')}
-              </label>
-              <input
-                id="total-trials"
-                type="number"
-                value={displayTotalTrials}
-                onChange={handleTotalTrialsChange}
-                onFocus={handleTotalTrialsFocus}
-                onBlur={handleTotalTrialsBlur}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                {t('settings.timing.totalTrialsDescription')}
-              </p>
-              {showNormalizationWarning && (
-                <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
-                  <svg
-                    className="w-3 h-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                  >
-                    <title>{t('settings.timing.warningIcon') || 'Warning'}</title>
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {t('settings.timing.oddValuesRounded', { value: displayTotalTrials })}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="buffer-time" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('settings.timing.bufferTime')}
-              </label>
-              <input
-                id="buffer-time"
-                type="number"
-                value={config.bufferMs}
-                onChange={(e) => {
-                  handleChange('bufferMs', parseInt(e.target.value, 10) || 0);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                min="0"
-                max="2000"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3">
+      {/* Settings content — shown only when authenticated */}
+      {isAuthenticated && isSetupComplete ? (
+        <div className="space-y-6">
+          {/* Change Password Button */}
+          <div className="flex justify-end">
             <button
               type="button"
-              onClick={handleSave}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
-            >
-              {t('button.saveSettings')}
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
+              onClick={() => setShowChangePassword(true)}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
             >
-              {t('button.resetDefaults')}
+              {t('settings.changePassword') || 'Change Password'}
             </button>
           </div>
 
-          {status && (
-            <p className={`mt-3 text-sm ${statusIsError ? 'text-red-600' : 'text-green-600'}`}>
-              {status}
-            </p>
-          )}
-        </div>
+          {/* Test Configuration */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+              {t('settings.timing.title')}
+            </h2>
+            <p className="text-gray-600 mb-4">{t('settings.timing.configDescription')}</p>
 
-        {/* Back Button */}
-        <button
-          type="button"
-          onClick={() => setPage('home')}
-          className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-        >
-          {t('button.backToHome')}
-        </button>
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label
+                  htmlFor="stimulus-duration"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.timing.stimulusDuration')}
+                </label>
+                <input
+                  id="stimulus-duration"
+                  type="number"
+                  value={config.stimulusDurationMs}
+                  onChange={(e) => {
+                    handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  min="10"
+                  max="1000"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="interstimulus-interval"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.timing.interstimulusInterval')}
+                </label>
+                <input
+                  id="interstimulus-interval"
+                  type="number"
+                  value={config.interstimulusIntervalMs}
+                  onChange={(e) => {
+                    handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  min="100"
+                  max="5000"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="total-trials"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.timing.totalTrials')}
+                </label>
+                <input
+                  id="total-trials"
+                  type="number"
+                  value={displayTotalTrials}
+                  onChange={handleTotalTrialsChange}
+                  onFocus={handleTotalTrialsFocus}
+                  onBlur={handleTotalTrialsBlur}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('settings.timing.totalTrialsDescription')}
+                </p>
+                {showNormalizationWarning && (
+                  <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <title>{t('settings.timing.warningIcon') || 'Warning'}</title>
+                      <path
+                        fillRule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {t('settings.timing.oddValuesRounded', { value: displayTotalTrials })}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="buffer-time"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.timing.bufferTime')}
+                </label>
+                <input
+                  id="buffer-time"
+                  type="number"
+                  value={config.bufferMs}
+                  onChange={(e) => {
+                    handleChange('bufferMs', parseInt(e.target.value, 10) || 0);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  min="0"
+                  max="2000"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
+              >
+                {t('button.saveSettings')}
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
+              >
+                {t('button.resetDefaults')}
+              </button>
+            </div>
+
+            {status && (
+              <p className={`mt-3 text-sm ${statusIsError ? 'text-red-600' : 'text-green-600'}`}>
+                {status}
+              </p>
+            )}
+          </div>
+
+          {/* Back Button */}
+          <button
+            type="button"
+            onClick={() => setPage('home')}
+            className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
+          >
+            {t('button.backToHome')}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
