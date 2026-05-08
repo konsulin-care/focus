@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore, useDataManagementStore } from '@/renderer/store';
-import { useAuthGuard } from '@/renderer/hooks';
+import { useAuthGuard, useIdleTimer } from '@/renderer/hooks';
 import { AdminLoginModal, AdminRegisterModal } from '@/renderer/components/Admin';
 import {
   Download,
@@ -566,37 +566,10 @@ export default function DataManagement() {
   }, [refreshStatus]);
 
   /* ---------- idle timer (10 min) ---------- */
-  useEffect(() => {
-    const IDLE_MS = 10 * 60 * 1000;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        void window.electronAPI.authLogout();
-        logout();
-      }, IDLE_MS);
-    };
-
-    resetTimer();
-
-    document.addEventListener('mousemove', resetTimer);
-    document.addEventListener('keydown', resetTimer);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      document.removeEventListener('mousemove', resetTimer);
-      document.removeEventListener('keydown', resetTimer);
-    };
-  }, [logout]);
-
-  /* ---------- session invalidation listener ---------- */
-  useEffect(() => {
-    const unsubscribe = window.electronAPI.onSessionInvalidated(() => {
-      logout();
-    });
-    return unsubscribe;
-  }, [logout]);
+  useIdleTimer({
+    timeoutMs: 10 * 60 * 1000,
+    onIdle: () => logout(),
+  });
 
   /** Fetch all sessions from main process. */
   const fetchData = useCallback(async () => {

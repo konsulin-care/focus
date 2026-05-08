@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useAuthStore } from '@/renderer/store';
-import { useAuthGuard } from '@/renderer/hooks';
+import { useAuthGuard, useIdleTimer } from '@/renderer/hooks';
 import {
   AdminLoginModal,
   AdminRegisterModal,
@@ -33,17 +33,10 @@ export default function Settings() {
   // Auth modal state - using state machine to prevent race conditions
   const { authModalStatus, handleLoginSuccess, handleRegisterSuccess } = useAuthGuard();
 
-  // Idle timer refs
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-
-  // Reset idle timer on user activity
-  const resetIdleTimer = useCallback(() => {
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current);
-    }
-    idleTimerRef.current = setTimeout(() => {
-      window.electronAPI.authLogout();
+  // Idle timer (10 min)
+  useIdleTimer({
+    timeoutMs: 10 * 60 * 1000,
+    onIdle: () => {
       useAuthStore.getState().logout();
       setStatus('Session expired due to inactivity');
       setStatusIsError(true);
@@ -51,20 +44,8 @@ export default function Settings() {
         setStatus('');
         setStatusIsError(false);
       }, 5000);
-    }, IDLE_TIMEOUT_MS);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('mousemove', resetIdleTimer);
-    window.addEventListener('keydown', resetIdleTimer);
-    return () => {
-      window.removeEventListener('mousemove', resetIdleTimer);
-      window.removeEventListener('keydown', resetIdleTimer);
-      if (idleTimerRef.current) {
-        clearTimeout(idleTimerRef.current);
-      }
-    };
-  }, [resetIdleTimer]);
+    },
+  });
 
   // Refresh auth status on mount
   useEffect(() => {
@@ -74,20 +55,6 @@ export default function Settings() {
   // Get auth state from store
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isSetupComplete = useAuthStore((state) => state.isSetupComplete);
-
-  // Listen for external session invalidation (e.g., system sleep)
-  useEffect(() => {
-    const unsubscribe = window.electronAPI.onSessionInvalidated(() => {
-      useAuthStore.getState().logout();
-      setStatus('Session invalidated. Please log in again.');
-      setStatusIsError(true);
-      setTimeout(() => {
-        setStatus('');
-        setStatusIsError(false);
-      }, 5000);
-    });
-    return unsubscribe;
-  }, []);
 
   // Show raw value when focused and editing, otherwise show normalized
   const displayTotalTrials =

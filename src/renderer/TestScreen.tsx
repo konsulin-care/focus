@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { StimulusType } from '@/renderer/types/electronAPI';
 import { SubjectInfo } from '@/renderer/types/trial';
-import { useTestPhase } from '@/renderer/hooks/useTestPhase';
-import { useTestEvents } from '@/renderer/hooks/useTestEvents';
-import { useTestInput } from '@/renderer/hooks/useTestInput';
-import { useAttentionMetrics } from '@/renderer/hooks/useAttentionMetrics';
+import { useTestPhase, useTestEvents, useTestInput, useAttentionMetrics } from '@/renderer/hooks';
 import { useFullscreenManager } from '@/renderer/hooks/useFullscreenManager';
 import { useNavigation } from '@/renderer/store';
 import { EmailCaptureForm } from '@/renderer/components/EmailCaptureForm';

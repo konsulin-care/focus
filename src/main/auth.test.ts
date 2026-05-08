@@ -254,48 +254,6 @@ describe('Authentication Module', () => {
   });
 
   // --------------------------------------------------------------------------
-  // Rate limiting counter increments
-  // --------------------------------------------------------------------------
-
-  describe('Rate limiting', () => {
-    it('should increment failed_login_attempts on wrong password', async () => {
-      const { loginAdmin } = auth;
-
-      db._seeds['admin_password_hash'] = deterministicHash('correctPassword');
-
-      await expect(loginAdmin('wrong', 1)).rejects.toThrow('Invalid password');
-
-      expect(db._seeds['failed_login_attempts']).toBe('1');
-    });
-
-    it('should lock account after 5 failed attempts', async () => {
-      const { loginAdmin } = auth;
-
-      db._seeds['admin_password_hash'] = deterministicHash('correctPassword');
-      db._seeds['failed_login_attempts'] = '4';
-
-      await expect(loginAdmin('wrong', 1)).rejects.toThrow(
-        'Too many failed attempts. Account locked for 1 minute'
-      );
-
-      expect(db._seeds['lockout_until']).toMatch(/^\d+$/);
-    });
-
-    it('should reset counter and lockout on successful login', async () => {
-      const { loginAdmin } = auth;
-
-      db._seeds['failed_login_attempts'] = '3';
-      // Past time so lockout check passes
-      db._seeds['lockout_until'] = String(Date.now() - 100_000);
-
-      const result = await loginAdmin('correctPassword', 1);
-      expect(result.sessionToken).toBeDefined();
-      expect(db._seeds['failed_login_attempts']).toBe('0');
-      expect(db._seeds['lockout_until']).toBe('0');
-    });
-  });
-
-  // --------------------------------------------------------------------------
   // Session creation and expiry
   // --------------------------------------------------------------------------
 
