@@ -127,7 +127,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   authLogout: () => ipcRenderer.invoke('admin-logout'),
   authVerifySession: (sessionToken: string) =>
     ipcRenderer.invoke('admin-verify-session', sessionToken),
-  authRequestRecovery: (email: string) => ipcRenderer.invoke('admin-request-recovery', email),
+  authRequestRecovery: () => ipcRenderer.invoke('admin-request-recovery'),
+  authValidateRecoveryKey: (key: string) => ipcRenderer.invoke('admin-validate-recovery-key', key),
   authPerformRecovery: (encryptedKeyJson: string, newPassword: string) =>
     ipcRenderer.invoke('admin-perform-recovery', encryptedKeyJson, newPassword),
   authChangePassword: (currentPassword: string, newPassword: string) =>

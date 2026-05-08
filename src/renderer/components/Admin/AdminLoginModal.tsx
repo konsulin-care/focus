@@ -6,7 +6,9 @@ export interface AdminLoginModalProps {
   isOpen: boolean;
   mandatory?: boolean;
   onSuccess?: () => void;
-  onClose?: () => void;
+  onClose?: () => void; // dismiss modal (stay on page)
+  onBack?: () => void; // navigate to last public page
+  onForgotPassword?: () => void;
 }
 
 /**
@@ -18,6 +20,8 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
   mandatory = false,
   onSuccess,
   onClose,
+  onBack,
+  onForgotPassword,
 }) => {
   const { t } = useTranslation('translation');
   const [password, setPassword] = useState('');
@@ -64,8 +68,19 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
   };
 
   const handleForgotPassword = () => {
-    // Trigger recovery flow — caller can wire this via onClose + parent state
-    onClose?.();
+    if (onForgotPassword) {
+      onForgotPassword();
+    } else {
+      onClose?.();
+    }
+  };
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      onClose?.();
+    }
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -140,11 +155,11 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={handleClose}
-              className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-              disabled={mandatory || isLoading}
+              onClick={handleBack}
+              className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
-              {t('button.cancel')}
+              {t('button.back')}
             </button>
             <button
               type="submit"

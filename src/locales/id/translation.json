@@ -208,7 +208,9 @@
     "saveSettings": "Simpan Pengaturan",
     "resetDefaults": "Kembalikan ke Bawaan",
     "saveAndPreview": "Simpan & Pratinjau",
-    "backToHome": "Kembali ke Beranda"
+    "backToHome": "Kembali ke Beranda",
+    "back": "Kembali",
+    "cancel": "Batal"
   },
   "status": {
     "loadFailed": "Gagal memuat pengaturan",
@@ -332,6 +334,32 @@
       }
     },
     "recovery": {
+      "title": "Pemulihan Kata Sandi",
+      "invalidKey": "Kunci pemulihan tidak valid. Periksa dan coba lagi.",
+      "directTab": "Kunci Pemulihan",
+      "emailTab": "Pemulihan Email",
+      "direct": {
+        "title": "Gunakan Kunci Pemulihan Tersimpan",
+        "description": "Masukkan kunci pemulihan heksadesimal 64 karakter yang Anda simpan selama pengaturan admin.",
+        "label": "Kunci Pemulihan",
+        "placeholder": "misalnya, a1b2c3d4e5f6...",
+        "hint": "64 karakter heksadesimal (0-9, a-f)",
+        "useKey": "Gunakan Kunci Pemulihan",
+        "validating": "Memvalidasi...",
+        "error": {
+          "failed": "Gagal memvalidasi kunci pemulihan"
+        }
+      },
+      "email": {
+        "title": "Pemulihan Email",
+        "description": "Kami akan mengirim instruksi pemulihan ke alamat email terdaftar Anda.",
+        "button": "Minta Kunci via Email",
+        "sending": "Mengirim...",
+        "sent": "Email pemulihan terkirim. Silakan periksa kotak masuk Anda dan tempel payload JSON di bawah.",
+        "error": {
+          "failed": "Gagal mengirim email pemulihan"
+        }
+      },
       "step1": {
         "title": "Pemulihan Kata Sandi",
         "description": "Masukkan alamat email yang terkait dengan akun admin yang ingin dipulihkan.",

@@ -6,6 +6,7 @@ import {
   AdminLoginModal,
   AdminRegisterModal,
   ChangePasswordModal,
+  RecoveryModal,
 } from '@/renderer/components/Admin';
 import type { TestConfig } from '@/renderer/types/electronAPI';
 
@@ -134,7 +135,7 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
  */
 export default function Settings() {
   const { t } = useTranslation();
-  const { setPage } = useNavigation();
+  const { setPage, lastVisitedPublicPage } = useNavigation();
   const [config, setConfig] = useState<TestConfig>({
     stimulusDurationMs: 100,
     interstimulusIntervalMs: 2000,
@@ -150,7 +151,14 @@ export default function Settings() {
   const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
 
   // Auth modal state - using state machine to prevent race conditions
-  const { authModalStatus, handleLoginSuccess, handleRegisterSuccess } = useAuthGuard();
+  const {
+    authModalStatus,
+    showRecovery,
+    handleLoginSuccess,
+    handleRegisterSuccess,
+    handleForgotPassword,
+    handleRecoveryClose,
+  } = useAuthGuard();
 
   // Idle timer (10 min)
   useIdleTimer({
@@ -342,7 +350,10 @@ export default function Settings() {
         isOpen={authModalStatus === 'login'}
         mandatory
         onSuccess={handleLoginSuccess}
+        onBack={() => setPage(lastVisitedPublicPage || 'home')}
+        onForgotPassword={handleForgotPassword}
       />
+      <RecoveryModal isOpen={showRecovery} onClose={handleRecoveryClose} />
       <ChangePasswordModal
         isOpen={showChangePassword}
         onClose={() => setShowChangePassword(false)}

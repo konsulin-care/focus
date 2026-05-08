@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n';
-import { useAuthStore, useDataManagementStore } from '@/renderer/store';
+import { useAuthStore, useDataManagementStore, useNavigation } from '@/renderer/store';
 import { useAuthGuard, useIdleTimer } from '@/renderer/hooks';
-import { AdminLoginModal, AdminRegisterModal } from '@/renderer/components/Admin';
+import { AdminLoginModal, AdminRegisterModal, RecoveryModal } from '@/renderer/components/Admin';
 import {
   Download,
   Trash2,
@@ -526,6 +526,7 @@ export default function DataManagement() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
   const refreshStatus = useAuthStore((state) => state.refreshStatus);
+  const { setPage: navigateToPage, lastVisitedPublicPage } = useNavigation();
   const {
     sessions,
     setSessions,
@@ -544,7 +545,7 @@ export default function DataManagement() {
     sortDir,
     setSortDir,
     page,
-    setPage,
+    setPage: setPaginationPage,
     pageSize,
     setPageSize,
     sessionTrials,
@@ -558,7 +559,14 @@ export default function DataManagement() {
   const extractRef = useRef<HTMLDivElement>(null);
 
   /* ---------- auth guard state ---------- */
-  const { authModalStatus, handleLoginSuccess, handleRegisterSuccess } = useAuthGuard();
+  const {
+    authModalStatus,
+    showRecovery,
+    handleLoginSuccess,
+    handleRegisterSuccess,
+    handleForgotPassword,
+    handleRecoveryClose,
+  } = useAuthGuard();
 
   /* ---------- auth status check ---------- */
   useEffect(() => {
@@ -918,11 +926,14 @@ export default function DataManagement() {
           isOpen={authModalStatus === 'login'}
           mandatory
           onSuccess={handleLoginSuccess}
+          onBack={() => navigateToPage(lastVisitedPublicPage || 'home')}
+          onForgotPassword={handleForgotPassword}
         />
         <AdminRegisterModal
           isOpen={authModalStatus === 'register'}
           onComplete={handleRegisterSuccess}
         />
+        <RecoveryModal isOpen={showRecovery} onClose={handleRecoveryClose} />
       </>
     );
   }
@@ -937,7 +948,7 @@ export default function DataManagement() {
           t={t}
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
-          setPage={setPage}
+          setPage={setPaginationPage}
           isFilterOpen={isFilterOpen}
           setIsFilterOpen={setIsFilterOpen}
           statusFilter={statusFilter}
@@ -996,7 +1007,7 @@ export default function DataManagement() {
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
-                    setPage(0);
+                    setPaginationPage(0);
                   }}
                   className="border border-[#ECEFF4] rounded px-2 py-1 text-sm"
                 >
@@ -1007,7 +1018,7 @@ export default function DataManagement() {
                 <button
                   type="button"
                   onClick={() => {
-                    setPage((p) => Math.max(0, p - 1));
+                    setPaginationPage((p) => Math.max(0, p - 1));
                   }}
                   disabled={page === 0}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"
@@ -1020,7 +1031,7 @@ export default function DataManagement() {
                 <button
                   type="button"
                   onClick={() => {
-                    setPage((p) => Math.min(totalPages - 1, p + 1));
+                    setPaginationPage((p) => Math.min(totalPages - 1, p + 1));
                   }}
                   disabled={page >= totalPages - 1}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"

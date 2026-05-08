@@ -5,8 +5,11 @@ export type AuthModalStatus = 'loading' | 'register' | 'login' | 'authenticated'
 
 interface UseAuthGuardReturn {
   authModalStatus: AuthModalStatus;
+  showRecovery: boolean;
   handleLoginSuccess: () => void;
   handleRegisterSuccess: () => void;
+  handleForgotPassword: () => void;
+  handleRecoveryClose: () => void;
 }
 
 /**
@@ -20,6 +23,7 @@ export function useAuthGuard(): UseAuthGuardReturn {
   const hasLoaded = useAuthStore((state) => state.hasLoaded);
 
   const [authModalStatus, setAuthModalStatus] = useState<AuthModalStatus>('loading');
+  const [showRecovery, setShowRecovery] = useState(false);
 
   useEffect(() => {
     // Only update modal state after initial load completes
@@ -39,7 +43,10 @@ export function useAuthGuard(): UseAuthGuardReturn {
 
   return {
     authModalStatus,
+    showRecovery,
     handleLoginSuccess: () => setAuthModalStatus('authenticated'),
     handleRegisterSuccess: () => setAuthModalStatus('authenticated'),
+    handleForgotPassword: () => setShowRecovery(true),
+    handleRecoveryClose: () => setShowRecovery(false),
   };
 }

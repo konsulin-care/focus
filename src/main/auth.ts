@@ -276,9 +276,46 @@ export function isAuthenticated(webContentsId: number): boolean {
 // ===========================================
 
 /**
- * Request a recovery token via webhook.
+ * Validate a plaintext recovery key against the stored encrypted key.
  */
-export async function requestRecovery(email: string): Promise<void> {
+export async function validateRecoveryKey(recoveryKey: string): Promise<{ valid: boolean }> {
+  if (!db) throw new Error('Database not initialized');
+
+  // Validate format: 64-character hex string
+  if (!/^[a-fA-F0-9]{64}$/.test(recoveryKey)) {
+    return { valid: false };
+  }
+
+  // Get stored recovery key (encrypted)
+  const storedC = db
+    .prepare('SELECT value FROM test_config WHERE key = ?')
+    .get('recovery_ciphertext') as { value: string } | undefined;
+  const storedIv = db.prepare('SELECT value FROM test_config WHERE key = ?').get('recovery_iv') as
+    | { value: string }
+    | undefined;
+  const storedTag = db
+    .prepare('SELECT value FROM test_config WHERE key = ?')
+    .get('recovery_tag') as { value: string } | undefined;
+
+  if (!storedC || !storedIv || !storedTag) {
+    return { valid: false };
+  }
+
+  // Decrypt stored key and compare
+  const decryptedStored = await decryptWithLMK(storedC.value, storedIv.value, storedTag.value);
+
+  if (recoveryKey.toLowerCase() === decryptedStored.toLowerCase()) {
+    return { valid: true };
+  }
+
+  return { valid: false };
+}
+
+/**
+ * Request a recovery token via webhook.
+ * Reads admin email from database (no user input required).
+ */
+export async function requestRecovery(): Promise<void> {
   if (!db) throw new Error('Database not initialized');
 
   const emailC = db
@@ -299,9 +336,6 @@ export async function requestRecovery(email: string): Promise<void> {
   }
 
   const decryptedEmail = await decryptWithLMK(emailC.value, emailIv.value, emailTag.value);
-  if (decryptedEmail.toLowerCase() !== email.toLowerCase()) {
-    throw new Error('Invalid recovery email');
-  }
 
   const currentUuid = getOrCreateDeviceUUID(db);
   if (currentUuid !== storedUuid.value) {
@@ -311,7 +345,7 @@ export async function requestRecovery(email: string): Promise<void> {
   // Generate JWT-like token using HMAC-SHA256
   const now = Math.floor(Date.now() / 1000);
   const payload = JSON.stringify({
-    sub: email,
+    sub: decryptedEmail,
     device_uuid: currentUuid,
     iat: now,
     exp: now + 300, // 5 min
@@ -338,7 +372,7 @@ export async function requestRecovery(email: string): Promise<void> {
     .post(
       CONFIG.RECOVERY_WEBHOOK_URL,
       {
-        email,
+        email: decryptedEmail,
         device_uuid: currentUuid,
         encrypted_recovery_key: recoveryC?.value,
         iv: recoveryIv?.value,

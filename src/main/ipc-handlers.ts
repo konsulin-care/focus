@@ -12,6 +12,7 @@ import {
   verifySession,
   requestRecovery,
   performRecovery,
+  validateRecoveryKey,
   changePassword,
   requireAdmin,
   isAuthenticated,
@@ -79,8 +80,12 @@ ipcMain.handle('admin-verify-session', (event, sessionToken: string) => {
   return verifySession(sessionToken, event.sender.id);
 });
 
-ipcMain.handle('admin-request-recovery', async (_event, email: string) => {
-  return await requestRecovery(email);
+ipcMain.handle('admin-validate-recovery-key', async (_event, plaintextKey: string) => {
+  return await validateRecoveryKey(plaintextKey);
+});
+
+ipcMain.handle('admin-request-recovery', async () => {
+  return await requestRecovery();
 });
 
 ipcMain.handle(

@@ -82,7 +82,8 @@ export interface ElectronAPI {
   authLogin: (password: string) => Promise<{ sessionToken: string }>;
   authLogout: () => Promise<void>;
   authVerifySession: (sessionToken: string) => Promise<boolean>;
-  authRequestRecovery: (email: string) => Promise<{ success: boolean; message: string }>;
+  authRequestRecovery: () => Promise<{ success: boolean; message: string }>;
+  authValidateRecoveryKey: (key: string) => Promise<{ valid: boolean }>;
   authPerformRecovery: (
     encryptedKeyJson: string,
     newPassword: string

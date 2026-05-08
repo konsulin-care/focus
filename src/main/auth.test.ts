@@ -368,7 +368,7 @@ describe('Authentication Module', () => {
       await registerAdmin('admin@example.com', 'password123');
 
       // Call requestRecovery – this fires the webhook via axios
-      await requestRecovery('admin@example.com');
+      await requestRecovery();
 
       // Verify axios.post was called with Authorization header
       expect(axiosPostMock.post).toHaveBeenCalled();
