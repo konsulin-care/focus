@@ -78,7 +78,7 @@ function createMockDb() {
       // DELETE queries: just the key (e.g., DELETE FROM test_config WHERE key = ?)
       if (args.length === 1) {
         const [key] = args as [string];
-        delete seeds[key];
+        Reflect.deleteProperty(seeds, key);
         return { changes: 1, lastInsertRowid: 1 };
       }
       // Handle both UPDATE (value, key) and INSERT (key, value) orders
@@ -152,7 +152,7 @@ function mockIpcEvent(webContentsId: number) {
 // ============================================================================
 
 describe('Authentication Module', () => {
-  let db: ReturnType<typeof createMockDb>;
+  let db!: ReturnType<typeof createMockDb>;
   let auth: typeof import('@/main/auth');
 
   beforeEach(async () => {
@@ -225,7 +225,7 @@ describe('Authentication Module', () => {
       const encrypted = await encryptWithLMK(plaintext);
 
       // Flip a character in the ciphertext
-      const tampered = encrypted.ciphertext.slice(0, 4) + 'XXXX' + encrypted.ciphertext.slice(4);
+      const tampered = `${encrypted.ciphertext.slice(0, 4)}XXXX${encrypted.ciphertext.slice(4)}`;
 
       await expect(decryptWithLMK(tampered, encrypted.iv, encrypted.tag)).rejects.toThrow(
         /Decryption process failed/i
@@ -428,17 +428,17 @@ describe('Authentication Module', () => {
       await deleteAdmin('correctPassword', false);
 
       // Verify setup complete flag is reset
-      expect(db!._seeds['admin_setup_complete']).toBe('0');
+      expect(db._seeds['admin_setup_complete']).toBe('0');
 
       // Verify auth fields are deleted
-      expect(db!._seeds['admin_password_hash']).toBeUndefined();
-      expect(db!._seeds['admin_email_ciphertext']).toBeUndefined();
-      expect(db!._seeds['admin_email_iv']).toBeUndefined();
-      expect(db!._seeds['admin_email_tag']).toBeUndefined();
-      expect(db!._seeds['admin_device_uuid']).toBeUndefined();
-      expect(db!._seeds['recovery_ciphertext']).toBeUndefined();
-      expect(db!._seeds['recovery_iv']).toBeUndefined();
-      expect(db!._seeds['recovery_tag']).toBeUndefined();
+      expect(db._seeds['admin_password_hash']).toBeUndefined();
+      expect(db._seeds['admin_email_ciphertext']).toBeUndefined();
+      expect(db._seeds['admin_email_iv']).toBeUndefined();
+      expect(db._seeds['admin_email_tag']).toBeUndefined();
+      expect(db._seeds['admin_device_uuid']).toBeUndefined();
+      expect(db._seeds['recovery_ciphertext']).toBeUndefined();
+      expect(db._seeds['recovery_iv']).toBeUndefined();
+      expect(db._seeds['recovery_tag']).toBeUndefined();
     });
 
     it('should wipe test data when wipeData is true', async () => {
@@ -452,13 +452,13 @@ describe('Authentication Module', () => {
       await registerAdmin('test@example.com', 'password123');
 
       // Create mock tables by inserting seed data for trial_data and test_sessions
-      db!._seeds['admin_setup_complete'] = '1';
-      db!._seeds['admin_password_hash'] = deterministicHash('password123');
+      db._seeds['admin_setup_complete'] = '1';
+      db._seeds['admin_password_hash'] = deterministicHash('password123');
 
       await deleteAdmin('password123', true);
 
       // Verify setup flag is reset
-      expect(db!._seeds['admin_setup_complete']).toBe('0');
+      expect(db._seeds['admin_setup_complete']).toBe('0');
     });
   });
 });

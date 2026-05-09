@@ -92,11 +92,11 @@ export async function registerAdmin(
 /**
  * Authenticate administrator.
  */
-export async function loginAdmin(
+export function loginAdmin(
   password: string,
   webContentsId: number
 ): Promise<{ sessionToken: string }> {
-  if (!db) throw new Error('Database not initialized');
+  if (!db) return Promise.reject(new Error('Database not initialized'));
 
   // Check lockout
   const lockoutRow = db
@@ -106,7 +106,7 @@ export async function loginAdmin(
     const lockoutUntil = parseInt(lockoutRow.value, 10);
     if (Date.now() < lockoutUntil) {
       const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
-      throw new Error(`Account locked. Please try again in ${remaining} seconds`);
+      return Promise.reject(new Error(`Account locked. Please try again in ${remaining} seconds`));
     }
     // Lockout expired - reset it
     db.prepare('UPDATE test_config SET value = ? WHERE key = ?').run('0', 'lockout_until');
@@ -115,7 +115,7 @@ export async function loginAdmin(
   const hashRow = db
     .prepare('SELECT value FROM test_config WHERE key = ?')
     .get('admin_password_hash') as { value: string } | undefined;
-  if (!hashRow) throw new Error('Admin not registered');
+  if (!hashRow) return Promise.reject(new Error('Admin not registered'));
 
   const isValid = bcrypt.compareSync(password, hashRow.value);
 
@@ -133,7 +133,7 @@ export async function loginAdmin(
       expiry.toString()
     );
 
-    return { sessionToken };
+    return Promise.resolve({ sessionToken });
   } else {
     // Handle failure and lockout
     const attemptsRow = db
@@ -152,10 +152,10 @@ export async function loginAdmin(
         lockoutUntil.toString(),
         'lockout_until'
       );
-      throw new Error('Too many failed attempts. Account locked for 1 minute');
+      return Promise.reject(new Error('Too many failed attempts. Account locked for 1 minute'));
     }
 
-    throw new Error('Invalid password');
+    return Promise.reject(new Error('Invalid password'));
   }
 }
 
@@ -211,8 +211,8 @@ export function invalidateAllSessions(): void {
  * @param password - Current admin password for verification
  * @param wipeData - If true, also delete all test sessions and trial data
  */
-export async function deleteAdmin(password: string, wipeData: boolean): Promise<void> {
-  if (!db) throw new Error('Database not initialized');
+export function deleteAdmin(password: string, wipeData: boolean): Promise<void> {
+  if (!db) return Promise.reject(new Error('Database not initialized'));
 
   // Verify password before deletion
   const hashRow = db
@@ -220,10 +220,11 @@ export async function deleteAdmin(password: string, wipeData: boolean): Promise<
     .get('admin_password_hash') as { value: string } | undefined;
 
   if (!hashRow || !bcrypt.compareSync(password, hashRow.value)) {
-    throw new Error('Current password is incorrect');
+    return Promise.reject(new Error('Current password is incorrect'));
   }
 
   // Begin transaction for atomic deletion
+  const database = db as NonNullable<typeof db>;
   db.transaction(() => {
     // Clear all admin auth fields
     const clearKeys = [
@@ -241,11 +242,11 @@ export async function deleteAdmin(password: string, wipeData: boolean): Promise<
     ];
 
     for (const key of clearKeys) {
-      db!.prepare('DELETE FROM test_config WHERE key = ?').run(key);
+      database.prepare('DELETE FROM test_config WHERE key = ?').run(key);
     }
 
     // Reset setup complete flag
-    db!
+    database
       .prepare(
         'INSERT INTO test_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
       )
@@ -253,10 +254,12 @@ export async function deleteAdmin(password: string, wipeData: boolean): Promise<
 
     // Optionally wipe test data
     if (wipeData) {
-      db!.prepare('DELETE FROM trial_data').run();
-      db!.prepare('DELETE FROM test_sessions').run();
+      database.prepare('DELETE FROM trial_data').run();
+      database.prepare('DELETE FROM test_sessions').run();
     }
   })();
+
+  return Promise.resolve();
 }
 
 /**
@@ -458,18 +461,19 @@ export async function performRecovery(
 /**
  * Change admin password.
  */
-export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-  if (!db) throw new Error('Database not initialized');
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  if (!db) return Promise.reject(new Error('Database not initialized'));
 
   const hashRow = db
     .prepare('SELECT value FROM test_config WHERE key = ?')
     .get('admin_password_hash') as { value: string } | undefined;
   if (!hashRow || !bcrypt.compareSync(currentPassword, hashRow.value)) {
-    throw new Error('Current password incorrect');
+    return Promise.reject(new Error('Current password incorrect'));
   }
 
   const newHash = bcrypt.hashSync(newPassword, 12);
   db.prepare('UPDATE test_config SET value = ? WHERE key = ?').run(newHash, 'admin_password_hash');
+  return Promise.resolve();
 }
 
 /**

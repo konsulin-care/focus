@@ -10,8 +10,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n';
-import { useNavigation, Page } from '@/renderer/store';
-import { useAuthStore } from '@/renderer/store';
+import { useNavigation, Page, useAuthStore } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
 import { Logo } from '.';
 

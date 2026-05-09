@@ -256,7 +256,7 @@ describe('Auth Store (useAuthStore)', () => {
     });
 
     it('should set isLoading=true then false around the call', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: unknown) => void = () => {};
       mockAuthStatus.mockReturnValue(
         new Promise((resolve) => {
           resolvePromise = resolve;
@@ -268,7 +268,7 @@ describe('Auth Store (useAuthStore)', () => {
       // isLoading should be true while the promise is pending
       expect(useAuthStore.getState().isLoading).toBe(true);
 
-      resolvePromise!({ isAuthenticated: true, isSetupComplete: true });
+      resolvePromise({ isAuthenticated: true, isSetupComplete: true });
       await promise;
       expect(useAuthStore.getState().isLoading).toBe(false);
     });
@@ -322,7 +322,7 @@ describe('Auth Store (useAuthStore)', () => {
     });
 
     it('should set isLoading=true then false around the call', async () => {
-      let resolvePromise: (value: unknown) => void;
+      let resolvePromise: (value: unknown) => void = () => {};
       mockAuthIsSetup.mockReturnValue(
         new Promise((resolve) => {
           resolvePromise = resolve;
@@ -333,7 +333,7 @@ describe('Auth Store (useAuthStore)', () => {
 
       expect(useAuthStore.getState().isLoading).toBe(true);
 
-      resolvePromise!(true);
+      resolvePromise(true);
       await promise;
       expect(useAuthStore.getState().isLoading).toBe(false);
     });

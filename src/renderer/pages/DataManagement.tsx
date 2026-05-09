@@ -570,7 +570,7 @@ export default function DataManagement() {
 
   /* ---------- auth status check ---------- */
   useEffect(() => {
-    void refreshStatus();
+    refreshStatus();
   }, [refreshStatus]);
 
   /* ---------- idle timer (10 min) ---------- */
@@ -868,7 +868,7 @@ export default function DataManagement() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    void fetchData();
+    fetchData();
   }, [fetchData, isAuthenticated]);
 
   useEffect(() => {

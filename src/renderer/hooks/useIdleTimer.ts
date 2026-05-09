@@ -17,7 +17,7 @@ export function useIdleTimer({ timeoutMs, onIdle }: UseIdleTimerOptions) {
       clearTimeout(timerRef.current);
     }
     timerRef.current = setTimeout(() => {
-      void window.electronAPI.authLogout();
+      window.electronAPI.authLogout();
       onIdle();
     }, timeoutMs);
   }, [timeoutMs, onIdle]);

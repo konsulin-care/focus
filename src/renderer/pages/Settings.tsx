@@ -10,12 +10,195 @@ import {
 } from '@/renderer/components/Admin';
 import type { TestConfig } from '@/renderer/types/electronAPI';
 
+/** Timing settings section – extracted to reduce JSX nesting depth. */
+const TimingSettings = ({
+  config,
+  displayTotalTrials,
+  showNormalizationWarning,
+  onStimulusDurationChange,
+  onInterstimulusIntervalChange,
+  onTotalTrialsChange,
+  onTotalTrialsFocus,
+  onTotalTrialsBlur,
+  onBufferChange,
+  onSave,
+  onReset,
+  status,
+  statusIsError,
+}: {
+  config: TestConfig;
+  displayTotalTrials: string | number;
+  showNormalizationWarning: boolean;
+  onStimulusDurationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInterstimulusIntervalChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTotalTrialsChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTotalTrialsFocus: () => void;
+  onTotalTrialsBlur: () => void;
+  onBufferChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSave: () => void;
+  onReset: () => void;
+  status: string;
+  statusIsError: boolean;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('settings.timing.title')}</h2>
+      <p className="text-gray-600 mb-4">{t('settings.timing.configDescription')}</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label
+            htmlFor="stimulus-duration"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {t('settings.timing.stimulusDuration')}
+          </label>
+          <input
+            id="stimulus-duration"
+            type="number"
+            value={config.stimulusDurationMs}
+            onChange={onStimulusDurationChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            min="10"
+            max="1000"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="interstimulus-interval"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            {t('settings.timing.interstimulusInterval')}
+          </label>
+          <input
+            id="interstimulus-interval"
+            type="number"
+            value={config.interstimulusIntervalMs}
+            onChange={onInterstimulusIntervalChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            min="100"
+            max="5000"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="total-trials" className="block text-sm font-medium text-gray-700 mb-1">
+            {t('settings.timing.totalTrials')}
+          </label>
+          <input
+            id="total-trials"
+            type="number"
+            value={displayTotalTrials}
+            onChange={onTotalTrialsChange}
+            onFocus={onTotalTrialsFocus}
+            onBlur={onTotalTrialsBlur}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            {t('settings.timing.totalTrialsDescription')}
+          </p>
+          {showNormalizationWarning && (
+            <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <title>{t('settings.timing.warningIcon') || 'Warning'}</title>
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {t('settings.timing.oddValuesRounded', { value: displayTotalTrials })}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="buffer-time" className="block text-sm font-medium text-gray-700 mb-1">
+            {t('settings.timing.bufferTime')}
+          </label>
+          <input
+            id="buffer-time"
+            type="number"
+            value={config.bufferMs}
+            onChange={onBufferChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            min="0"
+            max="2000"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onSave}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
+        >
+          {t('button.saveSettings')}
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
+        >
+          {t('button.resetDefaults')}
+        </button>
+      </div>
+
+      {status && (
+        <p className={`mt-3 text-sm ${statusIsError ? 'text-red-600' : 'text-green-600'}`}>
+          {status}
+        </p>
+      )}
+    </div>
+  );
+};
+
 interface RemoveAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (password: string, wipeData: boolean) => Promise<void>;
 }
 
+/** Admin account actions card – extracted to reduce JSX nesting depth. */
+const AdminAccountActions = ({
+  setShowChangePassword,
+  setShowRemoveAdmin,
+}: {
+  setShowChangePassword: (show: boolean) => void;
+  setShowRemoveAdmin: (show: boolean) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="border-t border-gray-200 pt-6 mt-6">
+      <h3 className="text-lg font-medium text-gray-800">{t('settings.account')}</h3>
+
+      <div className="w-1/2 flex flex-col gap-3 mt-3">
+        <button
+          type="button"
+          onClick={() => setShowChangePassword(true)}
+          className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
+        >
+          {t('settings.changePassword')}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowRemoveAdmin(true)}
+          className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+        >
+          {t('settings.removeAdmin')}
+        </button>
+      </div>
+
+      <p className="text-sm text-gray-600 mt-2">{t('settings.removeAdminDescription')}</p>
+    </div>
+  );
+};
+
+/** Modal component for removing the admin account. */
 function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps) {
   const { t } = useTranslation();
   const [password, setPassword] = useState('');
@@ -23,6 +206,7 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Handles confirmation of admin removal with password verification. */
   const handleConfirm = async () => {
     if (!password) {
       setError('Password is required');
@@ -43,6 +227,7 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
     }
   };
 
+  /** Handles closing the remove admin modal without confirming. */
   const handleClose = () => {
     setPassword('');
     setWipeData(false);
@@ -84,7 +269,6 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
             className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
             placeholder="Enter current password"
             disabled={isLoading}
-            autoFocus
           />
         </div>
 
@@ -176,7 +360,7 @@ export default function Settings() {
 
   // Refresh auth status on mount
   useEffect(() => {
-    void useAuthStore.getState().refreshStatus();
+    useAuthStore.getState().refreshStatus();
   }, []);
 
   // Get auth state from store
@@ -280,7 +464,7 @@ export default function Settings() {
     setTimeout(() => {
       setStatus('');
       setStatusIsError(false);
-      void useAuthStore.getState().refreshStatus();
+      useAuthStore.getState().refreshStatus();
     }, 3000);
   };
 
@@ -362,138 +546,25 @@ export default function Settings() {
       {/* Settings content — shown only when authenticated */}
       {isAuthenticated && isSetupComplete ? (
         <div className="space-y-6">
-          {/* Test Configuration */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-3 text-gray-800">
-              {t('settings.timing.title')}
-            </h2>
-            <p className="text-gray-600 mb-4">{t('settings.timing.configDescription')}</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label
-                  htmlFor="stimulus-duration"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  {t('settings.timing.stimulusDuration')}
-                </label>
-                <input
-                  id="stimulus-duration"
-                  type="number"
-                  value={config.stimulusDurationMs}
-                  onChange={(e) => {
-                    handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  min="10"
-                  max="1000"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="interstimulus-interval"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  {t('settings.timing.interstimulusInterval')}
-                </label>
-                <input
-                  id="interstimulus-interval"
-                  type="number"
-                  value={config.interstimulusIntervalMs}
-                  onChange={(e) => {
-                    handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  min="100"
-                  max="5000"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="total-trials"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  {t('settings.timing.totalTrials')}
-                </label>
-                <input
-                  id="total-trials"
-                  type="number"
-                  value={displayTotalTrials}
-                  onChange={handleTotalTrialsChange}
-                  onFocus={handleTotalTrialsFocus}
-                  onBlur={handleTotalTrialsBlur}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  {t('settings.timing.totalTrialsDescription')}
-                </p>
-                {showNormalizationWarning && (
-                  <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <title>{t('settings.timing.warningIcon') || 'Warning'}</title>
-                      <path
-                        fillRule="evenodd"
-                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {t('settings.timing.oddValuesRounded', { value: displayTotalTrials })}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="buffer-time"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  {t('settings.timing.bufferTime')}
-                </label>
-                <input
-                  id="buffer-time"
-                  type="number"
-                  value={config.bufferMs}
-                  onChange={(e) => {
-                    handleChange('bufferMs', parseInt(e.target.value, 10) || 0);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  min="0"
-                  max="2000"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
-              >
-                {t('button.saveSettings')}
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-              >
-                {t('button.resetDefaults')}
-              </button>
-            </div>
-
-            {status && (
-              <p className={`mt-3 text-sm ${statusIsError ? 'text-red-600' : 'text-green-600'}`}>
-                {status}
-              </p>
-            )}
-          </div>
-
+          <TimingSettings
+            config={config}
+            displayTotalTrials={displayTotalTrials}
+            showNormalizationWarning={showNormalizationWarning}
+            onStimulusDurationChange={(e) =>
+              handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0)
+            }
+            onInterstimulusIntervalChange={(e) =>
+              handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0)
+            }
+            onTotalTrialsChange={handleTotalTrialsChange}
+            onTotalTrialsFocus={handleTotalTrialsFocus}
+            onTotalTrialsBlur={handleTotalTrialsBlur}
+            onBufferChange={(e) => handleChange('bufferMs', parseInt(e.target.value, 10) || 0)}
+            onSave={handleSave}
+            onReset={handleReset}
+            status={status}
+            statusIsError={statusIsError}
+          />
           {/* Back Button */}
           <button
             type="button"
@@ -502,33 +573,10 @@ export default function Settings() {
           >
             {t('button.backToHome')}
           </button>
-
-          {/* Admin Account Actions */}
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <h3 className="text-lg font-medium text-gray-800">{t('settings.account')}</h3>
-
-            <div className="w-1/2 flex flex-col gap-3 mt-3">
-              {/* Change Password Button */}
-              <button
-                type="button"
-                onClick={() => setShowChangePassword(true)}
-                className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-              >
-                {t('settings.changePassword')}
-              </button>
-
-              {/* Remove Admin Account Button */}
-              <button
-                type="button"
-                onClick={() => setShowRemoveAdmin(true)}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
-              >
-                {t('settings.removeAdmin')}
-              </button>
-            </div>
-
-            <p className="text-sm text-gray-600 mt-2">{t('settings.removeAdminDescription')}</p>
-          </div>
+          <AdminAccountActions
+            setShowChangePassword={setShowChangePassword}
+            setShowRemoveAdmin={setShowRemoveAdmin}
+          />
         </div>
       ) : null}
 

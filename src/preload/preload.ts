@@ -137,6 +137,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('admin-delete', password, wipeData),
   authStatus: () => ipcRenderer.invoke('auth-status'),
   onSessionInvalidated: (callback: () => void) => {
+    /** Forwards the session-invalidated IPC event to the provided callback. */
     const listener = () => callback();
     ipcRenderer.on('admin-session-invalidated', listener);
     return () => {
