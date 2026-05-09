@@ -7,7 +7,7 @@
 
 import { randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'node:crypto';
 import keytar from 'keytar';
-import Database from 'better-sqlite3';
+import type { Database as DatabaseType } from 'better-sqlite3';
 
 const KEYTAR_SERVICE = 'focus-auth';
 const KEYTAR_ACCOUNT = 'local-master-key';
@@ -112,7 +112,7 @@ export async function decryptWithLMK(
  * @param db The initialized database instance.
  * @returns The Device UUID string.
  */
-export function getOrCreateDeviceUUID(db: Database.Database): string {
+export function getOrCreateDeviceUUID(db: DatabaseType): string {
   try {
     const row = db.prepare('SELECT value FROM test_config WHERE key = ?').get('device_uuid') as
       | { value: string }

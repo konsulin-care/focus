@@ -21,7 +21,7 @@ import {
   deleteAdmin,
 } from './auth';
 import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
-import { DatabaseQueryCommand, TestConfig, SessionWithUser } from '@/main/types';
+import type { DatabaseQueryCommand, TestConfig, SessionWithUser } from '@/main/types';
 import { queryWhitelist, db } from '@/main/database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from '@/main/test-config';
 import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from '@/main/gdpr';

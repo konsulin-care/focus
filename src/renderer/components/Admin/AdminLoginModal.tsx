@@ -113,7 +113,9 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
       aria-labelledby="admin-login-title"
     >
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
         className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6 space-y-4"
       >
         <h2 id="admin-login-title" className="text-xl font-semibold text-gray-800 mb-4">

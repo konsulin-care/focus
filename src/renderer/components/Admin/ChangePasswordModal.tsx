@@ -1,6 +1,7 @@
 import { useState, type FC, type KeyboardEvent } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
+import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (!constantTimeEquals(newPassword, confirmPassword)) {
       setError(t('admin.changePassword.error.passwordsMatch'));
       return;
     }
@@ -98,7 +99,9 @@ export const ChangePasswordModal: FC<ChangePasswordModalProps> = ({ isOpen, onCl
       aria-labelledby="change-password-title"
     >
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
         className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6 space-y-4"
       >
         <h2 id="change-password-title" className="text-xl font-semibold text-gray-800">

@@ -194,7 +194,9 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
           id="email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
           className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white"
           placeholder={t('emailForm.fields.email')}
           disabled={isSubmitting}
@@ -229,7 +231,9 @@ export function EmailCaptureForm({ onSubmit, onSkip, lng }: EmailCaptureFormProp
         </button>
         <button
           type="button"
-          onClick={() => onSkip?.(subjectInfo)}
+          onClick={() => {
+            onSkip?.(subjectInfo);
+          }}
           disabled={!gender || age < 0 || age > 120 || isSubmitting}
           className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
         >

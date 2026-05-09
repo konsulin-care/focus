@@ -1,6 +1,7 @@
 import { useState, type FC } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
+import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface AdminRegisterModalProps {
   isOpen: boolean;
@@ -67,7 +68,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (!constantTimeEquals(password, confirmPassword)) {
       setError(t('admin.register.error.passwordsMatch'));
       return;
     }
@@ -94,24 +95,21 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
 
   // --- Recovery key phase ---
 
-  const handleCopyKey = async () => {
-    try {
-      await navigator.clipboard.writeText(recoveryKey);
-    } catch {
-      // Clipboard API not available — ignore
-    }
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText(recoveryKey).catch(() => {});
   };
 
-  const handleContinue = async () => {
-    // Auto-login after registration
-    try {
-      const result = await window.electronAPI.authLogin(password);
-      useAuthStore.getState().login(result.sessionToken);
-    } catch {
-      // Login failed - user will need to use login modal
-    }
-    setSetupComplete(true);
-    handleClose();
+  const handleContinue = () => {
+    (async () => {
+      try {
+        const result = await window.electronAPI.authLogin(password);
+        useAuthStore.getState().login(result.sessionToken);
+      } catch {
+        // Login failed - user will need to use login modal
+      }
+      setSetupComplete(true);
+      handleClose();
+    })();
   };
 
   if (!isOpen) return null;
@@ -161,7 +159,9 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
             <input
               type="checkbox"
               checked={hasSavedKey}
-              onChange={(e) => setHasSavedKey(e.target.checked)}
+              onChange={(e) => {
+                setHasSavedKey(e.target.checked);
+              }}
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <span className="text-sm text-gray-700">{t('admin.register.acknowledge')}</span>
@@ -200,7 +200,9 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
       aria-labelledby="register-title"
     >
       <form
-        onSubmit={handleRegister}
+        onSubmit={(e) => {
+          void handleRegister(e);
+        }}
         className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6 space-y-4"
       >
         <h2 id="register-title" className="text-xl font-semibold text-gray-800 mb-4">

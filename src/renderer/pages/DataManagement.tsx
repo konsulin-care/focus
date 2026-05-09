@@ -391,7 +391,9 @@ const SessionRow: React.FC<SessionRowProps> = ({
     >
       <select
         value={session.upload_status}
-        onChange={(e) => handleStatusChange(session.id, e)}
+        onChange={(e) => {
+          handleStatusChange(session.id, e);
+        }}
         className={`px-2 py-1 rounded text-xs border ${
           session.upload_status === 'uploaded'
             ? 'bg-green-100 text-green-800 border-green-200'
@@ -467,7 +469,9 @@ const SessionTable: React.FC<SessionTableProps> = ({
             <th
               key={col.key}
               className="px-4 py-3 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort(col.key as keyof Session)}
+              onClick={() => {
+                handleSort(col.key as keyof Session);
+              }}
             >
               <div className="flex items-center gap-2">
                 {col.label}
@@ -491,7 +495,9 @@ const SessionTable: React.FC<SessionTableProps> = ({
                 else next.delete(session.id);
                 setSelectedIds(next);
               }}
-              onClick={() => toggleRow(session.id)}
+              onClick={() => {
+                toggleRow(session.id);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();

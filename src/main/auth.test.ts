@@ -11,6 +11,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
+import { DB_KEYS, STR_VALUES } from '@/test/constants';
 
 // ============================================================================
 // Shared mock state (vi.hoisted survives vi.resetModules)
@@ -18,6 +19,7 @@ import bcrypt from 'bcryptjs';
 
 const mockDbModule = vi.hoisted(() => ({
   db: null as unknown,
+  seeds: {} as Record<string, string | undefined>,
   initDatabase: vi.fn(),
 }));
 
@@ -62,13 +64,13 @@ vi.mock('axios', () => ({
  * Build a mock database that mimics the better-sqlite3 API used by auth.ts.
  */
 function createMockDb() {
-  const seeds: Record<string, string> = {};
+  const seeds: Record<string, string | undefined> = {};
   let deviceUuidQueryCount = 0;
 
   const statementMock = {
     get(key: string) {
       // First query for 'device_uuid' returns undefined (triggers UUID generation)
-      if (key === 'device_uuid') {
+      if (key === DB_KEYS.DEVICE_UUID) {
         deviceUuidQueryCount++;
         if (deviceUuidQueryCount === 1) return undefined;
       }
@@ -104,15 +106,15 @@ function createMockDb() {
       if (insertKeys.has(first)) {
         seeds[first] = second; // INSERT format: (key, value)
         // Sync device_uuid from admin_device_uuid for getOrCreateDeviceUUID compatibility
-        if (first === 'admin_device_uuid') {
-          seeds['device_uuid'] = second;
+        if (first === DB_KEYS.ADMIN_DEVICE_UUID) {
+          seeds[DB_KEYS.DEVICE_UUID] = second;
           deviceUuidQueryCount = 2;
         }
       } else {
         seeds[second] = first; // UPDATE format: (value, key)
         // Also sync device_uuid to admin_device_uuid for requestRecovery compatibility
-        if (second === 'device_uuid') {
-          seeds['admin_device_uuid'] = first;
+        if (second === DB_KEYS.DEVICE_UUID) {
+          seeds[DB_KEYS.ADMIN_DEVICE_UUID] = first;
         }
       }
       return { changes: 1, lastInsertRowid: 1 };
@@ -167,10 +169,10 @@ describe('Authentication Module', () => {
     mockDbModule.db = db;
 
     // Seed common config values
-    db._seeds['admin_setup_complete'] = '1';
-    db._seeds['admin_password_hash'] = deterministicHash('correctPassword');
-    db._seeds['failed_login_attempts'] = '0';
-    db._seeds['lockout_until'] = '0';
+    db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE] = STR_VALUES.ONE;
+    db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = deterministicHash('correctPassword');
+    db._seeds[DB_KEYS.FAILED_LOGIN_ATTEMPTS] = STR_VALUES.ZERO;
+    db._seeds[DB_KEYS.LOCKOUT_UNTIL] = STR_VALUES.ZERO;
 
     // Import auth after all mocks are in place
     auth = await import('@/main/auth');
@@ -269,9 +271,9 @@ describe('Authentication Module', () => {
       const result = await loginAdmin('correctPassword', 42);
 
       expect(result.sessionToken).toBeDefined();
-      expect(db._seeds['session_expiry']).toBeDefined();
+      expect(db._seeds[DB_KEYS.SESSION_EXPIRY]).toBeDefined();
 
-      const expiry = parseInt(db._seeds['session_expiry'], 10);
+      const expiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
       expect(expiry).toBeGreaterThan(Date.now());
       expect(expiry).toBeLessThanOrEqual(Date.now() + 10 * 60 * 1000 + 1000);
     });
@@ -285,7 +287,7 @@ describe('Authentication Module', () => {
       const valid = verifySession(token, 1);
       expect(valid).toBe(true);
 
-      const expiry = parseInt(db._seeds['session_expiry'], 10);
+      const expiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
       expect(expiry).toBeGreaterThan(Date.now());
     });
 
@@ -428,17 +430,17 @@ describe('Authentication Module', () => {
       await deleteAdmin('correctPassword', false);
 
       // Verify setup complete flag is reset
-      expect(db._seeds['admin_setup_complete']).toBe('0');
+      expect(db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE]).toBe(STR_VALUES.ZERO);
 
       // Verify auth fields are deleted
-      expect(db._seeds['admin_password_hash']).toBeUndefined();
-      expect(db._seeds['admin_email_ciphertext']).toBeUndefined();
-      expect(db._seeds['admin_email_iv']).toBeUndefined();
-      expect(db._seeds['admin_email_tag']).toBeUndefined();
-      expect(db._seeds['admin_device_uuid']).toBeUndefined();
-      expect(db._seeds['recovery_ciphertext']).toBeUndefined();
-      expect(db._seeds['recovery_iv']).toBeUndefined();
-      expect(db._seeds['recovery_tag']).toBeUndefined();
+      expect(db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.ADMIN_EMAIL_CIPHERTEXT]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.ADMIN_EMAIL_IV]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.ADMIN_EMAIL_TAG]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.ADMIN_DEVICE_UUID]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.RECOVERY_CIPHERTEXT]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.RECOVERY_IV]).toBeUndefined();
+      expect(db._seeds[DB_KEYS.RECOVERY_TAG]).toBeUndefined();
     });
 
     it('should wipe test data when wipeData is true', async () => {
@@ -452,13 +454,13 @@ describe('Authentication Module', () => {
       await registerAdmin('test@example.com', 'password123');
 
       // Create mock tables by inserting seed data for trial_data and test_sessions
-      db._seeds['admin_setup_complete'] = '1';
-      db._seeds['admin_password_hash'] = deterministicHash('password123');
+      db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE] = STR_VALUES.ONE;
+      db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = deterministicHash('password123');
 
       await deleteAdmin('password123', true);
 
       // Verify setup flag is reset
-      expect(db._seeds['admin_setup_complete']).toBe('0');
+      expect(db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE]).toBe(STR_VALUES.ZERO);
     });
   });
 });

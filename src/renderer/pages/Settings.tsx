@@ -133,14 +133,18 @@ const TimingSettings = ({
       <div className="flex gap-3">
         <button
           type="button"
-          onClick={onSave}
+          onClick={() => {
+            void onSave();
+          }}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
         >
           {t('button.saveSettings')}
         </button>
         <button
           type="button"
-          onClick={onReset}
+          onClick={() => {
+            void onReset();
+          }}
           className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
         >
           {t('button.resetDefaults')}
@@ -178,7 +182,9 @@ const AdminAccountActions = ({
       <div className="w-1/2 flex flex-col gap-3 mt-3">
         <button
           type="button"
-          onClick={() => setShowChangePassword(true)}
+          onClick={() => {
+            setShowChangePassword(true);
+          }}
           className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
         >
           {t('settings.changePassword')}
@@ -186,7 +192,9 @@ const AdminAccountActions = ({
 
         <button
           type="button"
-          onClick={() => setShowRemoveAdmin(true)}
+          onClick={() => {
+            setShowRemoveAdmin(true);
+          }}
           className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
         >
           {t('settings.removeAdmin')}
@@ -276,7 +284,9 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
           <input
             type="checkbox"
             checked={wipeData}
-            onChange={(e) => setWipeData(e.target.checked)}
+            onChange={(e) => {
+              setWipeData(e.target.checked);
+            }}
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             disabled={isLoading}
           />
@@ -300,7 +310,9 @@ function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveAdminModalProps)
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
+            onClick={() => {
+              void handleConfirm();
+            }}
             className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
@@ -568,7 +580,9 @@ export default function Settings() {
           {/* Back Button */}
           <button
             type="button"
-            onClick={() => setPage('home')}
+            onClick={() => {
+              setPage('home');
+            }}
             className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
           >
             {t('button.backToHome')}

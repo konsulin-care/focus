@@ -1,6 +1,7 @@
 import { useState, type FC } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
+import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface RecoveryModalProps {
   isOpen: boolean;
@@ -101,19 +102,17 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
 
   // --- Email recovery: request webhook ---
 
-  const handleRequestEmail = async () => {
+  const handleRequestEmail = () => {
     setError('');
     setIsLoading(true);
-
-    try {
-      await window.electronAPI.authRequestRecovery();
-      setEmailSent(true);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('admin.recovery.email.error.failed');
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
+    window.electronAPI
+      .authRequestRecovery()
+      .then(() => setEmailSent(true))
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : t('admin.recovery.email.error.failed');
+        setError(message);
+      })
+      .finally(() => setIsLoading(false));
   };
 
   // --- Password reset (shared by both paths) ---
@@ -142,7 +141,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (!constantTimeEquals(newPassword, confirmPassword)) {
       setError(t('admin.recovery.step2.error.passwordsMatch'));
       return;
     }
@@ -185,7 +184,9 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
         aria-labelledby="recovery-password-title"
       >
         <form
-          onSubmit={handleResetPassword}
+          onSubmit={(e) => {
+            void handleResetPassword(e);
+          }}
           className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6 space-y-4"
         >
           <h2 id="recovery-password-title" className="text-xl font-semibold text-gray-800">
@@ -345,7 +346,12 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
 
         {/* Direct recovery form */}
         {method === 'direct' && (
-          <form onSubmit={handleValidateDirectKey} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              void handleValidateDirectKey(e);
+            }}
+            className="space-y-4"
+          >
             <p className="text-sm text-gray-600">{t('admin.recovery.direct.description')}</p>
 
             <label

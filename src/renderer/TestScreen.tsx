@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { StimulusType } from '@/renderer/types/electronAPI';
-import { SubjectInfo } from '@/renderer/types/trial';
+import type { StimulusType } from '@/renderer/types/electronAPI';
+import type { SubjectInfo } from '@/renderer/types/trial';
 import { useTestPhase, useTestEvents, useTestInput, useAttentionMetrics } from '@/renderer/hooks';
 import { useFullscreenManager } from '@/renderer/hooks/useFullscreenManager';
 import { useNavigation } from '@/renderer/store';
