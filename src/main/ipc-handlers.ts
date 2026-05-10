@@ -84,8 +84,8 @@ ipcMain.handle('admin-validate-recovery-key', async (_event, plaintextKey: strin
   return await validateRecoveryKey(plaintextKey);
 });
 
-ipcMain.handle('admin-request-recovery', async () => {
-  return await requestRecovery();
+ipcMain.handle('admin-request-recovery', async (_event, email: string) => {
+  return await requestRecovery(email);
 });
 
 ipcMain.handle(
@@ -97,7 +97,8 @@ ipcMain.handle(
 
 ipcMain.handle(
   'admin-change-password',
-  async (_event, currentPassword: string, newPassword: string) => {
+  async (event, currentPassword: string, newPassword: string) => {
+    requireAdmin(event);
     await changePassword(currentPassword, newPassword);
     return { success: true };
   }

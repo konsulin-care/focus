@@ -49,12 +49,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const result = await window.electronAPI.authStatus();
-      set({
+      set((prev) => ({
+        ...prev,
         isAuthenticated: result.isAuthenticated,
         isSetupComplete: result.isSetupComplete,
+        sessionToken: result.isAuthenticated ? prev.sessionToken : null,
         isLoading: false,
         hasLoaded: true,
-      });
+      }));
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Failed to refresh auth status',

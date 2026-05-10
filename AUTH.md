@@ -130,7 +130,7 @@ Enter a strong password meeting the requirements listed in [Section 3.4](#34-pas
 
 **Step 3 — Receive recovery key**
 
-After successful registration, a **32-character hexadecimal recovery key** is displayed once. This key is your only way to reset your password if you forget it.
+After successful registration, a **64-character hexadecimal (32‑byte) recovery key** is displayed once. This key is your only way to reset your password if you forget it.
 
 > **CRITICAL**: Save this recovery key in a secure location (password manager, printed copy, etc.). If you lose both your password and this key, you will lose access to the application.
 
@@ -205,11 +205,11 @@ You are now logged in with your new credentials. The new recovery key will be di
 
 If you have lost both your password **and** the recovery key:
 
-1. **Uninstall and reinstall** the application.
-2. On first run, the LMK will be regenerated (new keychain entry), the device UUID will be fresh, and the database will be empty.
-3. Register a new admin account as described in [Section 2.1](#21-first-time-admin-setup).
+1. **Delete the application's SQLite database** located in the Electron `userData` directory. The `test_config` table contains admin authentication data and test results (see Appendix A for schema details). Deleting this database removes all locally stored admin credentials and test data.
 
-> **Warning**: This will reset the admin credentials. Any locally stored test data that is tied to the admin session may be affected. The SQLite database itself (containing test results) is separate from the auth data and will be preserved.
+2. **Delete the OS keychain entry** created by `keytar` (service: `focus-auth`, account: `local-master-key`) from macOS Keychain / Windows Credential Manager. This allows the Local Master Key (LMK) to be regenerated on next launch.
+
+> **Warning**: Deleting the database removes all test results and admin credentials. Deleting **only** the keychain entry will **not** reset authentication because the database still holds the encrypted admin state — you must delete both the database and the keychain entry to fully reset.
 
 ---
 

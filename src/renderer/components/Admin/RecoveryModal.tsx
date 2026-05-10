@@ -8,55 +8,36 @@ export interface RecoveryModalProps {
   onClose?: () => void;
 }
 
-interface RecoveryKeyPayload {
-  c?: string;
-  iv?: string;
-  tag?: string;
-}
-
-type RecoveryMethod = 'direct' | 'email';
-type RecoveryStep = 'method' | 'password-reset';
+type RecoveryStep = 'validate-key' | 'reset-password';
 
 /**
- * Modal component for password recovery with dual-path flow:
- *   Direct Recovery – Enter saved plaintext recovery key.
- *   Email Recovery  – System reads admin email from DB and sends webhook.
- * Both paths converge to the same password reset step.
+ * Modal component for password recovery using the direct recovery key path only.
+ * Email recovery is temporarily disabled.
  */
 export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation('translation');
   const login = useAuthStore((state) => state.login);
 
-  // Method selection state
-  const [method, setMethod] = useState<RecoveryMethod>('direct');
-
   // Direct recovery state
   const [plaintextKey, setPlaintextKey] = useState('');
-
-  // Email recovery state
-  const [emailSent, setEmailSent] = useState(false);
-
-  // Email JSON payload state (for email recovery path)
-  const [recoveryKeyJson, setRecoveryKeyJson] = useState('');
+  const [validatedRecoveryKey, setValidatedRecoveryKey] = useState('');
 
   // Password reset state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // UI state
-  const [step, setStep] = useState<RecoveryStep>('method');
+  const [step, setStep] = useState<RecoveryStep>('validate-key');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   /** Resets all form fields to their initial empty state. */
   const resetState = () => {
-    setMethod('direct');
     setPlaintextKey('');
-    setEmailSent(false);
-    setRecoveryKeyJson('');
+    setValidatedRecoveryKey('');
     setNewPassword('');
     setConfirmPassword('');
-    setStep('method');
+    setStep('validate-key');
     setError('');
     setIsLoading(false);
   };
@@ -88,7 +69,8 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     try {
       const result = await window.electronAPI.authValidateRecoveryKey(plaintextKey);
       if (result.valid) {
-        setStep('password-reset');
+        setValidatedRecoveryKey(plaintextKey);
+        setStep('reset-password');
       } else {
         setError(t('admin.recovery.invalidKey'));
       }
@@ -100,30 +82,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // --- Email recovery: request webhook ---
-
-  const handleRequestEmail = () => {
-    setError('');
-    setIsLoading(true);
-    window.electronAPI
-      .authRequestRecovery()
-      .then(() => setEmailSent(true))
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : t('admin.recovery.email.error.failed');
-        setError(message);
-      })
-      .finally(() => setIsLoading(false));
-  };
-
-  // --- Password reset (shared by both paths) ---
-
-  const parseRecoveryKey = (jsonStr: string): RecoveryKeyPayload => {
-    try {
-      return JSON.parse(jsonStr);
-    } catch {
-      return {};
-    }
-  };
+  // --- Password reset ---
 
   /** Handles password reset form submission after recovery key validation. */
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -146,20 +105,11 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // If email recovery path, validate JSON payload
-    if (method === 'email' && recoveryKeyJson) {
-      const parsed = parseRecoveryKey(recoveryKeyJson);
-      if (!parsed.c || !parsed.iv || !parsed.tag) {
-        setError(t('admin.recovery.step2.error.jsonParse'));
-        return;
-      }
-    }
-
     setIsLoading(true);
 
     try {
       const result = await window.electronAPI.authPerformRecovery(
-        recoveryKeyJson || '',
+        validatedRecoveryKey,
         newPassword
       );
       login(result.sessionToken);
@@ -174,8 +124,8 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // --- Password reset step (shared by both paths) ---
-  if (step === 'password-reset') {
+  // --- Password reset step ---
+  if (step === 'reset-password') {
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -192,41 +142,6 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
           <h2 id="recovery-password-title" className="text-xl font-semibold text-gray-800">
             {t('admin.recovery.step2.title')}
           </h2>
-
-          {/* Success message for email path */}
-          {method === 'email' && emailSent && (
-            <p className="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
-              {t('admin.recovery.step2.successMessage')}
-            </p>
-          )}
-
-          {/* Recovery key JSON input (email path only) */}
-          {method === 'email' && (
-            <>
-              <label
-                htmlFor="recovery-key-json"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {t('admin.recovery.step2.recoveryKey')}
-              </label>
-              <p className="text-xs text-gray-500 mb-2">
-                {t('admin.recovery.step2.recoveryKeyHelp')}
-              </p>
-              <textarea
-                id="recovery-key-json"
-                value={recoveryKeyJson}
-                onChange={(e) => {
-                  setRecoveryKeyJson(e.target.value);
-                  if (error) setError('');
-                }}
-                rows={4}
-                className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white font-mono text-sm focus:ring-primary focus:border-primary mb-4"
-                placeholder={t('admin.recovery.step2.recoveryKeyPlaceholder')}
-                disabled={isLoading}
-                required
-              />
-            </>
-          )}
 
           {/* New password */}
           <div>
@@ -299,149 +214,72 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     );
   }
 
-  // --- Method selection step ---
+  // --- Key validation step ---
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="recovery-method-title"
+      aria-labelledby="recovery-key-title"
     >
       <div className="w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6">
-        <h2 id="recovery-method-title" className="text-xl font-semibold text-gray-800 mb-4">
+        <h2 id="recovery-key-title" className="text-xl font-semibold text-gray-800 mb-4">
           {t('admin.recovery.title')}
         </h2>
 
-        {/* Method tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button
-            type="button"
-            onClick={() => {
-              setMethod('direct');
-              setError('');
-            }}
-            className={`flex-1 pb-2 text-sm font-medium transition-colors ${
-              method === 'direct'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+        <p className="text-sm text-gray-600 mb-4">{t('admin.recovery.direct.description')}</p>
+
+        {/* Recovery key input */}
+        <div>
+          <label
+            htmlFor="recovery-key-input"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
-            {t('admin.recovery.directTab')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMethod('email');
-              setError('');
+            {t('admin.recovery.direct.label')}
+          </label>
+          <input
+            id="recovery-key-input"
+            type="text"
+            value={plaintextKey}
+            onChange={(e) => {
+              setPlaintextKey(e.target.value);
+              if (error) setError('');
             }}
-            className={`flex-1 pb-2 text-sm font-medium transition-colors ${
-              method === 'email'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t('admin.recovery.emailTab')}
-          </button>
+            className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white font-mono text-sm focus:ring-primary focus:border-primary mb-1"
+            placeholder={t('admin.recovery.direct.placeholder')}
+            disabled={isLoading}
+            required
+            maxLength={64}
+          />
+          <p className="mt-1 text-xs text-gray-500">{t('admin.recovery.direct.hint')}</p>
         </div>
 
-        {/* Direct recovery form */}
-        {method === 'direct' && (
-          <form
-            onSubmit={(e) => {
+        {error && (
+          <p className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
+            disabled={isLoading}
+          >
+            {t('button.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
               void handleValidateDirectKey(e);
             }}
-            className="space-y-4"
+            className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            disabled={isLoading}
           >
-            <p className="text-sm text-gray-600">{t('admin.recovery.direct.description')}</p>
-
-            <label
-              htmlFor="recovery-key-direct"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              {t('admin.recovery.direct.label')}
-            </label>
-            <input
-              id="recovery-key-direct"
-              type="text"
-              value={plaintextKey}
-              onChange={(e) => {
-                setPlaintextKey(e.target.value);
-                if (error) setError('');
-              }}
-              className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white font-mono text-sm focus:ring-primary focus:border-primary mb-1"
-              placeholder={t('admin.recovery.direct.placeholder')}
-              disabled={isLoading}
-              required
-              maxLength={64}
-            />
-            <p className="mt-1 text-xs text-gray-500">{t('admin.recovery.direct.hint')}</p>
-
-            {error && (
-              <p className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-600">
-                {error}
-              </p>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-                disabled={isLoading}
-              >
-                {t('button.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                disabled={isLoading}
-              >
-                {isLoading
-                  ? t('admin.recovery.direct.validating')
-                  : t('admin.recovery.direct.useKey')}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Email recovery form */}
-        {method === 'email' && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">{t('admin.recovery.email.description')}</p>
-
-            {emailSent ? (
-              <div className="bg-green-50 border border-green-200 rounded p-3">
-                <p className="text-sm text-green-800">{t('admin.recovery.email.sent')}</p>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRequestEmail}
-                className="w-full py-2.5 bg-primary text-white rounded-lg hover:bg-[#099B9E] font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                disabled={isLoading}
-              >
-                {isLoading ? t('admin.recovery.email.sending') : t('admin.recovery.email.button')}
-              </button>
-            )}
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded p-3">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="flex-1 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-                disabled={isLoading}
-              >
-                {t('button.cancel')}
-              </button>
-            </div>
-          </div>
-        )}
+            {isLoading ? t('admin.recovery.direct.validating') : t('admin.recovery.direct.useKey')}
+          </button>
+        </div>
       </div>
     </div>
   );

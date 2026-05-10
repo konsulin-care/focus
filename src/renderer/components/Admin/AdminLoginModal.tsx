@@ -5,7 +5,7 @@ import { useAuthStore } from '@/renderer/store';
 export interface AdminLoginModalProps {
   isOpen: boolean;
   mandatory?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (token: string) => void;
   onClose?: () => void; // dismiss modal (stay on page)
   onBack?: () => void; // navigate to last public page
   onForgotPassword?: () => void;
@@ -53,7 +53,7 @@ export const AdminLoginModal: FC<AdminLoginModalProps> = ({
     try {
       const result = await window.electronAPI.authLogin(password);
       login(result.sessionToken);
-      onSuccess?.();
+      onSuccess?.(result.sessionToken);
       handleClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : t('admin.login.error.invalid');

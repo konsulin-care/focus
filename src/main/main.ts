@@ -48,19 +48,27 @@ app.whenReady().then(() => {
 
   // Log admin setup status on startup
   setTimeout(() => {
-    const setupComplete = isAdminSetup();
+    try {
+      const setupComplete = isAdminSetup();
 
-    // Count registered admin
-    let adminCount = 0;
-    if (db) {
-      const result = db
-        .prepare('SELECT COUNT(*) as count FROM test_config WHERE key = ?')
-        .get('admin_password_hash') as { count: number } | undefined;
-      adminCount = result?.count ?? 0;
+      // Count registered admin
+      let adminCount = 0;
+      if (db) {
+        try {
+          const result = db
+            .prepare('SELECT COUNT(*) as count FROM test_config WHERE key = ?')
+            .get('admin_password_hash') as { count: number } | undefined;
+          adminCount = result?.count ?? 0;
+        } catch (dbErr) {
+          console.warn('[STARTUP] DB error counting admin:', dbErr);
+        }
+      }
+
+      console.log(`[STARTUP] Admin setup status: ${setupComplete ? 'COMPLETE' : 'NOT SETUP'}`);
+      console.log(`[STARTUP] Registered admin count: ${adminCount}`);
+    } catch (err) {
+      console.warn('[STARTUP] Unexpected error:', err);
     }
-
-    console.log(`[STARTUP] Admin setup status: ${setupComplete ? 'COMPLETE' : 'NOT SETUP'}`);
-    console.log(`[STARTUP] Registered admin count: ${adminCount}`);
   }, 1000);
 
   // Create main window

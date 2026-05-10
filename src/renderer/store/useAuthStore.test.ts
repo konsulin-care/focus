@@ -43,6 +43,7 @@ function resetStore() {
     sessionToken: null,
     isLoading: false,
     error: null,
+    hasLoaded: false,
   });
 }
 

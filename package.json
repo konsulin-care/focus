@@ -8,7 +8,6 @@
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@tanstack/react-table": "^8.0.0-alpha.5",
-    "axios": "^1.16.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
     "i18next": "^26.0.3",

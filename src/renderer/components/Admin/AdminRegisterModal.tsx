@@ -5,7 +5,7 @@ import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface AdminRegisterModalProps {
   isOpen: boolean;
-  onComplete?: () => void;
+  onComplete: (recoveryKey: string) => void;
 }
 
 /**
@@ -43,7 +43,6 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
   /** Handles closing the registration modal. */
   const handleClose = () => {
     resetState();
-    onComplete?.();
   };
 
   // --- Registration phase ---
@@ -104,6 +103,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
       try {
         const result = await window.electronAPI.authLogin(password);
         useAuthStore.getState().login(result.sessionToken);
+        onComplete(recoveryKey);
       } catch {
         // Login failed - user will need to use login modal
       }

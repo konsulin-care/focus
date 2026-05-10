@@ -173,7 +173,8 @@
       "pendingUploads": "Unggahan Tertunda: {{count}}",
       "clearCache": "Hapus Cache Lokal"
     },
-    "changePassword": "Ubah Kata Sandi"
+    "changePassword": "Ubah Kata Sandi",
+    "removing": "Menghapus..."
   },
   "about": {
     "title": "Tentang F.O.C.U.S.",
@@ -277,7 +278,7 @@
   },
   "admin": {
     "login": {
-      "title": "Otentikasi Admin",
+      "title": "Autentikasi Admin",
       "password": "Kata Sandi",
       "placeholder": "Masukkan kata sandi admin",
       "forgotPassword": "Lupa Kata Sandi?",
@@ -336,8 +337,6 @@
     "recovery": {
       "title": "Pemulihan Kata Sandi",
       "invalidKey": "Kunci pemulihan tidak valid. Periksa dan coba lagi.",
-      "directTab": "Kunci Pemulihan",
-      "emailTab": "Pemulihan Email",
       "direct": {
         "title": "Gunakan Kunci Pemulihan Tersimpan",
         "description": "Masukkan kunci pemulihan heksadesimal 64 karakter yang Anda simpan selama pengaturan admin.",
@@ -350,36 +349,8 @@
           "failed": "Gagal memvalidasi kunci pemulihan"
         }
       },
-      "email": {
-        "title": "Pemulihan Email",
-        "description": "Kami akan mengirim instruksi pemulihan ke alamat email terdaftar Anda.",
-        "button": "Minta Kunci via Email",
-        "sending": "Mengirim...",
-        "sent": "Email pemulihan terkirim. Silakan periksa kotak masuk Anda dan tempel payload JSON di bawah.",
-        "error": {
-          "failed": "Gagal mengirim email pemulihan"
-        }
-      },
-      "step1": {
-        "title": "Pemulihan Kata Sandi",
-        "description": "Masukkan alamat email yang terkait dengan akun admin yang ingin dipulihkan.",
-        "email": "Email",
-        "emailPlaceholder": "admin@example.com",
-        "cancel": "Batal",
-        "send": "Kirim Email Pemulihan",
-        "sending": "Mengirim...",
-        "error": {
-          "required": "Email wajib diisi",
-          "invalidEmail": "Masukkan alamat email yang valid",
-          "failed": "Permintaan pemulihan gagal"
-        }
-      },
       "step2": {
         "title": "Atur Ulang Kata Sandi",
-        "successMessage": "Jika ada akun admin yang cocok dengan email ini, Anda akan menerima instruksi pemulihan sebentar lagi.",
-        "recoveryKey": "Kunci Pemulihan",
-        "recoveryKeyHelp": "Tempel payload JSON dari email pemulihan (harus berisi bidang 'c', 'iv', dan 'tag').",
-        "recoveryKeyPlaceholder": "{\"c\": \"...\", \"iv\": \"...\", \"tag\": \"...\"}",
         "newPassword": "Kata Sandi Baru",
         "newPasswordPlaceholder": "Setidaknya 8 karakter",
         "confirmNewPassword": "Konfirmasi Kata Sandi Baru",
@@ -388,7 +359,6 @@
         "reset": "Atur Ulang Kata Sandi",
         "resetting": "Mengatur ulang...",
         "error": {
-          "jsonParse": "JSON kunci pemulihan harus berisi bidang \"c\", \"iv\", dan \"tag\"",
           "required": "Kedua kolom kata sandi wajib diisi",
           "newPasswordLength": "Kata sandi harus setidaknya 8 karakter",
           "passwordsMatch": "Kata sandi tidak cocok",

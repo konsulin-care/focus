@@ -173,7 +173,8 @@
       "pendingUploads": "Pending Uploads: {{count}}",
       "clearCache": "Clear Local Cache"
     },
-    "changePassword": "Change Password"
+    "changePassword": "Change Password",
+    "removing": "Removing..."
   },
   "about": {
     "title": "About F.O.C.U.S.",
@@ -336,8 +337,6 @@
     "recovery": {
       "title": "Password Recovery",
       "invalidKey": "Invalid recovery key. Please check and try again.",
-      "directTab": "Recovery Key",
-      "emailTab": "Email Recovery",
       "direct": {
         "title": "Use Saved Recovery Key",
         "description": "Enter the 64-character hexadecimal recovery key you saved during admin setup.",
@@ -350,36 +349,8 @@
           "failed": "Failed to validate recovery key"
         }
       },
-      "email": {
-        "title": "Email Recovery",
-        "description": "We'll send recovery instructions to your registered email address.",
-        "button": "Request Key via Email",
-        "sending": "Sending...",
-        "sent": "Recovery email sent. Please check your inbox and paste the JSON payload below.",
-        "error": {
-          "failed": "Failed to send recovery email"
-        }
-      },
-      "step1": {
-        "title": "Password Recovery",
-        "description": "Enter the email address associated with the admin account you wish to recover.",
-        "email": "Email",
-        "emailPlaceholder": "admin@example.com",
-        "cancel": "Cancel",
-        "send": "Send Recovery Email",
-        "sending": "Sending...",
-        "error": {
-          "required": "Email is required",
-          "invalidEmail": "Please enter a valid email address",
-          "failed": "Recovery request failed"
-        }
-      },
       "step2": {
         "title": "Reset Password",
-        "successMessage": "If an admin account matches this email, you will receive recovery instructions shortly.",
-        "recoveryKey": "Recovery Key",
-        "recoveryKeyHelp": "Paste the JSON payload from the recovery email (must contain 'c', 'iv', and 'tag' fields).",
-        "recoveryKeyPlaceholder": "{\"c\": \"...\", \"iv\": \"...\", \"tag\": \"...\"}",
         "newPassword": "New Password",
         "newPasswordPlaceholder": "At least 8 characters",
         "confirmNewPassword": "Confirm New Password",
@@ -388,7 +359,6 @@
         "reset": "Reset Password",
         "resetting": "Resetting...",
         "error": {
-          "jsonParse": "Recovery key JSON must contain \"c\", \"iv\", and \"tag\" fields",
           "required": "Both password fields are required",
           "newPasswordLength": "Password must be at least 8 characters",
           "passwordsMatch": "Passwords do not match",

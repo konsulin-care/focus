@@ -4,7 +4,7 @@
  * Tests validate authentication, encryption, session management, and
  * recovery flow implemented in `src/main/auth.ts`.
  *
- * Uses Vitest with mocked `keytar`, `axios`, and `electron` modules.
+ * Uses Vitest with mocked `keytar` and `electron` modules.
  *
  * Run with: npm test
  */
@@ -25,10 +25,6 @@ const mockDbModule = vi.hoisted(() => ({
 
 const keytarState = vi.hoisted(() => ({
   password: null as string | null,
-}));
-
-const axiosPostMock = vi.hoisted(() => ({
-  post: vi.fn(() => Promise.resolve({ status: 200 })),
 }));
 
 // ============================================================================
@@ -52,10 +48,6 @@ vi.mock('keytar', () => ({
   },
 }));
 
-vi.mock('axios', () => ({
-  default: axiosPostMock,
-}));
-
 // ============================================================================
 // Test helpers
 // ============================================================================
@@ -72,6 +64,11 @@ function createMockDb() {
       // First query for 'device_uuid' returns undefined (triggers UUID generation)
       if (key === DB_KEYS.DEVICE_UUID) {
         deviceUuidQueryCount++;
+        // If seeds already has the value (from prior INSERT), return it
+        if (seeds[key] !== undefined) {
+          return { value: seeds[key] };
+        }
+        // Only return undefined on first query (old approach)
         if (deviceUuidQueryCount === 1) return undefined;
       }
       return seeds[key] !== undefined ? { value: seeds[key] } : undefined;
@@ -125,6 +122,37 @@ function createMockDb() {
     prepare(query: string) {
       if (query.includes('SELECT value FROM test_config WHERE key =')) {
         return { get: statementMock.get.bind(statementMock) };
+      }
+      // Handle ON CONFLICT DO NOTHING / DO UPDATE syntax
+      if (query.includes('ON CONFLICT')) {
+        return {
+          run(...args: [string, string?] | [string]) {
+            // When args.length === 1, the key is hardcoded in SQL and arg is the value
+            // e.g., INSERT ... VALUES ('device_uuid', ?).run(uuid)
+            if (args.length === 1) {
+              const value = args[0] as string;
+              // Determine the key from the query itself
+              const keyMatch = query.match(/VALUES\s*\(\s*'([^']+)'/);
+              const key = keyMatch ? keyMatch[1] : 'unknown';
+              if (!seeds[key]) {
+                seeds[key] = value;
+              }
+              return { changes: 0, lastInsertRowid: 0 };
+            }
+            const [first, second] = args as [string, string];
+            // For ON CONFLICT DO UPDATE: always set the seed (it always updates)
+            // For ON CONFLICT DO NOTHING: only set if key doesn't exist
+            const isDoUpdate = query.includes('DO UPDATE');
+            if (isDoUpdate || !seeds[first]) {
+              seeds[first] = second;
+            }
+            // For admin_device_uuid, also sync device_uuid
+            if (first === DB_KEYS.ADMIN_DEVICE_UUID && !seeds[DB_KEYS.DEVICE_UUID]) {
+              seeds[DB_KEYS.DEVICE_UUID] = second;
+            }
+            return { changes: 0, lastInsertRowid: 0 };
+          },
+        };
       }
       if (query.includes('INSERT') || query.includes('UPDATE') || query.includes('DELETE')) {
         return { run: statementMock.run.bind(statementMock) };
@@ -284,29 +312,39 @@ describe('Authentication Module', () => {
       await loginAdmin('correctPassword', 1);
       const token = (await loginAdmin('correctPassword', 1)).sessionToken;
 
+      // Capture initial expiry from DB
+      const initialExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
+
+      // Advance time by 5 minutes (using fake timers)
+      vi.useFakeTimers();
+      vi.advanceTimersByTime(5 * 60 * 1000);
+
+      // Verify session (which should extend expiry)
       const valid = verifySession(token, 1);
       expect(valid).toBe(true);
 
-      const expiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
-      expect(expiry).toBeGreaterThan(Date.now());
+      // Get new expiry from DB
+      const newExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
+
+      expect(newExpiry).toBeGreaterThan(initialExpiry);
+
+      vi.useRealTimers();
     });
 
     it('should reject expired sessions', async () => {
       const { loginAdmin, verifySession } = auth;
 
-      // Use fake timers so we can fast-forward past session expiry
-      vi.useFakeTimers();
+      const { sessionToken } = await loginAdmin('correctPassword', 1);
+      const token = sessionToken;
 
-      const loginResult = await loginAdmin('correctPassword', 1);
-      const token = loginResult.sessionToken;
-
-      // Advance 11 minutes past the 10-minute session duration
-      vi.advanceTimersByTime(11 * 60 * 1000);
+      // Manually expire the session by setting expiry to past
+      const session = auth.activeSessions.get(token);
+      if (!session) throw new Error('Session not found');
+      // Set expiry to a value less than current hrtime
+      session.expiry = process.hrtime.bigint() - 1n;
 
       const valid = verifySession(token, 1);
       expect(valid).toBe(false);
-
-      vi.useRealTimers();
     });
 
     it('should reject sessions with mismatched webContentsId', async () => {
@@ -351,63 +389,6 @@ describe('Authentication Module', () => {
       await loginAdmin('correctPassword', 1);
       // requireAdmin should not throw for an authenticated sender
       expect(() => requireAdmin(mockIpcEvent(1))).not.toThrow();
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // JWT signing claims (via requestRecovery)
-  // --------------------------------------------------------------------------
-
-  describe('JWT claims in recovery token', () => {
-    it('should include exp, iat, and jti claims', async () => {
-      const { registerAdmin, requestRecovery } = auth;
-
-      // Seed keytar so encryption uses a deterministic LMK
-      const lmk = 'c'.repeat(64);
-      keytarState.password = lmk;
-
-      // Register admin to populate required DB fields
-      await registerAdmin('admin@example.com', 'password123');
-
-      // Call requestRecovery – this fires the webhook via axios
-      await requestRecovery();
-
-      // Verify axios.post was called with Authorization header
-      expect(axiosPostMock.post).toHaveBeenCalled();
-      const callArgs = (axiosPostMock.post as ReturnType<typeof vi.fn>).mock.calls[0];
-      // Verify axios.post was called with expected arguments (url, data, config)
-      if (!callArgs[2]) {
-        throw new Error('Expected axios.post to be called with config object (3rd argument)');
-      }
-      const config = callArgs[2] as { headers?: { Authorization?: string } };
-      if (!config.headers?.Authorization) {
-        throw new Error('Authorization header missing in axios.post config');
-      }
-      const authHeader = config.headers.Authorization;
-      expect(authHeader).toMatch(/^Bearer \S+$/);
-
-      // Decode the JWT payload (first segment before the dot)
-      const jwtToken = authHeader.replace('Bearer ', '');
-      const payloadBase64 = jwtToken.split('.')[0];
-      const payloadJson = Buffer.from(payloadBase64, 'base64url').toString('utf-8');
-      const payload = JSON.parse(payloadJson);
-
-      // Verify required claims
-      expect(payload.exp).toBeDefined();
-      expect(typeof payload.exp).toBe('number');
-      expect(payload.iat).toBeDefined();
-      expect(typeof payload.iat).toBe('number');
-      expect(payload.jti).toBeDefined();
-      expect(typeof payload.jti).toBe('string');
-      expect(payload.jti).toHaveLength(32); // 16 bytes hex
-
-      // Verify additional claims present in the JWT
-      expect(payload.sub).toBe('admin@example.com');
-      expect(payload.device_uuid).toBeDefined();
-      expect(typeof payload.device_uuid).toBe('string');
-
-      // Verify exp is exactly 300 seconds (5 min) after iat
-      expect(payload.exp - payload.iat).toBe(300);
     });
   });
 

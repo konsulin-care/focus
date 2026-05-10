@@ -114,18 +114,23 @@ export async function decryptWithLMK(
  */
 export function getOrCreateDeviceUUID(db: DatabaseType): string {
   try {
+    const uuid = randomUUID();
+    db.prepare(
+      `
+      INSERT INTO test_config (key, value) VALUES ('device_uuid', ?)
+      ON CONFLICT(key) DO NOTHING
+    `
+    ).run(uuid);
+
     const row = db.prepare('SELECT value FROM test_config WHERE key = ?').get('device_uuid') as
       | { value: string }
       | undefined;
 
-    if (row) {
-      return row.value;
+    if (!row) {
+      throw new Error('Failed to retrieve device UUID after insert');
     }
 
-    const uuid = randomUUID();
-    db.prepare('INSERT INTO test_config (key, value) VALUES (?, ?)').run('device_uuid', uuid);
-
-    return uuid;
+    return row.value;
   } catch (error) {
     console.error('[KeyManagement] Error managing Device UUID:', error);
     throw new Error('Failed to retrieve or create Device UUID');
