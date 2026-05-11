@@ -58,8 +58,12 @@ export const useDataManagementStore = create<DataManagementState>((set) => ({
           ? (sessions as (prev: Session[]) => Session[])(state.sessions)
           : sessions,
     })),
-  setLoading: (loading) => set({ loading }),
-  setGlobalFilter: (globalFilter) => set({ globalFilter }),
+  setLoading: (loading) => {
+    set({ loading });
+  },
+  setGlobalFilter: (globalFilter) => {
+    set({ globalFilter });
+  },
   toggleStatusFilter: (status) =>
     set((state) => {
       const next = new Set(state.statusFilter);
@@ -71,14 +75,22 @@ export const useDataManagementStore = create<DataManagementState>((set) => ({
     set((state) => ({
       expandedRows: { ...state.expandedRows, [id]: expanded },
     })),
-  setSelectedIds: (selectedIds) => set({ selectedIds: new Set(selectedIds) }),
-  setSortCol: (sortCol) => set({ sortCol }),
-  setSortDir: (sortDir) => set({ sortDir }),
+  setSelectedIds: (selectedIds) => {
+    set({ selectedIds: new Set(selectedIds) });
+  },
+  setSortCol: (sortCol) => {
+    set({ sortCol });
+  },
+  setSortDir: (sortDir) => {
+    set({ sortDir });
+  },
   setPage: (page) =>
     set((state) => ({
       page: typeof page === 'function' ? (page as (prev: number) => number)(state.page) : page,
     })),
-  setPageSize: (pageSize) => set({ pageSize, page: 0 }),
+  setPageSize: (pageSize) => {
+    set({ pageSize, page: 0 });
+  },
   setSessionTrials: (sessionTrials) =>
     set((state) => ({
       sessionTrials:
@@ -88,6 +100,10 @@ export const useDataManagementStore = create<DataManagementState>((set) => ({
             )
           : sessionTrials,
     })),
-  setIsFilterOpen: (isFilterOpen) => set({ isFilterOpen }),
-  setIsExtractOpen: (isExtractOpen) => set({ isExtractOpen }),
+  setIsFilterOpen: (isFilterOpen) => {
+    set({ isFilterOpen });
+  },
+  setIsExtractOpen: (isExtractOpen) => {
+    set({ isExtractOpen });
+  },
 }));

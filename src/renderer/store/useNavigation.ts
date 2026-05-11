@@ -27,11 +27,17 @@ export const useNavigation = create<NavigationState>((set) => ({
       set({ lastVisitedPublicPage: page as PublicPage });
     }
   },
-  setLastVisitedPublicPage: (page) => set({ lastVisitedPublicPage: page }),
+  setLastVisitedPublicPage: (page) => {
+    set({ lastVisitedPublicPage: page });
+  },
   toggleSidebar: () =>
     set((state) => ({
       isSidebarCollapsed: !state.isSidebarCollapsed,
     })),
-  startTest: () => set({ isTestActive: true, isSidebarCollapsed: true }),
-  endTest: () => set({ isTestActive: false, isSidebarCollapsed: false }),
+  startTest: () => {
+    set({ isTestActive: true, isSidebarCollapsed: true });
+  },
+  endTest: () => {
+    set({ isTestActive: false, isSidebarCollapsed: false });
+  },
 }));

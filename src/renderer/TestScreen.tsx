@@ -23,7 +23,9 @@ function TestScreen() {
 
   // Use ref to avoid circular dependency between useFullscreenManager and handleExitTest
   const exitFullscreenRef = useRef<() => Promise<void>>(() => Promise.resolve());
-  const endTestRef = useRef(() => endTest());
+  const endTestRef = useRef(() => {
+    endTest();
+  });
 
   // Update refs when functions change
   const { exitFullscreen } = useFullscreenManager(
@@ -74,7 +76,9 @@ function TestScreen() {
         setIsStimulusVisible(false);
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [setPhase]);
 
   // Unified form submit handler: computes metrics and saves via IPC

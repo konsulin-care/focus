@@ -21,6 +21,7 @@ import {
   deleteAdmin,
 } from './auth';
 import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
+import { randomBytes } from 'node:crypto';
 import type { DatabaseQueryCommand, TestConfig, SessionWithUser } from '@/main/types';
 import { queryWhitelist, db } from '@/main/database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from '@/main/test-config';
@@ -29,6 +30,14 @@ import { getHighPrecisionTimeString, TIMING_VALIDATION_PASSED } from '@/main/tim
 import { startTest, stopTest, recordResponse, setMainWindow } from '@/main/test-engine';
 import type { AttentionMetrics } from '@/renderer/types/trial';
 import { processTestEvents } from '@/shared/utils/trial-processing';
+import {
+  DEFAULT_KEYTAR_SERVICE,
+  DEFAULT_KEYTAR_ACCOUNT,
+  DB_KEY_KEYTAR_SERVICE,
+  DB_KEY_KEYTAR_ACCOUNT,
+} from './constants';
+import { getOrCreateLMK } from './key-management';
+import keytar from 'keytar';
 
 /**
  * Validates that a specific metric is a finite number.
@@ -85,7 +94,7 @@ ipcMain.handle('admin-validate-recovery-key', async (_event, plaintextKey: strin
 });
 
 ipcMain.handle('admin-request-recovery', async (_event, email: string) => {
-  return await requestRecovery(email);
+  return requestRecovery(email);
 });
 
 ipcMain.handle(
@@ -107,6 +116,83 @@ ipcMain.handle(
 ipcMain.handle('auth-status', (event) => {
   return { isAuthenticated: isAuthenticated(event.sender.id), isSetupComplete: isAdminSetup() };
 });
+
+// ===========================================
+// Keychain Configuration Handlers
+// ===========================================
+
+ipcMain.handle('get-keytar-config', () => {
+  let service = DEFAULT_KEYTAR_SERVICE;
+  let account = DEFAULT_KEYTAR_ACCOUNT;
+
+  if (db) {
+    const serviceRow = db
+      .prepare('SELECT value FROM test_config WHERE key = ?')
+      .get(DB_KEY_KEYTAR_SERVICE) as { value: string } | undefined;
+    if (serviceRow?.value) {
+      service = serviceRow.value;
+    }
+
+    const accountRow = db
+      .prepare('SELECT value FROM test_config WHERE key = ?')
+      .get(DB_KEY_KEYTAR_ACCOUNT) as { value: string } | undefined;
+    if (accountRow?.value) {
+      account = accountRow.value;
+    }
+  }
+
+  return { service, account };
+});
+
+ipcMain.handle(
+  'save-keytar-config',
+  async (_event, config: { service: string; account: string }) => {
+    if (!db) throw new Error('Database not initialized');
+
+    const { service, account } = config;
+
+    if (!service || !account) {
+      throw new Error('Service and account are required');
+    }
+
+    // Ensure keytar has the LMK before changing credentials
+    await getOrCreateLMK();
+
+    // Update password entry in keychain using the new service/account
+    // First check if there's an existing LMK under the new identifiers
+    const existingKey = await keytar.getPassword(service, account);
+    if (!existingKey) {
+      // Retrieve the current LMK (stored under old or default identifiers)
+      // by trying known combinations
+      const fallbackService = DEFAULT_KEYTAR_SERVICE;
+      const fallbackAccount = DEFAULT_KEYTAR_ACCOUNT;
+      const currentKey = await keytar.getPassword(fallbackService, fallbackAccount);
+
+      if (currentKey) {
+        // Move to new identifiers
+        await keytar.setPassword(service, account, currentKey);
+        await keytar.deletePassword(fallbackService, fallbackAccount);
+      } else {
+        // No existing key found under defaults; create fresh entry
+        const newKey = randomBytes(32).toString('hex');
+        await keytar.setPassword(service, account, newKey);
+      }
+    }
+
+    // Persist the new identifiers to the database
+    const upsertStmt = db.prepare(`
+    INSERT INTO test_config (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `);
+
+    db.transaction(() => {
+      upsertStmt.run(DB_KEY_KEYTAR_SERVICE, service);
+      upsertStmt.run(DB_KEY_KEYTAR_ACCOUNT, account);
+    })();
+
+    return { success: true };
+  }
+);
 
 ipcMain.handle('admin-delete', async (event, password: string, wipeData: boolean) => {
   requireAdmin(event);

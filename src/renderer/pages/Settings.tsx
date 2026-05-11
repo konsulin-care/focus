@@ -10,6 +10,7 @@ import {
   RemoveAdminModal,
 } from '@/renderer/components/Admin';
 import type { TestConfig } from '@/renderer/types/electronAPI';
+import { DEFAULT_KEYTAR_SERVICE, DEFAULT_KEYTAR_ACCOUNT } from '@/main/constants';
 
 /** Timing settings section – extracted to reduce JSX nesting depth. */
 const TimingSettings = ({
@@ -219,6 +220,12 @@ export default function Settings() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
 
+  // Keytar configuration
+  const [keytarService, setKeytarService] = useState<string>('');
+  const [keytarAccount, setKeytarAccount] = useState<string>('');
+  const [keytarStatus, setKeytarStatus] = useState('');
+  const [keytarStatusIsError, setKeytarStatusIsError] = useState(false);
+
   // Auth modal state - using state machine to prevent race conditions
   const {
     authModalStatus,
@@ -251,6 +258,21 @@ export default function Settings() {
   // Get auth state from store
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isSetupComplete = useAuthStore((state) => state.isSetupComplete);
+
+  // Load keytar configuration when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      window.electronAPI
+        .getKeytarConfig()
+        .then((cfg) => {
+          setKeytarService(cfg.service);
+          setKeytarAccount(cfg.account);
+        })
+        .catch((err) => {
+          console.error('Failed to load keytar config:', err);
+        });
+    }
+  }, [isAuthenticated]);
 
   // Show raw value when focused and editing, otherwise show normalized
   const displayTotalTrials =
@@ -313,6 +335,24 @@ export default function Settings() {
         setStatusIsError(false);
       }, 3000);
     }
+  };
+
+  /**
+   * Handles saving keychain configuration
+   */
+  const handleSaveKeytarConfig = async () => {
+    try {
+      await window.electronAPI.saveKeytarConfig({ service: keytarService, account: keytarAccount });
+      setKeytarStatus(t('status.saveSuccess'));
+      setKeytarStatusIsError(false);
+    } catch {
+      setKeytarStatus(t('status.saveFailed'));
+      setKeytarStatusIsError(true);
+    }
+    setTimeout(() => {
+      setKeytarStatus('');
+      setKeytarStatusIsError(false);
+    }, 3000);
   };
 
   /**
@@ -428,13 +468,17 @@ export default function Settings() {
         isOpen={authModalStatus === 'login'}
         mandatory
         onSuccess={handleLoginSuccess}
-        onBack={() => setPage(lastVisitedPublicPage || 'home')}
+        onBack={() => {
+          setPage(lastVisitedPublicPage || 'home');
+        }}
         onForgotPassword={handleForgotPassword}
       />
       <RecoveryModal isOpen={showRecovery} onClose={handleRecoveryClose} />
       <ChangePasswordModal
         isOpen={showChangePassword}
-        onClose={() => setShowChangePassword(false)}
+        onClose={() => {
+          setShowChangePassword(false);
+        }}
       />
 
       {/* Settings content — shown only when authenticated */}
@@ -444,21 +488,92 @@ export default function Settings() {
             config={config}
             displayTotalTrials={displayTotalTrials}
             showNormalizationWarning={showNormalizationWarning}
-            onStimulusDurationChange={(e) =>
-              handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0)
-            }
-            onInterstimulusIntervalChange={(e) =>
-              handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0)
-            }
+            onStimulusDurationChange={(e) => {
+              handleChange('stimulusDurationMs', parseInt(e.target.value, 10) || 0);
+            }}
+            onInterstimulusIntervalChange={(e) => {
+              handleChange('interstimulusIntervalMs', parseInt(e.target.value, 10) || 0);
+            }}
             onTotalTrialsChange={handleTotalTrialsChange}
             onTotalTrialsFocus={handleTotalTrialsFocus}
             onTotalTrialsBlur={handleTotalTrialsBlur}
-            onBufferChange={(e) => handleChange('bufferMs', parseInt(e.target.value, 10) || 0)}
-            onSave={handleSave}
-            onReset={handleReset}
+            onBufferChange={(e) => {
+              handleChange('bufferMs', parseInt(e.target.value, 10) || 0);
+            }}
+            onSave={() => {
+              void handleSave();
+            }}
+            onReset={() => {
+              void handleReset();
+            }}
             status={status}
             statusIsError={statusIsError}
           />
+
+          {/* Keychain Settings */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-3 text-gray-800">
+              {t('settings.keychain.title')}
+            </h2>
+            <p className="text-gray-600 mb-4">{t('settings.keychain.description')}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="keytar-service"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.keychain.service')}
+                </label>
+                <input
+                  id="keytar-service"
+                  type="text"
+                  value={keytarService}
+                  onChange={(e) => {
+                    setKeytarService(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder={DEFAULT_KEYTAR_SERVICE}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="keytar-account"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  {t('settings.keychain.account')}
+                </label>
+                <input
+                  id="keytar-account"
+                  type="text"
+                  value={keytarAccount}
+                  onChange={(e) => {
+                    setKeytarAccount(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder={DEFAULT_KEYTAR_ACCOUNT}
+                />
+              </div>
+            </div>
+
+            {keytarStatus && (
+              <p
+                className={`mt-3 text-sm ${keytarStatusIsError ? 'text-red-600' : 'text-green-600'}`}
+              >
+                {keytarStatus}
+              </p>
+            )}
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleSaveKeytarConfig}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
+              >
+                {t('button.saveKeychainSettings')}
+              </button>
+            </div>
+          </div>
           {/* Back Button */}
           <button
             type="button"
@@ -478,7 +593,9 @@ export default function Settings() {
 
       <RemoveAdminModal
         isOpen={showRemoveAdmin}
-        onClose={() => setShowRemoveAdmin(false)}
+        onClose={() => {
+          setShowRemoveAdmin(false);
+        }}
         onConfirm={handleRemoveAdmin}
       />
     </div>

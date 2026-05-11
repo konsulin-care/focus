@@ -8,9 +8,14 @@
 import { randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'node:crypto';
 import keytar from 'keytar';
 import type { Database as DatabaseType } from 'better-sqlite3';
+import { db } from './database';
+import {
+  DEFAULT_KEYTAR_SERVICE,
+  DEFAULT_KEYTAR_ACCOUNT,
+  DB_KEY_KEYTAR_SERVICE,
+  DB_KEY_KEYTAR_ACCOUNT,
+} from './constants';
 
-const KEYTAR_SERVICE = 'focus-auth';
-const KEYTAR_ACCOUNT = 'local-master-key';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // Recommended for GCM
 
@@ -28,14 +33,34 @@ export interface EncryptionResult {
  */
 export async function getOrCreateLMK(): Promise<string> {
   try {
-    const existingKey = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT);
+    // Determine keytar service and account from DB config, with defaults
+    let service = DEFAULT_KEYTAR_SERVICE;
+    let account = DEFAULT_KEYTAR_ACCOUNT;
+
+    if (db) {
+      const serviceRow = db
+        .prepare('SELECT value FROM test_config WHERE key = ?')
+        .get(DB_KEY_KEYTAR_SERVICE) as { value: string } | undefined;
+      if (serviceRow?.value) {
+        service = serviceRow.value;
+      }
+
+      const accountRow = db
+        .prepare('SELECT value FROM test_config WHERE key = ?')
+        .get(DB_KEY_KEYTAR_ACCOUNT) as { value: string } | undefined;
+      if (accountRow?.value) {
+        account = accountRow.value;
+      }
+    }
+
+    const existingKey = await keytar.getPassword(service, account);
     if (existingKey) {
       return existingKey;
     }
 
     // Generate 32 random bytes for AES-256
     const newKey = randomBytes(32).toString('hex');
-    await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT, newKey);
+    await keytar.setPassword(service, account, newKey);
     return newKey;
   } catch (error) {
     console.error('[KeyManagement] Error accessing system keychain:', error);

@@ -54,7 +54,7 @@ vi.mock('keytar', () => ({
  * Build a mock database that mimics the better-sqlite3 API used by auth.ts.
  */
 function createMockDb() {
-  const seeds: Record<string, string | undefined> = {};
+  const seeds = Object.create(null) as Record<string, string | undefined>;
   let deviceUuidQueryCount = 0;
 
   const statementMock = {
@@ -202,7 +202,7 @@ describe('Auth Rate Limiting', () => {
 
       // lockout_until should be set to a future timestamp
       expect(db._seeds[DB_KEYS.LOCKOUT_UNTIL]).toMatch(/^\d+$/);
-      const lockoutUntil = parseInt(db._seeds[DB_KEYS.LOCKOUT_UNTIL]!, 10);
+      const lockoutUntil = parseInt(db._seeds[DB_KEYS.LOCKOUT_UNTIL] ?? '0', 10);
       expect(lockoutUntil).toBeGreaterThan(Date.now());
       expect(lockoutUntil).toBeLessThanOrEqual(Date.now() + 60 * 1000 + 1000);
     });
@@ -385,7 +385,7 @@ describe('Auth Rate Limiting', () => {
       const { loginAdmin } = auth;
 
       db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = deterministicHash('correctPassword');
-      delete db._seeds[DB_KEYS.FAILED_LOGIN_ATTEMPTS];
+      db._seeds[DB_KEYS.FAILED_LOGIN_ATTEMPTS] = undefined;
 
       await expect(loginAdmin('wrongPassword', 1)).rejects.toThrow('Invalid password');
       expect(db._seeds[DB_KEYS.FAILED_LOGIN_ATTEMPTS]).toBe(STR_VALUES.ONE);
@@ -395,7 +395,7 @@ describe('Auth Rate Limiting', () => {
       const { loginAdmin } = auth;
 
       db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = deterministicHash('correctPassword');
-      delete db._seeds[DB_KEYS.LOCKOUT_UNTIL];
+      db._seeds[DB_KEYS.LOCKOUT_UNTIL] = undefined;
 
       const result = await loginAdmin('correctPassword', 1);
       expect(result.sessionToken).toBeDefined();
@@ -404,7 +404,7 @@ describe('Auth Rate Limiting', () => {
     it('should not allow login when admin is not registered', async () => {
       const { loginAdmin } = auth;
 
-      delete db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH];
+      db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = undefined;
 
       await expect(loginAdmin('anyPassword', 1)).rejects.toThrow('Admin not registered');
     });

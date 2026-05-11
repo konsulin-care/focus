@@ -56,7 +56,7 @@ vi.mock('keytar', () => ({
  * Build a mock database that mimics the better-sqlite3 API used by auth.ts.
  */
 function createMockDb() {
-  const seeds: Record<string, string | undefined> = {};
+  const seeds = Object.create(null) as Record<string, string | undefined>;
   let deviceUuidQueryCount = 0;
 
   const statementMock = {
@@ -161,7 +161,9 @@ function createMockDb() {
     },
     exec: vi.fn(),
     transaction<T>(fn: () => T): () => T {
-      return () => fn();
+      return () => {
+        return fn();
+      };
     },
     _seeds: seeds,
   };
@@ -301,7 +303,7 @@ describe('Authentication Module', () => {
       expect(result.sessionToken).toBeDefined();
       expect(db._seeds[DB_KEYS.SESSION_EXPIRY]).toBeDefined();
 
-      const expiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
+      const expiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
       expect(expiry).toBeGreaterThan(Date.now());
       expect(expiry).toBeLessThanOrEqual(Date.now() + 10 * 60 * 1000 + 1000);
     });
@@ -313,7 +315,7 @@ describe('Authentication Module', () => {
       const token = (await loginAdmin('correctPassword', 1)).sessionToken;
 
       // Capture initial expiry from DB
-      const initialExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
+      const initialExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
 
       // Advance time by 5 minutes (using fake timers)
       vi.useFakeTimers();
@@ -324,7 +326,7 @@ describe('Authentication Module', () => {
       expect(valid).toBe(true);
 
       // Get new expiry from DB
-      const newExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY]!, 10);
+      const newExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
 
       expect(newExpiry).toBeGreaterThan(initialExpiry);
 
@@ -378,9 +380,9 @@ describe('Authentication Module', () => {
     it('should throw when no valid session exists for the sender', () => {
       const { requireAdmin } = auth;
 
-      expect(() => requireAdmin(mockIpcEvent(999))).toThrow(
-        'Unauthorized: Administrator access required'
-      );
+      expect(() => {
+        requireAdmin(mockIpcEvent(999));
+      }).toThrow('Unauthorized: Administrator access required');
     });
 
     it('should not throw when a valid session exists', async () => {
@@ -388,7 +390,9 @@ describe('Authentication Module', () => {
 
       await loginAdmin('correctPassword', 1);
       // requireAdmin should not throw for an authenticated sender
-      expect(() => requireAdmin(mockIpcEvent(1))).not.toThrow();
+      expect(() => {
+        requireAdmin(mockIpcEvent(1));
+      }).not.toThrow();
     });
   });
 

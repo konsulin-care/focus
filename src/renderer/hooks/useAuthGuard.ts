@@ -44,9 +44,17 @@ export function useAuthGuard(): UseAuthGuardReturn {
   return {
     authModalStatus,
     showRecovery,
-    handleLoginSuccess: () => setAuthModalStatus('authenticated'),
-    handleRegisterSuccess: () => setAuthModalStatus('authenticated'),
-    handleForgotPassword: () => setShowRecovery(true),
-    handleRecoveryClose: () => setShowRecovery(false),
+    handleLoginSuccess: () => {
+      setAuthModalStatus('authenticated');
+    },
+    handleRegisterSuccess: () => {
+      setAuthModalStatus('authenticated');
+    },
+    handleForgotPassword: () => {
+      setShowRecovery(true);
+    },
+    handleRecoveryClose: () => {
+      setShowRecovery(false);
+    },
   };
 }

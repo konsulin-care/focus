@@ -12,7 +12,9 @@ import { useNavigation } from '@/renderer/store';
 import { useAuthStore } from '@/renderer/store/useAuthStore';
 
 // Lazy load Test page for better performance
-const Test = lazy(() => import('@/renderer/pages/Test'));
+const Test = lazy(() => {
+  return import('@/renderer/pages/Test');
+});
 
 // Loading fallback component for Suspense
 function LoadingFallback() {

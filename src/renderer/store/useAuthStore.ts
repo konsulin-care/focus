@@ -25,25 +25,33 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
   hasLoaded: false,
 
-  login: (sessionToken) =>
+  login: (sessionToken) => {
     set({
       isAuthenticated: true,
       sessionToken,
       error: null,
-    }),
+    });
+  },
 
-  logout: () =>
+  logout: () => {
     set({
       isAuthenticated: false,
       sessionToken: null,
       error: null,
-    }),
+    });
+  },
 
-  setSetupComplete: (complete) => set({ isSetupComplete: complete }),
+  setSetupComplete: (complete) => {
+    set({ isSetupComplete: complete });
+  },
 
-  setLoading: (loading) => set({ isLoading: loading }),
+  setLoading: (loading) => {
+    set({ isLoading: loading });
+  },
 
-  setError: (error) => set({ error }),
+  setError: (error) => {
+    set({ error });
+  },
 
   refreshStatus: async () => {
     set({ isLoading: true, error: null });

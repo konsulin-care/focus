@@ -91,6 +91,8 @@ export interface ElectronAPI {
   authChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   authDeleteAdmin: (password: string, wipeData: boolean) => Promise<void>;
   authStatus: () => Promise<{ isAuthenticated: boolean; isSetupComplete: boolean }>;
+  getKeytarConfig: () => Promise<{ service: string; account: string }>;
+  saveKeytarConfig: (config: { service: string; account: string }) => Promise<void>;
   onSessionInvalidated: (callback: () => void) => () => void;
 }
 

@@ -62,7 +62,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * @param _event - The IPC renderer event
      * @param data - The test event data
      */
-    const listener = (_event: IpcRendererEvent, data: TestEvent) => callback(data);
+    const listener = (_event: IpcRendererEvent, data: TestEvent) => {
+      callback(data);
+    };
     ipcRenderer.on('stimulus-change', listener);
     return () => {
       ipcRenderer.removeListener('stimulus-change', listener);
@@ -74,7 +76,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * @param _event - The IPC renderer event
      * @param data - The test complete result data
      */
-    const listener = (_event: IpcRendererEvent, data: TestCompleteResult) => callback(data);
+    const listener = (_event: IpcRendererEvent, data: TestCompleteResult) => {
+      callback(data);
+    };
     ipcRenderer.on('test-complete', listener);
     return () => {
       ipcRenderer.removeListener('test-complete', listener);
@@ -136,9 +140,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   authDeleteAdmin: (password: string, wipeData: boolean) =>
     ipcRenderer.invoke('admin-delete', password, wipeData),
   authStatus: () => ipcRenderer.invoke('auth-status'),
+  getKeytarConfig: () => ipcRenderer.invoke('get-keytar-config'),
+  saveKeytarConfig: (config: { service: string; account: string }) =>
+    ipcRenderer.invoke('save-keytar-config', config),
   onSessionInvalidated: (callback: () => void) => {
     /** Callback for admin session invalidation IPC event. */
-    const listener = () => callback();
+    const listener = () => {
+      callback();
+    };
     ipcRenderer.on('admin-session-invalidated', listener);
     return () => {
       ipcRenderer.removeListener('admin-session-invalidated', listener);

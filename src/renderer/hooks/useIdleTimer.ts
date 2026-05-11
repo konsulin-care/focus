@@ -16,13 +16,15 @@ export function useIdleTimer({ timeoutMs, onIdle }: UseIdleTimerOptions) {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    timerRef.current = setTimeout(async () => {
-      try {
-        await window.electronAPI.authLogout();
-      } catch (err) {
-        console.error('Failed to logout on idle:', err);
-      }
-      onIdle();
+    timerRef.current = setTimeout(() => {
+      (async () => {
+        try {
+          await window.electronAPI.authLogout();
+        } catch (err) {
+          console.error('Failed to logout on idle:', err);
+        }
+        onIdle();
+      })();
     }, timeoutMs);
   }, [timeoutMs, onIdle]);
 

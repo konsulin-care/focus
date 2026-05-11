@@ -312,7 +312,7 @@ const RecoveryKeyPhase: FC<RecoveryKeyPhaseProps> = ({
       </div>
 
       {/* Recovery key display */}
-      <label className="block text-sm font-medium text-gray-700">
+      <label htmlFor="recovery-key" className="block text-sm font-medium text-gray-700">
         {t('admin.register.recoveryKey')}
       </label>
       <div className="flex gap-2 mb-4">

@@ -5,7 +5,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { IpcMainInvokeEvent } from 'electron';
+import type { IpcMainInvokeEvent } from 'electron';
 import bcrypt from 'bcryptjs';
 import { db } from './database';
 import { encryptWithLMK, decryptWithLMK, getOrCreateDeviceUUID } from './key-management';
@@ -327,9 +327,9 @@ export async function validateRecoveryKey(recoveryKey: string): Promise<{ valid:
  * Request a recovery token via webhook.
  * Temporarily disabled – direct recovery via saved key remains available.
  */
-export async function requestRecovery(_email: string): Promise<void> {
+export function requestRecovery(_email: string): Promise<void> {
   void _email; // intentionally unused – email recovery disabled
-  throw new Error('Email recovery is temporarily unavailable');
+  return Promise.reject(new Error('Email recovery is temporarily unavailable'));
 }
 
 /**
@@ -412,7 +412,7 @@ export async function performRecovery(
   const nowNs = process.hrtime.bigint();
   const expiryNs = nowNs + BigInt(SESSION_DURATION) * 1_000_000n;
 
-  if (webContentsId === undefined || webContentsId === null) {
+  if (webContentsId === undefined) {
     throw new Error('webContentsId is required for session creation');
   }
   activeSessions.set(sessionToken, { webContentsId, expiry: expiryNs });

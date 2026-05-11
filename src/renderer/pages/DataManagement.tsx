@@ -580,7 +580,9 @@ export default function DataManagement() {
   /* ---------- idle timer (10 min) ---------- */
   useIdleTimer({
     timeoutMs: 10 * 60 * 1000,
-    onIdle: () => logout(),
+    onIdle: () => {
+      logout();
+    },
   });
 
   /** Fetch all sessions from main process. */
@@ -872,7 +874,7 @@ export default function DataManagement() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetchData();
+    void fetchData();
   }, [fetchData, isAuthenticated]);
 
   useEffect(() => {
@@ -930,7 +932,9 @@ export default function DataManagement() {
           isOpen={authModalStatus === 'login'}
           mandatory
           onSuccess={handleLoginSuccess}
-          onBack={() => navigateToPage(lastVisitedPublicPage || 'home')}
+          onBack={() => {
+            navigateToPage(lastVisitedPublicPage || 'home');
+          }}
           onForgotPassword={handleForgotPassword}
         />
         <AdminRegisterModal
