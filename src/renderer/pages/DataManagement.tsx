@@ -288,7 +288,7 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
                 key={mode.id}
                 type="button"
                 onClick={() => {
-                  void handleExport(mode.id);
+                  handleExport(mode.id);
                   setIsExtractOpen(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -304,9 +304,7 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
     {/* Bulk delete */}
     <button
       type="button"
-      onClick={() => {
-        void handleBulkDelete();
-      }}
+      onClick={handleBulkDelete}
       disabled={selectedIds.size === 0}
       className="p-2 bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50"
       title={t('dataManagement.bulkDelete')}
@@ -787,7 +785,7 @@ export default function DataManagement() {
     const expanding = !expandedRows[id];
     setExpandedRow(id, expanding);
     if (expanding && sessionTrials[id] === undefined) {
-      void fetchTrials(id);
+      fetchTrials(id);
     }
   };
 
@@ -1001,9 +999,7 @@ export default function DataManagement() {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  void handleClearCache();
-                }}
+                onClick={handleClearCache}
                 className="px-3 py-2 border border-[#ECEFF4] rounded-md text-sm font-medium hover:bg-gray-50"
               >
                 Clear Cache

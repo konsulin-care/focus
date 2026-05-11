@@ -134,18 +134,14 @@ const TimingSettings = ({
       <div className="flex gap-3">
         <button
           type="button"
-          onClick={() => {
-            void onSave();
-          }}
+          onClick={onSave}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#099B9E] transition-colors cursor-pointer"
         >
           {t('button.saveSettings')}
         </button>
         <button
           type="button"
-          onClick={() => {
-            void onReset();
-          }}
+          onClick={onReset}
           className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
         >
           {t('button.resetDefaults')}
@@ -300,9 +296,14 @@ export default function Settings() {
       setTotalTrialsRaw(updatedConfig.totalTrials);
       setStatus(t('status.saveSuccess'));
       setStatusIsError(false);
-      setTimeout(() => {
+      setTimeout(async () => {
         setStatus('');
         setStatusIsError(false);
+        try {
+          await useAuthStore.getState().refreshStatus();
+        } catch (err) {
+          console.error('Failed to refresh status after save:', err);
+        }
       }, 3000);
     } catch {
       setStatus(t('status.saveFailed'));
@@ -350,10 +351,14 @@ export default function Settings() {
     useAuthStore.getState().logout();
     setStatus(t('settings.removeAdminSuccess'));
     setStatusIsError(false);
-    setTimeout(() => {
+    setTimeout(async () => {
       setStatus('');
       setStatusIsError(false);
-      useAuthStore.getState().refreshStatus();
+      try {
+        await useAuthStore.getState().refreshStatus();
+      } catch (err) {
+        console.error('Failed to refresh status after remove admin:', err);
+      }
     }, 3000);
   };
 

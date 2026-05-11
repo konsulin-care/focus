@@ -443,5 +443,25 @@ describe('Authentication Module', () => {
       // Verify setup flag is reset
       expect(db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE]).toBe(STR_VALUES.ZERO);
     });
+
+    it('should wipe test data when wipeData is true', async () => {
+      // Re-seed the db with test data
+      const { deleteAdmin, registerAdmin } = auth;
+
+      // Seed keytar for registration
+      keytarState.password = 'c'.repeat(64);
+
+      // First register an admin
+      await registerAdmin('test@example.com', 'password123');
+
+      // Create mock tables by inserting seed data for trial_data and test_sessions
+      db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE] = STR_VALUES.ONE;
+      db._seeds[DB_KEYS.ADMIN_PASSWORD_HASH] = deterministicHash('password123');
+
+      await deleteAdmin('password123', true);
+
+      // Verify setup flag is reset
+      expect(db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE]).toBe(STR_VALUES.ZERO);
+    });
   });
 });

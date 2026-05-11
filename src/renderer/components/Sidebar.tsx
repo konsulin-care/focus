@@ -9,8 +9,8 @@ import {
   Database,
   Lock,
 } from 'lucide-react';
-import { useTranslation } from '@/i18n';
-import { useNavigation, Page, useAuthStore } from '@/renderer/store';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useAuthStore, type Page } from '@/renderer/store';
 import SidebarButton from './SidebarButton';
 import { Logo } from '.';
 
