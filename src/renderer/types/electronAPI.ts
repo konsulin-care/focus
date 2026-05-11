@@ -4,7 +4,7 @@
 import type { MessageBoxOptions } from 'electron';
 
 export type StimulusType = 'target' | 'non-target';
-import type { AttentionMetrics } from './trial';
+import type { AttentionMetrics } from '@/renderer/types/trial';
 
 export interface TestConfig {
   stimulusDurationMs: number;
@@ -75,6 +75,25 @@ export interface ElectronAPI {
 
   // UI Dialogs
   showMessageBox: (options: MessageBoxOptions) => Promise<boolean>;
+
+  // Admin Authentication API
+  authIsSetup: () => Promise<boolean>;
+  authRegister: (email: string, password: string) => Promise<{ recoveryKey: string }>;
+  authLogin: (password: string) => Promise<{ sessionToken: string }>;
+  authLogout: () => Promise<void>;
+  authVerifySession: (sessionToken: string) => Promise<boolean>;
+  authRequestRecovery: (email: string) => Promise<{ success: boolean; message: string }>;
+  authValidateRecoveryKey: (key: string) => Promise<{ valid: boolean }>;
+  authPerformRecovery: (
+    encryptedKeyJson: string,
+    newPassword: string
+  ) => Promise<{ sessionToken: string }>;
+  authChangePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  authDeleteAdmin: (password: string, wipeData: boolean) => Promise<void>;
+  authStatus: () => Promise<{ isAuthenticated: boolean; isSetupComplete: boolean }>;
+  getKeytarConfig: () => Promise<{ service: string; account: string }>;
+  saveKeytarConfig: (config: { service: string; account: string }) => Promise<void>;
+  onSessionInvalidated: (callback: () => void) => () => void;
 }
 
 // Augment the Window interface to include electronAPI

@@ -39,7 +39,9 @@ export function AcsCalculationModal({ details, onClose }: AcsCalculationModalPro
     /**
      * Handles modal close button click
      */
-    const handleCancel = () => onClose();
+    const handleCancel = () => {
+      onClose();
+    };
     dialog.addEventListener('close', handleCancel);
 
     return () => {

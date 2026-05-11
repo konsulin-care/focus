@@ -6,7 +6,8 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { initDatabase } from './database';
+import { initDatabase, db } from './database';
+import { initAuth, invalidateAllSessions, isAdminSetup } from './auth';
 import { cleanupExpiredRecords } from './gdpr';
 import { TIMING_VALIDATION_PASSED } from './timing';
 import { createWindow, setApplicationMenu } from './window';
@@ -39,8 +40,36 @@ app.whenReady().then(() => {
   // Initialize database
   initDatabase();
 
+  // Initialize auth
+  initAuth();
+
   // Run GDPR cleanup on startup
   cleanupExpiredRecords();
+
+  // Log admin setup status on startup
+  setTimeout(() => {
+    try {
+      const setupComplete = isAdminSetup();
+
+      // Count registered admin
+      let adminCount = 0;
+      if (db) {
+        try {
+          const result = db
+            .prepare('SELECT COUNT(*) as count FROM test_config WHERE key = ?')
+            .get('admin_password_hash') as { count: number } | undefined;
+          adminCount = result?.count ?? 0;
+        } catch (dbErr) {
+          console.warn('[STARTUP] DB error counting admin:', dbErr);
+        }
+      }
+
+      console.log(`[STARTUP] Admin setup status: ${setupComplete ? 'COMPLETE' : 'NOT SETUP'}`);
+      console.log(`[STARTUP] Registered admin count: ${adminCount}`);
+    } catch (err) {
+      console.warn('[STARTUP] Unexpected error:', err);
+    }
+  }, 1000);
 
   // Create main window
   mainWindow = createWindow();
@@ -60,4 +89,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  invalidateAllSessions();
+  mainWindow?.webContents.send('admin-session-invalidated');
 });

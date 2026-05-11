@@ -4,8 +4,25 @@
  * All IPC handler registrations for main-renderer communication.
  */
 
+import {
+  isAdminSetup,
+  registerAdmin,
+  loginAdmin,
+  logoutSession,
+  verifySession,
+  requestRecovery,
+  performRecovery,
+  validateRecoveryKey,
+  changePassword,
+  requireAdmin,
+  isAuthenticated,
+  getSessionTokenByWebContentsId,
+  invalidateAllSessions,
+  deleteAdmin,
+} from './auth';
 import { ipcMain, dialog, type MessageBoxOptions } from 'electron';
-import { DatabaseQueryCommand, TestConfig, SessionWithUser, TrialData } from '@/main/types';
+import { randomBytes } from 'node:crypto';
+import type { DatabaseQueryCommand, TestConfig, SessionWithUser } from '@/main/types';
 import { queryWhitelist, db } from '@/main/database';
 import { getTestConfig, saveTestConfig, resetTestConfig } from '@/main/test-config';
 import { cleanupExpiredRecords, getExpiredRecordCount, isValidEmail } from '@/main/gdpr';
@@ -13,6 +30,14 @@ import { getHighPrecisionTimeString, TIMING_VALIDATION_PASSED } from '@/main/tim
 import { startTest, stopTest, recordResponse, setMainWindow } from '@/main/test-engine';
 import type { AttentionMetrics } from '@/renderer/types/trial';
 import { processTestEvents } from '@/shared/utils/trial-processing';
+import {
+  DEFAULT_KEYTAR_SERVICE,
+  DEFAULT_KEYTAR_ACCOUNT,
+  DB_KEY_KEYTAR_SERVICE,
+  DB_KEY_KEYTAR_ACCOUNT,
+} from './constants';
+import { getOrCreateLMK } from './key-management';
+import keytar from 'keytar';
 
 /**
  * Validates that a specific metric is a finite number.
@@ -29,18 +54,154 @@ function validateNumericMetric(metrics: AttentionMetrics, field: keyof Attention
 // Timing Handlers
 // ===========================================
 
-/**
- * Get high-precision timestamp for renderer.
- */
 ipcMain.handle('get-high-precision-time', () => {
   return getHighPrecisionTimeString();
 });
 
-/**
- * Get event timestamp for renderer.
- */
 ipcMain.handle('get-event-timestamp', () => {
   return getHighPrecisionTimeString();
+});
+
+// ===========================================
+// Auth Handlers
+// ===========================================
+
+ipcMain.handle('admin-is-setup', () => {
+  return isAdminSetup();
+});
+
+ipcMain.handle('admin-register', async (_event, email: string, password: string) => {
+  if (isAdminSetup()) {
+    throw new Error('Admin already registered');
+  }
+  return await registerAdmin(email, password);
+});
+
+ipcMain.handle('admin-login', async (event, password: string) => {
+  return await loginAdmin(password, event.sender.id);
+});
+
+ipcMain.handle('admin-logout', (event) => {
+  const token = getSessionTokenByWebContentsId(event.sender.id);
+  if (token) {
+    logoutSession(token);
+  }
+});
+
+ipcMain.handle('admin-verify-session', (event, sessionToken: string) => {
+  return verifySession(sessionToken, event.sender.id);
+});
+
+ipcMain.handle('admin-validate-recovery-key', async (_event, plaintextKey: string) => {
+  return await validateRecoveryKey(plaintextKey);
+});
+
+ipcMain.handle('admin-request-recovery', async (_event, email: string) => {
+  return requestRecovery(email);
+});
+
+ipcMain.handle(
+  'admin-perform-recovery',
+  async (event, encryptedKeyJson: string, newPassword: string) => {
+    return await performRecovery(encryptedKeyJson, newPassword, event.sender.id);
+  }
+);
+
+ipcMain.handle(
+  'admin-change-password',
+  async (event, currentPassword: string, newPassword: string) => {
+    requireAdmin(event);
+    await changePassword(currentPassword, newPassword);
+    return { success: true };
+  }
+);
+
+ipcMain.handle('auth-status', (event) => {
+  return { isAuthenticated: isAuthenticated(event.sender.id), isSetupComplete: isAdminSetup() };
+});
+
+// ===========================================
+// Keychain Configuration Handlers
+// ===========================================
+
+ipcMain.handle('get-keytar-config', () => {
+  let service = DEFAULT_KEYTAR_SERVICE;
+  let account = DEFAULT_KEYTAR_ACCOUNT;
+
+  if (db) {
+    const serviceRow = db
+      .prepare('SELECT value FROM test_config WHERE key = ?')
+      .get(DB_KEY_KEYTAR_SERVICE) as { value: string } | undefined;
+    if (serviceRow?.value) {
+      service = serviceRow.value;
+    }
+
+    const accountRow = db
+      .prepare('SELECT value FROM test_config WHERE key = ?')
+      .get(DB_KEY_KEYTAR_ACCOUNT) as { value: string } | undefined;
+    if (accountRow?.value) {
+      account = accountRow.value;
+    }
+  }
+
+  return { service, account };
+});
+
+ipcMain.handle(
+  'save-keytar-config',
+  async (_event, config: { service: string; account: string }) => {
+    if (!db) throw new Error('Database not initialized');
+
+    const { service, account } = config;
+
+    if (!service || !account) {
+      throw new Error('Service and account are required');
+    }
+
+    // Ensure keytar has the LMK before changing credentials
+    await getOrCreateLMK();
+
+    // Update password entry in keychain using the new service/account
+    // First check if there's an existing LMK under the new identifiers
+    const existingKey = await keytar.getPassword(service, account);
+    if (!existingKey) {
+      // Retrieve the current LMK (stored under old or default identifiers)
+      // by trying known combinations
+      const fallbackService = DEFAULT_KEYTAR_SERVICE;
+      const fallbackAccount = DEFAULT_KEYTAR_ACCOUNT;
+      const currentKey = await keytar.getPassword(fallbackService, fallbackAccount);
+
+      if (currentKey) {
+        // Move to new identifiers
+        await keytar.setPassword(service, account, currentKey);
+        await keytar.deletePassword(fallbackService, fallbackAccount);
+      } else {
+        // No existing key found under defaults; create fresh entry
+        const newKey = randomBytes(32).toString('hex');
+        await keytar.setPassword(service, account, newKey);
+      }
+    }
+
+    // Persist the new identifiers to the database
+    const upsertStmt = db.prepare(`
+    INSERT INTO test_config (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `);
+
+    db.transaction(() => {
+      upsertStmt.run(DB_KEY_KEYTAR_SERVICE, service);
+      upsertStmt.run(DB_KEY_KEYTAR_ACCOUNT, account);
+    })();
+
+    return { success: true };
+  }
+);
+
+ipcMain.handle('admin-delete', async (event, password: string, wipeData: boolean) => {
+  requireAdmin(event);
+  await deleteAdmin(password, wipeData);
+  // Invalidate all sessions after deletion
+  invalidateAllSessions();
 });
 
 // ===========================================
@@ -50,48 +211,47 @@ ipcMain.handle('get-event-timestamp', () => {
 /**
  * Safe query handler - executes whitelisted database queries.
  */
-ipcMain.handle(
-  'query-database',
-  (_event: Electron.IpcMainInvokeEvent, command: DatabaseQueryCommand, params?: unknown[]) => {
-    if (!db) {
-      throw new Error('Database not initialized');
-    }
-
-    // Validate command is in whitelist
-    if (!Object.hasOwn(queryWhitelist, command)) {
-      throw new Error(`Invalid database command: ${command}`);
-    }
-
-    const queryEntry = queryWhitelist[command];
-
-    // Validate parameter count
-    const paramCount = params ? params.length : 0;
-    if (paramCount !== queryEntry.paramCount) {
-      throw new Error(
-        `Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`
-      );
-    }
-
-    try {
-      const stmt = db.prepare(queryEntry.sql);
-
-      // Use appropriate execution method based on query type
-      switch (queryEntry.type) {
-        case 'select-one':
-          return stmt.get(...(params || []));
-        case 'select-many':
-          return stmt.all(...(params || []));
-        case 'write':
-          return stmt.run(...(params || []));
-        default:
-          throw new Error(`Unknown query type: ${queryEntry.type}`);
-      }
-    } catch (error) {
-      console.error('Database query error:', error);
-      throw error;
-    }
+ipcMain.handle('query-database', (event, command: DatabaseQueryCommand, params?: unknown[]) => {
+  requireAdmin(event);
+  if (!db) {
+    throw new Error('Database not initialized');
   }
-);
+  // ... existing logic ...
+
+  // Validate command is in whitelist
+  if (!Object.hasOwn(queryWhitelist, command)) {
+    throw new Error(`Invalid database command: ${command}`);
+  }
+
+  const queryEntry = queryWhitelist[command];
+
+  // Validate parameter count
+  const paramCount = params ? params.length : 0;
+  if (paramCount !== queryEntry.paramCount) {
+    throw new Error(
+      `Command '${command}' expects ${queryEntry.paramCount} parameters, got ${paramCount}`
+    );
+  }
+
+  try {
+    const stmt = db.prepare(queryEntry.sql);
+
+    // Use appropriate execution method based on query type
+    switch (queryEntry.type) {
+      case 'select-one':
+        return stmt.get(...(params || []));
+      case 'select-many':
+        return stmt.all(...(params || []));
+      case 'write':
+        return stmt.run(...(params || []));
+      default:
+        throw new Error(`Unknown query type: ${queryEntry.type}`);
+    }
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
+});
 
 // ===========================================
 // Test Config Handlers
@@ -101,7 +261,8 @@ ipcMain.handle('get-test-config', () => {
   return getTestConfig();
 });
 
-ipcMain.handle('save-test-config', (_event: Electron.IpcMainInvokeEvent, config: TestConfig) => {
+ipcMain.handle('save-test-config', (event, config: TestConfig) => {
+  requireAdmin(event);
   try {
     saveTestConfig(config);
   } catch (error) {
@@ -110,7 +271,8 @@ ipcMain.handle('save-test-config', (_event: Electron.IpcMainInvokeEvent, config:
   }
 });
 
-ipcMain.handle('reset-test-config', () => {
+ipcMain.handle('reset-test-config', (event) => {
+  requireAdmin(event);
   try {
     resetTestConfig();
   } catch (error) {
@@ -123,11 +285,13 @@ ipcMain.handle('reset-test-config', () => {
 // GDPR Compliance Handlers
 // ===========================================
 
-ipcMain.handle('cleanup-expired-records', () => {
+ipcMain.handle('cleanup-expired-records', (event) => {
+  requireAdmin(event);
   return cleanupExpiredRecords();
 });
 
-ipcMain.handle('get-expired-count', () => {
+ipcMain.handle('get-expired-count', (event) => {
+  requireAdmin(event);
   return getExpiredRecordCount();
 });
 
@@ -304,84 +468,71 @@ ipcMain.handle(
 // Data Management Handlers
 // ===========================================
 
-ipcMain.handle('get-all-sessions', () => {
+ipcMain.handle('get-all-sessions', (event) => {
+  requireAdmin(event);
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   return currentDb
     .prepare(
       `
-    SELECT 
-      ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
-      ts.mean_response_time_ms, ts.response_time_variability,
-      ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
-      ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
-      ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
-      u.id as user_id, u.email, u.age, u.gender, u.is_generic
-    FROM test_sessions ts
-    JOIN users u ON ts.user_id = u.id
-    ORDER BY ts.test_date DESC
-  `
+      SELECT 
+        ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
+        ts.mean_response_time_ms, ts.response_time_variability,
+        ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
+        ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
+        ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
+        u.id as user_id, u.email, u.age, u.gender, u.is_generic
+      FROM test_sessions ts
+      JOIN users u ON ts.user_id = u.id
+      ORDER BY ts.test_date DESC
+    `
     )
     .all() as SessionWithUser[];
 });
 
-ipcMain.handle('get-session-with-user', (_event, sessionId: number) => {
+ipcMain.handle('get-session-with-user', (event, sessionId: number) => {
+  requireAdmin(event);
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   return currentDb
     .prepare(
       `
-    SELECT 
-      ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
-      ts.mean_response_time_ms, ts.response_time_variability,
-      ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
-      ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
-      ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
-      u.id as user_id, u.email, u.age, u.gender, u.is_generic
-    FROM test_sessions ts
-    JOIN users u ON ts.user_id = u.id
-    WHERE ts.id = ?
-  `
+      SELECT 
+        ts.id, ts.test_date, ts.acs_score, ts.acs_interpretation, 
+        ts.mean_response_time_ms, ts.response_time_variability,
+        ts.commission_errors, ts.omission_errors, ts.hits, ts.d_prime,
+        ts.validity, ts.validity_reason, ts.total_trials, ts.test_config,
+        ts.upload_status, ts.uploaded_at, ts.consent_given, ts.consent_timestamp,
+        u.id as user_id, u.email, u.age, u.gender, u.is_generic
+      FROM test_sessions ts
+      JOIN users u ON ts.user_id = u.id
+      WHERE ts.id = ?
+    `
     )
     .get(sessionId) as SessionWithUser | undefined;
 });
 
-ipcMain.handle('get-session-trials', (_event, sessionId: number) => {
-  if (!db) throw new Error('Database not initialized');
-  const currentDb = db;
-  return currentDb
-    .prepare(
-      `
-     SELECT id, test_session_id, trial_index, stimulus_type, outcome,
-            response_correct, response_time_ms, is_anticipatory,
-            is_multiple_response, follows_commission
-    FROM trial_data
-    WHERE test_session_id = ?
-    ORDER BY trial_index ASC
-  `
-    )
-    .all(sessionId) as TrialData[];
-});
-
 ipcMain.handle(
   'update-session-status',
-  (_event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
+  (event, sessionId: number, status: 'pending' | 'uploaded' | 'failed') => {
+    requireAdmin(event);
     if (!db) throw new Error('Database not initialized');
     const currentDb = db;
     const uploadedAt = status === 'uploaded' ? new Date().toISOString() : null;
     currentDb
       .prepare(
         `
-    UPDATE test_sessions 
-    SET upload_status = ?, uploaded_at = ?
-    WHERE id = ?
-  `
+        UPDATE test_sessions 
+        SET upload_status = ?, uploaded_at = ?
+        WHERE id = ?
+      `
       )
       .run(status, uploadedAt, sessionId);
   }
 );
 
-ipcMain.handle('bulk-delete-sessions', (_event, sessionIds: number[]) => {
+ipcMain.handle('bulk-delete-sessions', (event, sessionIds: number[]) => {
+  requireAdmin(event);
   if (!db) throw new Error('Database not initialized');
   const currentDb = db;
   if (!Array.isArray(sessionIds) || sessionIds.length === 0) {
@@ -395,6 +546,23 @@ ipcMain.handle('bulk-delete-sessions', (_event, sessionIds: number[]) => {
     }
     return { deleted };
   })();
+});
+
+ipcMain.handle('get-session-trials', (event, sessionId: number) => {
+  requireAdmin(event);
+  if (!db) throw new Error('Database not initialized');
+  const currentDb = db;
+  return currentDb
+    .prepare(
+      `SELECT 
+         id, test_session_id, trial_index, stimulus_type,
+         outcome, response_correct, response_time_ms, is_anticipatory,
+         is_multiple_response, follows_commission
+       FROM trial_data
+       WHERE test_session_id = ?
+       ORDER BY trial_index`
+    )
+    .all(sessionId);
 });
 
 // ===========================================

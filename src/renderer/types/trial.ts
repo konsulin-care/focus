@@ -4,7 +4,7 @@
  * Types for post-processed trial data and computed metrics.
  */
 
-import { StimulusType } from './electronAPI';
+import type { StimulusType } from './electronAPI';
 
 /**
  * Possible outcomes for a single trial.

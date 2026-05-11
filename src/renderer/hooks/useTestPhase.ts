@@ -59,7 +59,9 @@ export function useTestPhase(): UseTestPhaseReturn {
       const timer = setTimeout(() => {
         setCountdown((c) => c - 1);
       }, 1000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     } else if (countdown === 0) {
       // Only start when countdown transitions from 1 to 0
       // The else if guard prevents multiple calls if effect re-runs before state update

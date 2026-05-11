@@ -15,7 +15,8 @@
     "test": "Test",
     "dataManagement": "Data Management",
     "settings": "Settings",
-    "about": "About"
+    "about": "About",
+    "adminAccessRequired": "Admin access required"
   },
   "language": {
     "label": "Language",
@@ -31,5 +32,15 @@
     "networkError": "Network error. Please check your connection."
   },
   "loading": "Loading...",
-  "success": "Success"
+  "success": "Success",
+  "settings": {
+    "removeAdmin": "Remove Admin Account",
+    "removeAdminDescription": "Delete admin credentials and optionally all test data",
+    "removeAdminPassword": "Enter current password",
+    "removeAdminWipe": "Also delete all test data",
+    "removeAdminConfirm": "Are you sure? This action cannot be undone.",
+    "removeAdminError": "Failed to remove admin account",
+    "removeAdminSuccess": "Admin account removed successfully",
+    "account": "Account Management"
+  }
 }

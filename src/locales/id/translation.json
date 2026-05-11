@@ -164,6 +164,7 @@
       "totalTrials": "Total Percobaan",
       "totalTrialsDescription": "Harus berupa angka genap untuk desain tes dua bagian yang seimbang",
       "oddValuesRounded": "Nilai ganjil dibulatkan menjadi {{value}}",
+      "warningIcon": "Peringatan",
       "bufferTime": "Waktu Buffer (md)"
     },
     "dataManagement": {
@@ -171,7 +172,9 @@
       "description": "Kelola data tes lokal dan pengaturan unggahan.",
       "pendingUploads": "Unggahan Tertunda: {{count}}",
       "clearCache": "Hapus Cache Lokal"
-    }
+    },
+    "changePassword": "Ubah Kata Sandi",
+    "removing": "Menghapus..."
   },
   "about": {
     "title": "Tentang F.O.C.U.S.",
@@ -206,7 +209,9 @@
     "saveSettings": "Simpan Pengaturan",
     "resetDefaults": "Kembalikan ke Bawaan",
     "saveAndPreview": "Simpan & Pratinjau",
-    "backToHome": "Kembali ke Beranda"
+    "backToHome": "Kembali ke Beranda",
+    "back": "Kembali",
+    "cancel": "Batal"
   },
   "status": {
     "loadFailed": "Gagal memuat pengaturan",
@@ -270,5 +275,96 @@
       "failed": "Gagal"
     },
     "showing": "Menampilkan {{from}} - {{to}} dari {{total}} sesi"
+  },
+  "admin": {
+    "login": {
+      "title": "Autentikasi Admin",
+      "password": "Kata Sandi",
+      "placeholder": "Masukkan kata sandi admin",
+      "forgotPassword": "Lupa Kata Sandi?",
+      "cancel": "Batal",
+      "login": "Masuk",
+      "loggingIn": "Sedang masuk...",
+      "error": {
+        "required": "Kata sandi wajib diisi",
+        "invalid": "Kata sandi tidak valid. Silakan coba lagi."
+      }
+    },
+    "register": {
+      "title": "Siapkan Akun Admin",
+      "email": "Email",
+      "emailPlaceholder": "admin@example.com",
+      "password": "Kata Sandi",
+      "passwordPlaceholder": "Setidaknya 8 karakter",
+      "confirmPassword": "Konfirmasi Kata Sandi",
+      "confirmPasswordPlaceholder": "Ketik ulang kata sandi",
+      "cancel": "Batal",
+      "register": "Daftar",
+      "registering": "Mendaftar...",
+      "recoveryKey": "Kunci Pemulihan",
+      "copy": "Salin",
+      "saveWarning": "Ini adalah satu-satunya cara untuk memulihkan akses admin. Simpan dengan aman.",
+      "acknowledge": "Saya telah menyimpan kunci pemulihan ini dengan aman",
+      "back": "Kembali",
+      "continue": "Lanjutkan",
+      "error": {
+        "required": "Semua kolom wajib diisi",
+        "invalidEmail": "Masukkan alamat email yang valid",
+        "passwordsMatch": "Kata sandi tidak cocok",
+        "passwordLength": "Kata sandi harus setidaknya 8 karakter",
+        "registrationFailed": "Pendaftaran gagal"
+      }
+    },
+    "changePassword": {
+      "title": "Ubah Kata Sandi Admin",
+      "currentPassword": "Kata Sandi Saat Ini",
+      "currentPasswordPlaceholder": "Masukkan kata sandi saat ini",
+      "newPassword": "Kata Sandi Baru",
+      "newPasswordPlaceholder": "Masukkan kata sandi baru (min 8 karakter)",
+      "confirmNewPassword": "Konfirmasi Kata Sandi Baru",
+      "confirmNewPasswordPlaceholder": "Konfirmasi kata sandi baru",
+      "cancel": "Batal",
+      "changePassword": "Ubah Kata Sandi",
+      "changing": "Mengubah…",
+      "success": "Kata sandi berhasil diubah! Sedang menutup…",
+      "error": {
+        "required": "Kata sandi saat ini wajib diisi",
+        "newPasswordLength": "Kata sandi baru harus setidaknya 8 karakter",
+        "passwordsMatch": "Kata sandi baru tidak cocok",
+        "failed": "Gagal mengubah kata sandi"
+      }
+    },
+    "recovery": {
+      "title": "Pemulihan Kata Sandi",
+      "invalidKey": "Kunci pemulihan tidak valid. Periksa dan coba lagi.",
+      "direct": {
+        "title": "Gunakan Kunci Pemulihan Tersimpan",
+        "description": "Masukkan kunci pemulihan heksadesimal 64 karakter yang Anda simpan selama pengaturan admin.",
+        "label": "Kunci Pemulihan",
+        "placeholder": "misalnya, a1b2c3d4e5f6...",
+        "hint": "64 karakter heksadesimal (0-9, a-f)",
+        "useKey": "Gunakan Kunci Pemulihan",
+        "validating": "Memvalidasi...",
+        "error": {
+          "failed": "Gagal memvalidasi kunci pemulihan"
+        }
+      },
+      "step2": {
+        "title": "Atur Ulang Kata Sandi",
+        "newPassword": "Kata Sandi Baru",
+        "newPasswordPlaceholder": "Setidaknya 8 karakter",
+        "confirmNewPassword": "Konfirmasi Kata Sandi Baru",
+        "confirmNewPasswordPlaceholder": "Ketik ulang kata sandi baru",
+        "cancel": "Batal",
+        "reset": "Atur Ulang Kata Sandi",
+        "resetting": "Mengatur ulang...",
+        "error": {
+          "required": "Kedua kolom kata sandi wajib diisi",
+          "newPasswordLength": "Kata sandi harus setidaknya 8 karakter",
+          "passwordsMatch": "Kata sandi tidak cocok",
+          "failed": "Pengaturan ulang kata sandi gagal"
+        }
+      }
+    }
   }
 }

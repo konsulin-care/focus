@@ -33,7 +33,9 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
     <div className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+        }}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -78,7 +80,9 @@ export default function LanguageSwitcher({ className = '' }: LanguageSwitcherPro
                 <button
                   type="button"
                   key={lang.code}
-                  onClick={() => handleLanguageChange(lang.code)}
+                  onClick={() => {
+                    handleLanguageChange(lang.code);
+                  }}
                   className={`w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
                     currentLanguage.code === lang.code
                       ? 'bg-blue-50 text-blue-700 font-medium'

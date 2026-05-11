@@ -60,6 +60,14 @@ updated: 2026-05-01
 - The `node:` protocol improves clarity and avoids potential conflicts.
 - Avoid namespace/wildcard imports (`import * as`) — use named imports for better tree-shaking and explicitness.
 
+## Admin Authentication System
+- A full admin authentication system protects Settings and Data Management pages.
+- Architecture: the main process owns all auth logic (registration, login, session management, recovery) via `src/main/auth.ts`; cryptographic key material is managed by `src/main/key-management.ts`; `src/main/generated-config.ts` is auto-generated during CI builds and must never be committed, unless the user explicitly grants an override via confirmed action.
+- Session tokens are in-memory only (Map with 10 min expiry); rate limiting enforces 5 attempts before a 1 min lockout.
+- The `requireAdmin` guard pattern rejects IPC requests that lack a valid session token.
+- Detailed documentation is in `AUTH.md` (**AUTH** – Admin User Two-factor Handling system).
+- Reference: `src/main/AGENTS.md` (auth module details), `src/preload/AGENTS.md` (exposed API), `src/renderer/components/AGENTS.md` (admin UI components).
+
 ## Sub‑module AGENTS.md locations
 - `src/main/AGENTS.md` – main‑process IPC and timing details.
 - `src/renderer/AGENTS.md` – UI state, Zustand patterns, Tailwind usage.

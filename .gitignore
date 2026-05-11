@@ -37,9 +37,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Auto-generated configuration (secrets) – never commit
+src/main/generated-config.ts
+dist/main/generated-config.ts
+
 # local env files
-.env*.local
-.env*
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
 
 # vercel
 .vercel

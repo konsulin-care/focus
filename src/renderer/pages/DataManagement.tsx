@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n';
-import { useDataManagementStore } from '@/renderer/store';
+import { useAuthStore, useDataManagementStore, useNavigation } from '@/renderer/store';
+import { useAuthGuard, useIdleTimer } from '@/renderer/hooks';
+import { AdminLoginModal, AdminRegisterModal, RecoveryModal } from '@/renderer/components/Admin';
 import {
   Download,
   Trash2,
@@ -286,7 +288,7 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
                 key={mode.id}
                 type="button"
                 onClick={() => {
-                  void handleExport(mode.id);
+                  handleExport(mode.id);
                   setIsExtractOpen(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
@@ -302,9 +304,7 @@ const DataManagementToolbar: React.FC<ToolbarProps> = ({
     {/* Bulk delete */}
     <button
       type="button"
-      onClick={() => {
-        void handleBulkDelete();
-      }}
+      onClick={handleBulkDelete}
       disabled={selectedIds.size === 0}
       className="p-2 bg-red-50 text-red-600 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50"
       title={t('dataManagement.bulkDelete')}
@@ -389,7 +389,9 @@ const SessionRow: React.FC<SessionRowProps> = ({
     >
       <select
         value={session.upload_status}
-        onChange={(e) => handleStatusChange(session.id, e)}
+        onChange={(e) => {
+          handleStatusChange(session.id, e);
+        }}
         className={`px-2 py-1 rounded text-xs border ${
           session.upload_status === 'uploaded'
             ? 'bg-green-100 text-green-800 border-green-200'
@@ -465,7 +467,9 @@ const SessionTable: React.FC<SessionTableProps> = ({
             <th
               key={col.key}
               className="px-4 py-3 text-sm font-semibold text-gray-600 cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort(col.key as keyof Session)}
+              onClick={() => {
+                handleSort(col.key as keyof Session);
+              }}
             >
               <div className="flex items-center gap-2">
                 {col.label}
@@ -489,7 +493,9 @@ const SessionTable: React.FC<SessionTableProps> = ({
                 else next.delete(session.id);
                 setSelectedIds(next);
               }}
-              onClick={() => toggleRow(session.id)}
+              onClick={() => {
+                toggleRow(session.id);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -521,6 +527,10 @@ const SessionTable: React.FC<SessionTableProps> = ({
  */
 export default function DataManagement() {
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
+  const refreshStatus = useAuthStore((state) => state.refreshStatus);
+  const { setPage: navigateToPage, lastVisitedPublicPage } = useNavigation();
   const {
     sessions,
     setSessions,
@@ -539,7 +549,7 @@ export default function DataManagement() {
     sortDir,
     setSortDir,
     page,
-    setPage,
+    setPage: setPaginationPage,
     pageSize,
     setPageSize,
     sessionTrials,
@@ -551,6 +561,29 @@ export default function DataManagement() {
   } = useDataManagementStore();
   const filterRef = useRef<HTMLDivElement>(null);
   const extractRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- auth guard state ---------- */
+  const {
+    authModalStatus,
+    showRecovery,
+    handleLoginSuccess,
+    handleRegisterSuccess,
+    handleForgotPassword,
+    handleRecoveryClose,
+  } = useAuthGuard();
+
+  /* ---------- auth status check ---------- */
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus]);
+
+  /* ---------- idle timer (10 min) ---------- */
+  useIdleTimer({
+    timeoutMs: 10 * 60 * 1000,
+    onIdle: () => {
+      logout();
+    },
+  });
 
   /** Fetch all sessions from main process. */
   const fetchData = useCallback(async () => {
@@ -754,7 +787,7 @@ export default function DataManagement() {
     const expanding = !expandedRows[id];
     setExpandedRow(id, expanding);
     if (expanding && sessionTrials[id] === undefined) {
-      void fetchTrials(id);
+      fetchTrials(id);
     }
   };
 
@@ -840,11 +873,9 @@ export default function DataManagement() {
   }, [t, fetchData]);
 
   useEffect(() => {
-    async function load() {
-      await fetchData();
-    }
-    void load();
-  }, [fetchData]);
+    if (!isAuthenticated) return;
+    void fetchData();
+  }, [fetchData, isAuthenticated]);
 
   useEffect(() => {
     /** Closes filter and extract dropdowns when clicking outside of them. */
@@ -893,6 +924,28 @@ export default function DataManagement() {
 
   const totalPages = Math.ceil(sorted.length / pageSize);
 
+  /* ---------- auth guard: show modals when not authenticated ---------- */
+  if (!isAuthenticated) {
+    return (
+      <>
+        <AdminLoginModal
+          isOpen={authModalStatus === 'login'}
+          mandatory
+          onSuccess={handleLoginSuccess}
+          onBack={() => {
+            navigateToPage(lastVisitedPublicPage || 'home');
+          }}
+          onForgotPassword={handleForgotPassword}
+        />
+        <AdminRegisterModal
+          isOpen={authModalStatus === 'register'}
+          onComplete={handleRegisterSuccess}
+        />
+        <RecoveryModal isOpen={showRecovery} onClose={handleRecoveryClose} />
+      </>
+    );
+  }
+
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
@@ -903,7 +956,7 @@ export default function DataManagement() {
           t={t}
           globalFilter={globalFilter}
           setGlobalFilter={setGlobalFilter}
-          setPage={setPage}
+          setPage={setPaginationPage}
           isFilterOpen={isFilterOpen}
           setIsFilterOpen={setIsFilterOpen}
           statusFilter={statusFilter}
@@ -950,9 +1003,7 @@ export default function DataManagement() {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  void handleClearCache();
-                }}
+                onClick={handleClearCache}
                 className="px-3 py-2 border border-[#ECEFF4] rounded-md text-sm font-medium hover:bg-gray-50"
               >
                 Clear Cache
@@ -962,7 +1013,7 @@ export default function DataManagement() {
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
-                    setPage(0);
+                    setPaginationPage(0);
                   }}
                   className="border border-[#ECEFF4] rounded px-2 py-1 text-sm"
                 >
@@ -973,7 +1024,7 @@ export default function DataManagement() {
                 <button
                   type="button"
                   onClick={() => {
-                    setPage((p) => Math.max(0, p - 1));
+                    setPaginationPage((p) => Math.max(0, p - 1));
                   }}
                   disabled={page === 0}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"
@@ -986,7 +1037,7 @@ export default function DataManagement() {
                 <button
                   type="button"
                   onClick={() => {
-                    setPage((p) => Math.min(totalPages - 1, p + 1));
+                    setPaginationPage((p) => Math.min(totalPages - 1, p + 1));
                   }}
                   disabled={page >= totalPages - 1}
                   className="px-3 py-1 border border-[#ECEFF4] rounded hover:bg-gray-50 disabled:opacity-50"

@@ -60,7 +60,9 @@ export default function About() {
 
       <button
         type="button"
-        onClick={() => setPage('home')}
+        onClick={() => {
+          setPage('home');
+        }}
         className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
       >
         {t('about.backToHome')}

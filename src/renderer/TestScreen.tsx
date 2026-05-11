@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { StimulusType } from './types/electronAPI';
-import { SubjectInfo } from './types/trial';
-import { useTestPhase } from './hooks/useTestPhase';
-import { useTestEvents } from './hooks/useTestEvents';
-import { useTestInput } from './hooks/useTestInput';
-import { useAttentionMetrics } from './hooks/useAttentionMetrics';
-import { useFullscreenManager } from './hooks/useFullscreenManager';
-import { useNavigation } from './store';
-import { EmailCaptureForm } from './components/EmailCaptureForm';
-import { TestHeader, CountdownDisplay, BufferDisplay, TrialProgress } from './components/Test';
-import { StimulusContainer } from './components/Stimulus';
-import { ResultsSummary } from './components/Results';
+import type { StimulusType } from '@/renderer/types/electronAPI';
+import type { SubjectInfo } from '@/renderer/types/trial';
+import { useTestPhase, useTestEvents, useTestInput, useAttentionMetrics } from '@/renderer/hooks';
+import { useFullscreenManager } from '@/renderer/hooks/useFullscreenManager';
+import { useNavigation } from '@/renderer/store';
+import { EmailCaptureForm } from '@/renderer/components/EmailCaptureForm';
+import {
+  TestHeader,
+  CountdownDisplay,
+  BufferDisplay,
+  TrialProgress,
+} from '@/renderer/components/Test';
+import { StimulusContainer } from '@/renderer/components/Stimulus';
+import { ResultsSummary } from '@/renderer/components/Results';
 
 /** Main test execution screen managing phases, stimuli, and results capture. */
 function TestScreen() {
@@ -21,7 +23,9 @@ function TestScreen() {
 
   // Use ref to avoid circular dependency between useFullscreenManager and handleExitTest
   const exitFullscreenRef = useRef<() => Promise<void>>(() => Promise.resolve());
-  const endTestRef = useRef(() => endTest());
+  const endTestRef = useRef(() => {
+    endTest();
+  });
 
   // Update refs when functions change
   const { exitFullscreen } = useFullscreenManager(
@@ -72,7 +76,9 @@ function TestScreen() {
         setIsStimulusVisible(false);
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [setPhase]);
 
   // Unified form submit handler: computes metrics and saves via IPC

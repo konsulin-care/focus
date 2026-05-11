@@ -15,7 +15,8 @@
     "test": "Tes",
     "dataManagement": "Manajemen Data",
     "settings": "Pengaturan",
-    "about": "Tentang"
+    "about": "Tentang",
+    "adminAccessRequired": "Diperlukan akses admin"
   },
   "language": {
     "label": "Bahasa",
@@ -31,5 +32,15 @@
     "networkError": "Kesalahan jaringan. Periksa koneksi Anda."
   },
   "loading": "Memuat...",
-  "success": "Berhasil"
+  "success": "Berhasil",
+  "settings": {
+    "removeAdmin": "Hapus Akun Admin",
+    "removeAdminDescription": "Hapus kredensial admin dan opsional semua data tes",
+    "removeAdminPassword": "Masukkan kata sandi saat ini",
+    "removeAdminWipe": "Juga hapus semua data tes",
+    "removeAdminConfirm": "Apakah Anda yakin? Tindakan ini tidak dapat dibatalkan.",
+    "removeAdminError": "Gagal menghapus akun admin",
+    "removeAdminSuccess": "Akun admin berhasil dihapus",
+    "account": "Manajemen Akun"
+  }
 }

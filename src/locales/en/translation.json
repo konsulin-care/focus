@@ -164,6 +164,7 @@
       "totalTrials": "Total Trials",
       "totalTrialsDescription": "Must be an even number for balanced two-half test design",
       "oddValuesRounded": "Odd values are rounded up to {{value}}",
+      "warningIcon": "Warning",
       "bufferTime": "Buffer Time (ms)"
     },
     "dataManagement": {
@@ -171,7 +172,9 @@
       "description": "Manage local test data and upload settings.",
       "pendingUploads": "Pending Uploads: {{count}}",
       "clearCache": "Clear Local Cache"
-    }
+    },
+    "changePassword": "Change Password",
+    "removing": "Removing..."
   },
   "about": {
     "title": "About F.O.C.U.S.",
@@ -206,7 +209,9 @@
     "saveSettings": "Save Settings",
     "resetDefaults": "Reset to Defaults",
     "saveAndPreview": "Save & Preview",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "back": "Back",
+    "cancel": "Cancel"
   },
   "status": {
     "loadFailed": "Failed to load settings",
@@ -270,5 +275,101 @@
       "failed": "Failed"
     },
     "showing": "Showing {{from}} - {{to}} of {{total}} sessions"
+  },
+  "admin": {
+    "login": {
+      "title": "Admin Authentication",
+      "password": "Password",
+      "placeholder": "Enter admin password",
+      "forgotPassword": "Forgot Password?",
+      "cancel": "Cancel",
+      "login": "Login",
+      "loggingIn": "Logging in...",
+      "error": {
+        "required": "Password is required",
+        "invalid": "Invalid password. Please try again."
+      }
+    },
+    "register": {
+      "title": "Setup Admin Account",
+      "email": "Email",
+      "emailPlaceholder": "admin@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "cancel": "Cancel",
+      "register": "Register",
+      "registering": "Registering...",
+      "recoveryKey": "Recovery Key",
+      "copy": "Copy",
+      "saveWarning": "This is your only way to recover admin access. Save it securely.",
+      "acknowledge": "I have saved this recovery key securely",
+      "back": "Back",
+      "continue": "Continue",
+      "error": {
+        "required": "All fields are required",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordsMatch": "Passwords do not match",
+        "passwordLength": "Password must be at least 8 characters",
+        "registrationFailed": "Registration failed"
+      }
+    },
+    "changePassword": {
+      "title": "Change Admin Password",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password (min 8 characters)",
+      "confirmNewPassword": "Confirm New Password",
+      "confirmNewPasswordPlaceholder": "Confirm new password",
+      "cancel": "Cancel",
+      "changePassword": "Change Password",
+      "changing": "Changing…",
+      "success": "Password changed successfully! Closing…",
+      "error": {
+        "required": "Current password is required",
+        "newPasswordLength": "New password must be at least 8 characters",
+        "passwordsMatch": "New passwords do not match",
+        "failed": "Failed to change password"
+      }
+    },
+    "remove": {
+      "error": {
+        "required": "Password is required"
+      }
+    },
+    "recovery": {
+      "title": "Password Recovery",
+      "invalidKey": "Invalid recovery key. Please check and try again.",
+      "direct": {
+        "title": "Use Saved Recovery Key",
+        "description": "Enter the 64-character hexadecimal recovery key you saved during admin setup.",
+        "label": "Recovery Key",
+        "placeholder": "e.g., a1b2c3d4e5f6...",
+        "hint": "64 hexadecimal characters (0-9, a-f)",
+        "useKey": "Use Recovery Key",
+        "validating": "Validating...",
+        "error": {
+          "failed": "Failed to validate recovery key"
+        }
+      },
+      "step2": {
+        "title": "Reset Password",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "At least 8 characters",
+        "confirmNewPassword": "Confirm New Password",
+        "confirmNewPasswordPlaceholder": "Re-enter new password",
+        "cancel": "Cancel",
+        "reset": "Reset Password",
+        "resetting": "Resetting...",
+        "error": {
+          "required": "Both password fields are required",
+          "newPasswordLength": "Password must be at least 8 characters",
+          "passwordsMatch": "Passwords do not match",
+          "failed": "Password reset failed"
+        }
+      }
+    }
   }
 }
