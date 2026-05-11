@@ -282,10 +282,7 @@ The bcrypt cost factor of 12 means each hash computation takes approximately 0.5
 
 **Symptoms**: Forgotten password with no recovery key available.
 
-**Resolution**:
-1. Uninstall and reinstall F.O.C.U.S.
-2. Register a new admin account on first run.
-3. The database test data is preserved; only admin credentials are reset.
+**Resolution**: Follow the lost-key recovery procedure in §2.4. This requires manually deleting both the application's SQLite database (stored in the Electron `userData` directory) and the OS keychain entry (`focus-auth` / `local-master-key`). **This permanently erases all test data and admin credentials.** After completing those steps, reinstall the application and create a fresh admin account.
 
 **Prevention**: Save the recovery key in a password manager immediately after setup.
 

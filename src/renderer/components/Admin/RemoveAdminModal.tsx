@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n';
 
 export interface RemoveAdminModalProps {
@@ -15,10 +15,23 @@ export default function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveA
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const firstFocusableRef = useRef<HTMLInputElement>(null);
+  const lastFocusableRef = useRef<HTMLButtonElement>(null);
+  const prevActiveEl = useRef<HTMLElement | null>(null);
+
+  /** Handles closing the remove admin modal without confirming. */
+  const handleClose = () => {
+    setPassword('');
+    setWipeData(false);
+    setError('');
+    onClose();
+  };
+
   /** Handles confirmation of admin removal with password verification. */
   const handleConfirm = async () => {
     if (!password) {
-      setError(t('admin.changePassword.error.required'));
+      setError(t('admin.remove.error.required'));
       return;
     }
 
@@ -36,18 +49,51 @@ export default function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveA
     }
   };
 
-  /** Handles closing the remove admin modal without confirming. */
-  const handleClose = () => {
-    setPassword('');
-    setWipeData(false);
-    setError('');
-    onClose();
-  };
+  useEffect(() => {
+    if (isOpen) {
+      prevActiveEl.current = document.activeElement as HTMLElement;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+          return;
+        }
+        if (e.key === 'Tab') {
+          const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (!focusable || focusable.length === 0) return;
+          const first = firstFocusableRef.current!;
+          const last = lastFocusableRef.current!;
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      setTimeout(() => firstFocusableRef.current?.focus(), 0);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        prevActiveEl.current?.focus();
+      };
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
       aria-modal="true"
@@ -68,6 +114,7 @@ export default function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveA
             {t('settings.removeAdminPassword')}
           </label>
           <input
+            ref={firstFocusableRef}
             id="remove-admin-password"
             type="password"
             value={password}
@@ -110,6 +157,7 @@ export default function RemoveAdminModal({ isOpen, onClose, onConfirm }: RemoveA
             {t('button.cancel')}
           </button>
           <button
+            ref={lastFocusableRef}
             type="button"
             onClick={handleConfirm}
             className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"

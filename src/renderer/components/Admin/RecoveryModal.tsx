@@ -1,7 +1,6 @@
 import { useState, type FC, type FormEvent } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
-import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface RecoveryModalProps {
   isOpen: boolean;
@@ -16,7 +15,9 @@ type RecoveryStep = 'validate-key' | 'reset-password';
  */
 export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation('translation');
-  const login = useAuthStore((state) => state.login);
+  const store = useAuthStore();
+  const error = store.error || '';
+  const isLoading = store.isLoading;
 
   // Direct recovery state
   const [plaintextKey, setPlaintextKey] = useState('');
@@ -28,8 +29,6 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
 
   // UI state
   const [step, setStep] = useState<RecoveryStep>('validate-key');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -43,19 +42,14 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
       {step === 'reset-password' ? (
         <PasswordResetForm
           t={t}
-          login={login}
-          validatedRecoveryKey={validatedRecoveryKey}
           newPassword={newPassword}
           confirmPassword={confirmPassword}
           error={error}
           isLoading={isLoading}
-          setIsLoading={setIsLoading}
           onNewPasswordChange={setNewPassword}
           onConfirmPasswordChange={setConfirmPassword}
-          onErrorSet={setError}
-          onSuccess={() => {
-            handleClose();
-          }}
+          onErrorSet={() => store.setError(null)}
+          onSubmit={handlePasswordSubmit}
           onBack={handleBackToKeyEntry}
         />
       ) : (
@@ -65,7 +59,7 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
           error={error}
           isLoading={isLoading}
           onKeyChange={setPlaintextKey}
-          onErrorSet={setError}
+          onErrorSet={() => store.setError(null)}
           onValidate={handleValidateDirectKey}
           onClose={handleClose}
         />
@@ -79,48 +73,44 @@ export const RecoveryModal: FC<RecoveryModalProps> = ({ isOpen, onClose }) => {
     setValidatedRecoveryKey('');
     setNewPassword('');
     setConfirmPassword('');
-    setError('');
-    setIsLoading(false);
     setStep('validate-key');
+    store.resetRecoveryState();
     onClose?.();
   }
 
   /** Returns to key entry from password reset step. */
   function handleBackToKeyEntry() {
     setStep('validate-key');
-    setError('');
+    store.setError(null);
   }
 
   /** Handles validation of the direct recovery key input. */
   async function handleValidateDirectKey(e: FormEvent) {
     e.preventDefault();
-    setError('');
-
-    if (!validatePlaintextKey(plaintextKey)) {
-      setError(t('admin.recovery.invalidKey'));
-      return;
+    store.setError(null);
+    const isValid = await store.validateRecoveryKey(plaintextKey);
+    if (isValid) {
+      setValidatedRecoveryKey(plaintextKey);
+      setStep('reset-password');
     }
-
-    setIsLoading(true);
-
-    try {
-      const result = await window.electronAPI.authValidateRecoveryKey(plaintextKey);
-      if (result.valid) {
-        setValidatedRecoveryKey(plaintextKey);
-        setStep('reset-password');
-      } else {
-        setError(t('admin.recovery.invalidKey'));
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('admin.recovery.direct.error.failed');
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
+    // else store.error is set
   }
 
-  function validatePlaintextKey(value: string): boolean {
-    return /^[a-fA-F0-9]{64}$/.test(value);
+  /** Handles password reset submission after recovery key validation. */
+  async function handlePasswordSubmit() {
+    if (!store.passwordsMatch(newPassword, confirmPassword)) {
+      store.setError(t('admin.recovery.step2.error.passwordsMatch'));
+      return;
+    }
+    if (newPassword.length < 8) {
+      store.setError(t('admin.recovery.step2.error.newPasswordLength'));
+      return;
+    }
+    const result = await store.performRecovery(validatedRecoveryKey, newPassword);
+    if (result) {
+      onClose?.();
+    }
+    // on failure, store.error already set
   }
 };
 
@@ -133,7 +123,7 @@ interface KeyValidationFormProps {
   error: string;
   isLoading: boolean;
   onKeyChange: (key: string) => void;
-  onErrorSet: (error: string) => void;
+  onErrorSet: () => void;
   onValidate: (e: FormEvent) => void;
   onClose: () => void;
 }
@@ -188,7 +178,7 @@ const KeyValidationForm: FC<KeyValidationFormProps> = ({
           value={plaintextKey}
           onChange={(e) => {
             onKeyChange(e.target.value);
-            if (error) onErrorSet('');
+            if (error) onErrorSet();
           }}
           className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white font-mono text-sm focus:ring-primary focus:border-primary mb-1"
           placeholder={t('admin.recovery.direct.placeholder')}
@@ -230,71 +220,33 @@ const KeyValidationForm: FC<KeyValidationFormProps> = ({
  */
 interface PasswordResetFormProps {
   t: (key: string) => string;
-  login: (token: string) => void;
-  validatedRecoveryKey: string;
   newPassword: string;
   confirmPassword: string;
   error: string;
   isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  onNewPasswordChange: (password: string) => void;
-  onConfirmPasswordChange: (password: string) => void;
-  onErrorSet: (error: string) => void;
-  onSuccess: () => void;
+  onNewPasswordChange: (pwd: string) => void;
+  onConfirmPasswordChange: (pwd: string) => void;
+  onErrorSet: () => void; // clears error
+  onSubmit: () => Promise<void>; // parent provides full submit handling
   onBack: () => void;
 }
 
 const PasswordResetForm: FC<PasswordResetFormProps> = ({
   t,
-  login,
-  validatedRecoveryKey,
   newPassword,
   confirmPassword,
   error,
   isLoading,
-  setIsLoading,
   onNewPasswordChange,
   onConfirmPasswordChange,
   onErrorSet,
-  onSuccess,
+  onSubmit,
   onBack,
 }) => {
-  /** Handles password reset form submission after recovery key validation. */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    onErrorSet(''); // clear error
-
-    // Validate passwords
-    if (!newPassword || !confirmPassword) {
-      onErrorSet(t('admin.recovery.step2.error.required'));
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      onErrorSet(t('admin.recovery.step2.error.newPasswordLength'));
-      return;
-    }
-
-    if (!constantTimeEquals(newPassword, confirmPassword)) {
-      onErrorSet(t('admin.recovery.step2.error.passwordsMatch'));
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await window.electronAPI.authPerformRecovery(
-        validatedRecoveryKey,
-        newPassword
-      );
-      login(result.sessionToken);
-      onSuccess();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('admin.recovery.step2.error.failed');
-      onErrorSet(message);
-    } finally {
-      setIsLoading(false);
-    }
+    onErrorSet();
+    await onSubmit();
   };
 
   return (
@@ -317,7 +269,7 @@ const PasswordResetForm: FC<PasswordResetFormProps> = ({
           value={newPassword}
           onChange={(e) => {
             onNewPasswordChange(e.target.value);
-            if (error) onErrorSet('');
+            if (error) onErrorSet();
           }}
           className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
           placeholder={t('admin.recovery.step2.newPasswordPlaceholder')}
@@ -340,7 +292,7 @@ const PasswordResetForm: FC<PasswordResetFormProps> = ({
           value={confirmPassword}
           onChange={(e) => {
             onConfirmPasswordChange(e.target.value);
-            if (error) onErrorSet('');
+            if (error) onErrorSet();
           }}
           className="block w-full rounded-md border-gray-300 shadow-sm p-3 border text-gray-900 bg-white focus:ring-primary focus:border-primary"
           placeholder={t('admin.recovery.step2.confirmNewPasswordPlaceholder')}

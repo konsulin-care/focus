@@ -12,6 +12,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { DB_KEYS, STR_VALUES } from '@/test/constants';
+import { createMockDb } from '@/test/helpers/mockDb';
 
 // ============================================================================
 // Shared mock state (vi.hoisted survives vi.resetModules)
@@ -51,123 +52,6 @@ vi.mock('keytar', () => ({
 // ============================================================================
 // Test helpers
 // ============================================================================
-
-/**
- * Build a mock database that mimics the better-sqlite3 API used by auth.ts.
- */
-function createMockDb() {
-  const seeds = Object.create(null) as Record<string, string | undefined>;
-  let deviceUuidQueryCount = 0;
-
-  const statementMock = {
-    get(key: string) {
-      // First query for 'device_uuid' returns undefined (triggers UUID generation)
-      if (key === DB_KEYS.DEVICE_UUID) {
-        deviceUuidQueryCount++;
-        // If seeds already has the value (from prior INSERT), return it
-        if (seeds[key] !== undefined) {
-          return { value: seeds[key] };
-        }
-        // Only return undefined on first query (old approach)
-        if (deviceUuidQueryCount === 1) return undefined;
-      }
-      return seeds[key] !== undefined ? { value: seeds[key] } : undefined;
-    },
-    run(...args: [string, string?] | [string]) {
-      // DELETE queries: just the key (e.g., DELETE FROM test_config WHERE key = ?)
-      if (args.length === 1) {
-        const [key] = args as [string];
-        Reflect.deleteProperty(seeds, key);
-        return { changes: 1, lastInsertRowid: 1 };
-      }
-      // Handle both UPDATE (value, key) and INSERT (key, value) orders
-      // UPDATE: `SET value = ? WHERE key = ?` → run(value, key)
-      // INSERT: `VALUES (?, ?)` → run(key, value)
-      const [first, second] = args as [string, string];
-      // Keys used in INSERT statements (key, value) order
-      const insertKeys = new Set([
-        'session_expiry',
-        'admin_password_hash',
-        'lockout_until',
-        'failed_login_attempts',
-        'recovery_ciphertext',
-        'recovery_iv',
-        'recovery_tag',
-        'admin_email_ciphertext',
-        'admin_email_iv',
-        'admin_email_tag',
-        'admin_device_uuid',
-        'device_uuid',
-        'admin_setup_complete',
-      ]);
-      if (insertKeys.has(first)) {
-        seeds[first] = second; // INSERT format: (key, value)
-        // Sync device_uuid from admin_device_uuid for getOrCreateDeviceUUID compatibility
-        if (first === DB_KEYS.ADMIN_DEVICE_UUID) {
-          seeds[DB_KEYS.DEVICE_UUID] = second;
-          deviceUuidQueryCount = 2;
-        }
-      } else {
-        seeds[second] = first; // UPDATE format: (value, key)
-        // Also sync device_uuid to admin_device_uuid for requestRecovery compatibility
-        if (second === DB_KEYS.DEVICE_UUID) {
-          seeds[DB_KEYS.ADMIN_DEVICE_UUID] = first;
-        }
-      }
-      return { changes: 1, lastInsertRowid: 1 };
-    },
-  };
-
-  return {
-    prepare(query: string) {
-      if (query.includes('SELECT value FROM test_config WHERE key =')) {
-        return { get: statementMock.get.bind(statementMock) };
-      }
-      // Handle ON CONFLICT DO NOTHING / DO UPDATE syntax
-      if (query.includes('ON CONFLICT')) {
-        return {
-          run(...args: [string, string?] | [string]) {
-            // When args.length === 1, the key is hardcoded in SQL and arg is the value
-            // e.g., INSERT ... VALUES ('device_uuid', ?).run(uuid)
-            if (args.length === 1) {
-              const value = args[0] as string;
-              // Determine the key from the query itself
-              const keyMatch = query.match(/VALUES\s*\(\s*'([^']+)'/);
-              const key = keyMatch ? keyMatch[1] : 'unknown';
-              if (!seeds[key]) {
-                seeds[key] = value;
-              }
-              return { changes: 0, lastInsertRowid: 0 };
-            }
-            const [first, second] = args as [string, string];
-            // For ON CONFLICT DO UPDATE: always set the seed (it always updates)
-            // For ON CONFLICT DO NOTHING: only set if key doesn't exist
-            const isDoUpdate = query.includes('DO UPDATE');
-            if (isDoUpdate || !seeds[first]) {
-              seeds[first] = second;
-            }
-            // For admin_device_uuid, also sync device_uuid
-            if (first === DB_KEYS.ADMIN_DEVICE_UUID && !seeds[DB_KEYS.DEVICE_UUID]) {
-              seeds[DB_KEYS.DEVICE_UUID] = second;
-            }
-            return { changes: 0, lastInsertRowid: 0 };
-          },
-        };
-      }
-      if (query.includes('INSERT') || query.includes('UPDATE') || query.includes('DELETE')) {
-        return { run: statementMock.run.bind(statementMock) };
-      }
-      return { get: () => undefined, run: () => ({ changes: 1 }) };
-    },
-    exec: vi.fn(),
-    transaction<T>(fn: () => T): () => T {
-      return () => {
-        return fn();
-      };
-    },
-    _seeds: seeds,
-  };
-}
 
 /** Generate a bcrypt hash for a known password. */
 function deterministicHash(password: string): string {
@@ -311,26 +195,32 @@ describe('Authentication Module', () => {
     it('should extend session expiry on valid verifySession call', async () => {
       const { loginAdmin, verifySession } = auth;
 
+      // Login to create session
       await loginAdmin('correctPassword', 1);
-      const token = (await loginAdmin('correctPassword', 1)).sessionToken;
+      const { sessionToken } = await loginAdmin('correctPassword', 1);
+      expect(sessionToken).toBeDefined();
 
-      // Capture initial expiry from DB
-      const initialExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
+      // Capture initial state
+      const sessionBefore = auth.activeSessions.get(sessionToken);
+      expect(sessionBefore).toBeDefined();
+      const initialExpiryNs = sessionBefore!.expiry;
+      const initialDbExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
 
-      // Advance time by 5 minutes (using fake timers)
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(5 * 60 * 1000);
+      // Small delay to ensure Date.now() advances, avoiding same-millisecond equality
+      await new Promise((resolve) => setTimeout(resolve, 2));
 
-      // Verify session (which should extend expiry)
-      const valid = verifySession(token, 1);
+      // Call verifySession (should extend both in-memory and DB expiry)
+      const valid = verifySession(sessionToken, 1);
       expect(valid).toBe(true);
 
-      // Get new expiry from DB
-      const newExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
+      // Verify in-memory expiry was extended
+      const sessionAfter = auth.activeSessions.get(sessionToken);
+      expect(sessionAfter).toBeDefined();
+      expect(sessionAfter!.expiry).toBeGreaterThan(initialExpiryNs);
 
-      expect(newExpiry).toBeGreaterThan(initialExpiry);
-
-      vi.useRealTimers();
+      // Verify DB expiry was extended
+      const newDbExpiry = parseInt(db._seeds[DB_KEYS.SESSION_EXPIRY] ?? '0', 10);
+      expect(newDbExpiry).toBeGreaterThan(initialDbExpiry);
     });
 
     it('should reject expired sessions', async () => {
@@ -435,6 +325,9 @@ describe('Authentication Module', () => {
       // Seed keytar for registration
       keytarState.password = 'c'.repeat(64);
 
+      // Clear admin setup flag to allow fresh registration (guard protection)
+      db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE] = STR_VALUES.ZERO;
+
       // First register an admin
       await registerAdmin('test@example.com', 'password123');
 
@@ -454,6 +347,9 @@ describe('Authentication Module', () => {
 
       // Seed keytar for registration
       keytarState.password = 'c'.repeat(64);
+
+      // Clear admin setup flag to allow fresh registration (guard protection)
+      db._seeds[DB_KEYS.ADMIN_SETUP_COMPLETE] = STR_VALUES.ZERO;
 
       // First register an admin
       await registerAdmin('test@example.com', 'password123');

@@ -30,9 +30,3 @@ export const STR_VALUES = {
   FOUR: '4',
   FIVE: '5',
 } as const;
-
-/** Bcrypt hash of 'correctPassword' used in tests */
-export const TEST_PASSWORD_HASH = 'correctPasswordHash';
-
-/** Deterministic hash for testing (mock) */
-export const DETERMINISTIC_HASH = 'deterministicHash';

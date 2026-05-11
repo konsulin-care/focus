@@ -12,6 +12,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { DB_KEYS, STR_VALUES } from '@/test/constants';
+import { createMockDb } from '@/test/helpers/mockDb';
 
 // ============================================================================
 // Shared mock state (vi.hoisted survives vi.resetModules)
@@ -49,66 +50,6 @@ vi.mock('keytar', () => ({
 // ============================================================================
 // Test helpers
 // ============================================================================
-
-/**
- * Build a mock database that mimics the better-sqlite3 API used by auth.ts.
- */
-function createMockDb() {
-  const seeds = Object.create(null) as Record<string, string | undefined>;
-  let deviceUuidQueryCount = 0;
-
-  const statementMock = {
-    get(key: string) {
-      if (key === DB_KEYS.DEVICE_UUID) {
-        deviceUuidQueryCount++;
-        if (deviceUuidQueryCount === 1) return undefined;
-      }
-      return seeds[key] !== undefined ? { value: seeds[key] } : undefined;
-    },
-    run(...args: [string, string]) {
-      // Handle both UPDATE (value, key) and INSERT (key, value) orders
-      if (args.length === 2) {
-        const [first, second] = args as [string, string];
-        const insertKeys = new Set([
-          'session_expiry',
-          'admin_password_hash',
-          'lockout_until',
-          'failed_login_attempts',
-          'recovery_ciphertext',
-          'recovery_iv',
-          'recovery_tag',
-          'admin_email_ciphertext',
-          'admin_email_iv',
-          'admin_email_tag',
-          'admin_device_uuid',
-        ]);
-        if (insertKeys.has(first)) {
-          seeds[first] = second; // INSERT format: (key, value)
-        } else {
-          seeds[second] = first; // UPDATE format: (value, key)
-        }
-      }
-      return { changes: 1, lastInsertRowid: 1 };
-    },
-  };
-
-  return {
-    prepare(query: string) {
-      if (query.includes('SELECT value FROM test_config WHERE key =')) {
-        return { get: statementMock.get.bind(statementMock) };
-      }
-      if (query.includes('INSERT') || query.includes('UPDATE')) {
-        return { run: statementMock.run.bind(statementMock) };
-      }
-      return { get: () => undefined, run: () => ({ changes: 1 }) };
-    },
-    exec: vi.fn(),
-    transaction<T>(fn: () => T): () => T {
-      return fn as () => T;
-    },
-    _seeds: seeds,
-  };
-}
 
 /** Generate a bcrypt hash for a known password. */
 function deterministicHash(password: string): string {

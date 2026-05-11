@@ -55,6 +55,9 @@ export async function registerAdmin(
   password: string
 ): Promise<{ recoveryKey: string }> {
   if (!db) throw new Error('Database not initialized');
+  if (isAdminSetup()) {
+    throw new Error('Admin already registered');
+  }
 
   // Basic email validation
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -343,6 +346,9 @@ export async function performRecovery(
   webContentsId?: number
 ): Promise<{ sessionToken: string }> {
   if (!db) throw new Error('Database not initialized');
+  if (webContentsId === undefined) {
+    throw new Error('webContentsId is required for session creation');
+  }
 
   // Resolve the plaintext recovery key from the input
   let plaintextKey: string;
@@ -412,9 +418,6 @@ export async function performRecovery(
   const nowNs = process.hrtime.bigint();
   const expiryNs = nowNs + BigInt(SESSION_DURATION) * 1_000_000n;
 
-  if (webContentsId === undefined) {
-    throw new Error('webContentsId is required for session creation');
-  }
   activeSessions.set(sessionToken, { webContentsId, expiry: expiryNs });
 
   if (db) {

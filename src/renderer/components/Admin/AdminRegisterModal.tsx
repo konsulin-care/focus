@@ -1,27 +1,32 @@
 import { useState, type FC, type FormEvent } from 'react';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/renderer/store';
-import { constantTimeEquals } from '@/renderer/utils/constantTime';
 
 export interface AdminRegisterModalProps {
   isOpen: boolean;
   onComplete: (recoveryKey: string) => void;
+  onClose?: () => void;
 }
 
 /**
  * Modal wrapper for first-time admin account registration.
  * Manages state and delegates rendering to extracted components.
  */
-export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComplete }) => {
+export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({
+  isOpen,
+  onComplete,
+  onClose,
+}) => {
   const { t } = useTranslation('translation');
-  const setSetupComplete = useAuthStore((state) => state.setSetupComplete);
+  const store = useAuthStore();
+  const setSetupComplete = store.setSetupComplete;
+  const error = store.error || '';
+  const isLoading = store.isLoading;
 
   // Registration phase state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Recovery key phase state
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -63,7 +68,7 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
         onEmailChange={setEmail}
         onPasswordChange={setPassword}
         onConfirmPasswordChange={setConfirmPassword}
-        onErrorSet={setError}
+        onErrorSet={() => store.setError(null)}
         onSubmit={handleRegister}
         onCancel={handleClose}
       />
@@ -75,25 +80,26 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
     setEmail('');
     setPassword('');
     setConfirmPassword('');
-    setError('');
-    setIsLoading(false);
     setRecoveryKey('');
     setHasSavedKey(false);
+    store.resetRegistrationState();
+    onClose?.();
   }
 
   /** Copies the recovery key to clipboard. */
-  function handleCopyKey() {
-    navigator.clipboard.writeText(recoveryKey).catch(() => {});
+  async function handleCopyKey() {
+    try {
+      await store.copyRecoveryKey(recoveryKey);
+    } catch {
+      // ignore clipboard errors
+    }
   }
 
   /** Continues after acknowledging recovery key. */
   async function handleContinue() {
-    try {
-      const result = await window.electronAPI.authLogin(password);
-      useAuthStore.getState().login(result.sessionToken);
+    const result = await store.loginWithPassword(password);
+    if (result) {
       onComplete(recoveryKey);
-    } catch {
-      // Login failed - user will need to use login modal
     }
     setSetupComplete(true);
     handleClose();
@@ -102,46 +108,26 @@ export const AdminRegisterModal: FC<AdminRegisterModalProps> = ({ isOpen, onComp
   /** Handles registration form submission for admin account creation. */
   async function handleRegister(e: FormEvent) {
     e.preventDefault();
-    setError('');
 
-    if (!email.trim() || !password || !confirmPassword) {
-      setError(t('admin.register.error.required'));
+    // Client-side validation via store
+    if (!store.validateEmail(email)) {
+      store.setError(t('admin.register.error.invalidEmail'));
       return;
     }
-
-    if (!validateEmail(email)) {
-      setError(t('admin.register.error.invalidEmail'));
+    if (!store.passwordsMatch(password, confirmPassword)) {
+      store.setError(t('admin.register.error.passwordsMatch'));
       return;
     }
-
-    if (!constantTimeEquals(password, confirmPassword)) {
-      setError(t('admin.register.error.passwordsMatch'));
-      return;
-    }
-
     if (password.length < 8) {
-      setError(t('admin.register.error.passwordLength'));
+      store.setError(t('admin.register.error.passwordLength'));
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const result = await window.electronAPI.authRegister(email, password);
+    const result = await store.registerAdmin(email, password);
+    if (result) {
       setRecoveryKey(result.recoveryKey);
-      // Transition to recovery key phase
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : t('admin.register.error.registrationFailed');
-      setError(message);
-    } finally {
-      setIsLoading(false);
     }
-  }
-
-  function validateEmail(value: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(value);
+    // If undefined, store.error already set
   }
 };
 

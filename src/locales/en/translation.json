@@ -334,6 +334,11 @@
         "failed": "Failed to change password"
       }
     },
+    "remove": {
+      "error": {
+        "required": "Password is required"
+      }
+    },
     "recovery": {
       "title": "Password Recovery",
       "invalidKey": "Invalid recovery key. Please check and try again.",

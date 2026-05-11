@@ -71,6 +71,9 @@ ipcMain.handle('admin-is-setup', () => {
 });
 
 ipcMain.handle('admin-register', async (_event, email: string, password: string) => {
+  if (isAdminSetup()) {
+    throw new Error('Admin already registered');
+  }
   return await registerAdmin(email, password);
 });
 
