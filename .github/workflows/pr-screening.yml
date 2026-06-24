@@ -26,17 +26,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Full history for git diff
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
         with:
           cache: true
           # mise reads node=24 and npm=11 from mise.toml
 
       - name: Cache node_modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Cache electron-gyp
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.electron-gyp
           key: ${{ runner.os }}-electron-gyp-${{ hashFiles('package-lock.json') }}
