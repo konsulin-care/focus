@@ -32,7 +32,7 @@ jobs:
       is_release: ${{ steps.extract-version.outputs.is_release }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: true
@@ -80,12 +80,12 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
         with:
           cache: true
           # mise reads node=24 and npm=11 from mise.toml
@@ -110,7 +110,7 @@ jobs:
       needs.build.result == 'success'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
