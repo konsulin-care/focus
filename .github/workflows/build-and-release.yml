@@ -85,7 +85,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
+        uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea  # pinned to v4.0.1 for security - see GitHub Actions pinning guide
         with:
           cache: true
           # mise reads node=24 and npm=11 from mise.toml
